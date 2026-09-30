@@ -55,8 +55,11 @@ const headerNavSchema = z.object({
   pricingRequireAuth: z.boolean(),
   rankingsEnabled: z.boolean(),
   rankingsRequireAuth: z.boolean(),
+  monitoringEnabled: z.boolean(),
+  monitoringRequireAuth: z.boolean(),
   docs: z.boolean(),
   about: z.boolean(),
+  showSearch: z.boolean(),
 })
 
 type HeaderNavFormValues = z.infer<typeof headerNavSchema>
@@ -89,12 +92,24 @@ const toFormValues = (config: HeaderNavModulesConfig): HeaderNavFormValues => ({
     config.rankings?.requireAuth === undefined
       ? HEADER_NAV_DEFAULT.rankings.requireAuth
       : Boolean(config.rankings.requireAuth),
+  monitoringEnabled:
+    config.monitoring?.enabled === undefined
+      ? HEADER_NAV_DEFAULT.monitoring.enabled
+      : Boolean(config.monitoring.enabled),
+  monitoringRequireAuth:
+    config.monitoring?.requireAuth === undefined
+      ? HEADER_NAV_DEFAULT.monitoring.requireAuth
+      : Boolean(config.monitoring.requireAuth),
   docs:
     config.docs === undefined ? HEADER_NAV_DEFAULT.docs : Boolean(config.docs),
   about:
     config.about === undefined
       ? HEADER_NAV_DEFAULT.about
       : Boolean(config.about),
+  showSearch:
+    config.showSearch === undefined
+      ? Boolean(HEADER_NAV_DEFAULT.showSearch)
+      : Boolean(config.showSearch),
 })
 
 export function HeaderNavigationSection({
@@ -121,6 +136,7 @@ export function HeaderNavigationSection({
       console: values.console,
       docs: values.docs,
       about: values.about,
+      showSearch: values.showSearch,
       pricing: {
         ...(config.pricing ?? HEADER_NAV_DEFAULT.pricing),
         enabled: values.pricingEnabled,
@@ -130,6 +146,11 @@ export function HeaderNavigationSection({
         ...(config.rankings ?? HEADER_NAV_DEFAULT.rankings),
         enabled: values.rankingsEnabled,
         requireAuth: values.rankingsRequireAuth,
+      },
+      monitoring: {
+        ...(config.monitoring ?? HEADER_NAV_DEFAULT.monitoring),
+        enabled: values.monitoringEnabled,
+        requireAuth: values.monitoringRequireAuth,
       },
     }
 
@@ -173,12 +194,17 @@ export function HeaderNavigationSection({
       title: t('About'),
       description: t('Static page describing the platform.'),
     },
+    {
+      key: 'showSearch',
+      title: t('Show search box'),
+      description: t('Show the search box in the console top bar.'),
+    },
   ]
 
   const accessModules: Array<{
     enabledKey: keyof HeaderNavFormValues
     requireAuthKey: keyof HeaderNavFormValues
-    requireAuthDependsOn: 'pricingEnabled' | 'rankingsEnabled'
+    requireAuthDependsOn: 'pricingEnabled' | 'rankingsEnabled' | 'monitoringEnabled'
     title: string
     description: string
     requireAuthTitle: string
@@ -204,6 +230,17 @@ export function HeaderNavigationSection({
       requireAuthTitle: t('Require login to view rankings'),
       requireAuthDescription: t(
         'Visitors must authenticate before accessing the rankings page.'
+      ),
+    },
+    {
+      enabledKey: 'monitoringEnabled',
+      requireAuthKey: 'monitoringRequireAuth',
+      requireAuthDependsOn: 'monitoringEnabled',
+      title: t('Model Monitoring'),
+      description: t('Real-time model status and performance monitoring page.'),
+      requireAuthTitle: t('Require login to view monitoring'),
+      requireAuthDescription: t(
+        'Visitors must authenticate before accessing the monitoring page.'
       ),
     },
   ]

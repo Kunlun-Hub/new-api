@@ -19,23 +19,38 @@ For commercial licensing, please contact support@quantumnous.com
 import { useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatCompactCount, formatNumber } from '@/lib/format'
+
+import { useHomeStats } from '../../hooks'
+
 interface CounterProps {
   end: number
   suffix?: string
   prefix?: string
   duration?: number
   decimals?: number
+  compact?: boolean
 }
 
 function Counter(props: CounterProps) {
-  const { end, suffix = '', prefix = '', duration = 1600, decimals = 0 } = props
+  const {
+    end,
+    suffix = '',
+    prefix = '',
+    duration = 1600,
+    decimals = 0,
+    compact = false,
+  } = props
   const ref = useRef<HTMLSpanElement>(null)
   const startedRef = useRef(false)
 
   const formatValue = useCallback(
-    (v: number) =>
-      decimals > 0 ? v.toFixed(decimals) : Math.round(v).toLocaleString(),
-    [decimals]
+    (v: number) => {
+      if (compact) return formatCompactCount(v)
+      return decimals > 0 ? v.toFixed(decimals) : formatNumber(v)
+    },
+    [compact, decimals]
   )
 
   const animate = useCallback(() => {
@@ -92,35 +107,80 @@ interface StatItem {
   suffix: string
   label: string
   decimals?: number
+  compact?: boolean
 }
 
 export function Stats(_props: StatsProps) {
   const { t } = useTranslation()
+  const { data } = useHomeStats()
 
-  const stats: StatItem[] = [
-    { end: 200, suffix: '+', label: t('AI models available') },
-    { end: 50, suffix: 'K+', label: t('developers served') },
-    { end: 99.9, suffix: '%', label: t('service availability'), decimals: 1 },
-  ]
+  const stats: StatItem[] = data
+    ? [
+        {
+          end: data.model_count,
+          suffix: '+',
+          label: t('AI models available'),
+        },
+        {
+          end: data.total_requests,
+          suffix: '',
+          label: t('Requests served'),
+          compact: true,
+        },
+        ...(data.success_rate_hours > 0
+          ? [
+              {
+                end: data.success_rate,
+                suffix: '%',
+                label: t('service availability'),
+                decimals: 1,
+              },
+            ]
+          : []),
+      ]
+    : []
 
   return (
     <div className='border-border/40 bg-muted/10 relative z-10 border-y'>
       <div className='mx-auto max-w-6xl px-6 py-10 md:py-12'>
-        <div className='grid grid-cols-1 gap-8 sm:grid-cols-3 md:gap-12'>
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className='flex flex-col items-center text-center'
-            >
-              <span className='text-2xl font-bold tracking-tight md:text-3xl'>
-                <Counter end={s.end} suffix={s.suffix} decimals={s.decimals} />
-              </span>
-              <span className='text-muted-foreground mt-1.5 text-xs'>
-                {s.label}
-              </span>
-            </div>
-          ))}
-        </div>
+        {stats.length === 0 ? (
+          <div className='grid grid-cols-1 gap-8 sm:grid-cols-3 md:gap-12'>
+            {[0, 1, 2].map((slot) => (
+              <div
+                key={slot}
+                className='flex flex-col items-center text-center'
+              >
+                <Skeleton className='h-7 w-20 md:h-8' />
+                <Skeleton className='mt-2 h-3 w-24' />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            className={`grid grid-cols-1 gap-8 md:gap-12 ${
+              stats.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+            }`}
+          >
+            {stats.map((s) => (
+              <div
+                key={s.label}
+                className='flex flex-col items-center text-center'
+              >
+                <span className='text-2xl font-bold tracking-tight md:text-3xl'>
+                  <Counter
+                    end={s.end}
+                    suffix={s.suffix}
+                    decimals={s.decimals}
+                    compact={s.compact}
+                  />
+                </span>
+                <span className='text-muted-foreground mt-1.5 text-xs'>
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

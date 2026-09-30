@@ -22,7 +22,10 @@ import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { useNotifications } from '@/hooks/use-notifications'
+import { useStatus } from '@/hooks/use-status'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
+import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
+import { useMemo } from 'react'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
@@ -68,8 +71,9 @@ type AppHeaderProps = {
    */
   leftContent?: React.ReactNode
   /**
-   * Whether to show search box
-   * @default true
+   * Whether to show search box.
+   * When not specified, follows the "Show search box" toggle in
+   * Settings -> Header navigation (defaults to true).
    */
   showSearch?: boolean
   /**
@@ -97,7 +101,7 @@ export function AppHeader({
   navLinks = defaultTopNavLinks,
   showTopNav = true,
   leftContent,
-  showSearch = true,
+  showSearch: showSearchProp,
   rightContent,
   showNotifications = true,
   showConfigDrawer = true,
@@ -107,12 +111,25 @@ export function AppHeader({
   const dynamicLinks = useTopNavLinks()
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
 
+  // "Show search box" toggle from Settings -> Header navigation
+  const { status } = useStatus()
+  const headerNavModules = useMemo(
+    () => parseHeaderNavModulesFromStatus(status as Record<string, unknown> | null),
+    [status]
+  )
+  const showSearchSetting =
+    typeof headerNavModules.showSearch === 'boolean'
+      ? headerNavModules.showSearch
+      : true
+  const showSearch = showSearchProp ?? showSearchSetting
+
   // Notifications hook
   const notifications = useNotifications()
 
   return (
     <Header>
-      <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1'>
+      {/* Left: sidebar trigger (inside Header) + brand */}
+      <div className='flex min-w-0 flex-1 items-center gap-2'>
         <SystemBrand variant='inline' />
       </div>
 
@@ -120,16 +137,18 @@ export function AppHeader({
         <div className='ms-2 flex items-center'>{leftContent}</div>
       ) : null}
 
+      {/* Center: navigation, absolutely centered like the public header */}
       {showTopNav && (
-        <div className='pointer-events-none hidden items-center justify-center lg:flex 2xl:absolute 2xl:inset-0'>
+        <div className='pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex'>
           <div className='pointer-events-auto'>
             <TopNav links={links} />
           </div>
         </div>
       )}
 
+      {/* Right: actions */}
       {rightContent ?? (
-        <div className='ms-auto flex shrink-0 items-center gap-1 sm:gap-2'>
+        <div className='relative ms-auto flex shrink-0 items-center gap-1 sm:gap-2'>
           {showSearch && (
             <Search className='w-8 flex-none [&>span]:hidden sm:[&>span]:inline' />
           )}

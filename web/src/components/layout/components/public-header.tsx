@@ -279,7 +279,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                     className={cn(
                       'hover:bg-muted min-w-0 truncate rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-200',
                       isActive
-                        ? 'text-foreground'
+                        ? 'bg-muted text-foreground'
                         : 'text-muted-foreground hover:text-foreground',
                       link.disabled && 'pointer-events-none opacity-50'
                     )}

@@ -16,28 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useRouterState } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
-import LoadingBar, { type LoadingBarRef } from 'react-top-loading-bar'
+import { useQuery } from '@tanstack/react-query'
 
-export function NavigationProgress() {
-  const ref = useRef<LoadingBarRef>(null)
-  const state = useRouterState()
+import { requireServerSuccess } from '@/lib/server-error-message'
 
-  useEffect(() => {
-    if (state.status === 'pending') {
-      ref.current?.continuousStart()
-    } else {
-      ref.current?.complete()
-    }
-  }, [state.status])
+import { getHomeStats } from '../api'
 
-  return (
-    <LoadingBar
-      color='var(--muted-foreground)'
-      ref={ref}
-      shadow={true}
-      height={2}
-    />
-  )
+/**
+ * Load the public platform statistics shown by the landing page.
+ */
+export function useHomeStats() {
+  return useQuery({
+    queryKey: ['home-stats'],
+    queryFn: async () => requireServerSuccess(await getHomeStats()).data,
+    staleTime: 60 * 1000,
+    retry: false,
+  })
 }

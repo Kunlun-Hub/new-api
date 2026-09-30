@@ -66,7 +66,7 @@ export function HowItWorks() {
   }'`
 
   return (
-    <section className='border-border/40 bg-muted/20 relative z-10 border-y px-6 py-20 md:py-28'>
+    <section className='border-border/40 bg-muted/20 relative z-10 hidden border-y px-6 py-20 md:py-28 lg:block'>
       <div className='mx-auto max-w-6xl'>
         <AnimateInView className='mx-auto mb-14 max-w-2xl text-center'>
           <p className='mb-3 text-xs font-medium tracking-widest text-blue-600 uppercase dark:text-blue-400'>
@@ -82,8 +82,8 @@ export function HowItWorks() {
           </p>
         </AnimateInView>
 
-        <div className='grid items-start gap-10 lg:grid-cols-2 lg:gap-14'>
-          <div className='flex flex-col gap-8'>
+        <div className='grid grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:gap-14'>
+          <div className='flex min-w-0 flex-col gap-8'>
             {steps.map((step, i) => (
               <AnimateInView
                 key={step.num}
@@ -99,11 +99,11 @@ export function HowItWorks() {
                     {step.num}
                   </div>
                 </div>
-                <div>
+                <div className='min-w-0'>
                   <h3 className='mb-1.5 text-base font-semibold'>
                     {step.title}
                   </h3>
-                  <p className='text-muted-foreground text-sm leading-relaxed'>
+                  <p className='text-muted-foreground text-sm leading-relaxed break-words'>
                     {step.desc}
                   </p>
                 </div>
@@ -111,7 +111,7 @@ export function HowItWorks() {
             ))}
           </div>
 
-          <AnimateInView delay={150} animation='fade-up'>
+          <AnimateInView delay={150} animation='fade-up' className='min-w-0'>
             <div className='border-border/50 bg-background overflow-hidden rounded-2xl border shadow-xl'>
               <div className='border-border/50 flex items-center gap-2 border-b px-4 py-3'>
                 <span className='size-3 rounded-full bg-red-500/70' />

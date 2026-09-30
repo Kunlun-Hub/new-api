@@ -37,3 +37,23 @@ export interface HomePageContentResult {
   isLoaded: boolean
   isUrl: boolean
 }
+
+/**
+ * Public platform statistics rendered by the landing page stats strip.
+ */
+export interface HomeStats {
+  model_count: number
+  total_requests: number
+  success_rate: number
+  /** Window the success rate covers; 0 when the platform has no traffic yet. */
+  success_rate_hours: number
+}
+
+/**
+ * Response from the public home stats API
+ */
+export interface HomeStatsResponse {
+  success: boolean
+  message?: string
+  data: HomeStats
+}

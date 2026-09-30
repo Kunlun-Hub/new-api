@@ -33,6 +33,27 @@ import { Hero } from '@/features/home/components/sections/hero'
 import { HowItWorks } from '@/features/home/components/sections/how-it-works'
 import { Stats } from '@/features/home/components/sections/stats'
 import { UseCases } from '@/features/home/components/sections/use-cases'
+import type { HomeStats } from '@/features/home/types'
+
+const { getHomeStats } = vi.hoisted(() => ({ getHomeStats: vi.fn() }))
+
+vi.mock('@/features/home/api', () => ({
+  getHomePageContent: vi.fn(),
+  getHomeStats,
+}))
+
+function mockHomeStats(overrides: Partial<HomeStats> = {}) {
+  getHomeStats.mockResolvedValue({
+    success: true,
+    data: {
+      model_count: 42,
+      total_requests: 1234567,
+      success_rate: 99.9,
+      success_rate_hours: 24,
+      ...overrides,
+    },
+  })
+}
 
 vi.mock('@/hooks/use-status', () => ({
   useStatus: () => ({
@@ -107,7 +128,9 @@ describe('landing sections', () => {
     expect(
       screen.getByRole('button', { name: /Start for free/ })
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /View Pricing/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /View Pricing/ })
+    ).toBeInTheDocument()
   })
 
   it('hero links to the dashboard for signed-in users', async () => {
@@ -117,11 +140,19 @@ describe('landing sections', () => {
     ).toBeInTheDocument()
   })
 
-  it('stats shows the three platform metrics', async () => {
+  it('stats renders the live platform metrics', async () => {
+    mockHomeStats()
     await renderWithRouter(<Stats />)
-    expect(screen.getByText('AI models available')).toBeInTheDocument()
-    expect(screen.getByText('developers served')).toBeInTheDocument()
+    expect(await screen.findByText('AI models available')).toBeInTheDocument()
+    expect(screen.getByText('Requests served')).toBeInTheDocument()
     expect(screen.getByText('service availability')).toBeInTheDocument()
+  })
+
+  it('stats omits availability while the platform has no recorded traffic', async () => {
+    mockHomeStats({ success_rate: 0, success_rate_hours: 0 })
+    await renderWithRouter(<Stats />)
+    expect(await screen.findByText('AI models available')).toBeInTheDocument()
+    expect(screen.queryByText('service availability')).not.toBeInTheDocument()
   })
 
   it('features renders all six service cards', async () => {
@@ -137,7 +168,9 @@ describe('landing sections', () => {
     expect(screen.getByText('Sign up and top up')).toBeInTheDocument()
     expect(screen.getByText('Create an API token')).toBeInTheDocument()
     expect(screen.getByText('Point and call')).toBeInTheDocument()
-    expect(screen.getByText(/curl .*\/v1\/chat\/completions/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/curl .*\/v1\/chat\/completions/)
+    ).toBeInTheDocument()
   })
 
   it('use-cases renders all six scenario cards', async () => {

@@ -24,6 +24,8 @@ import {
   type ReactNode,
 } from 'react'
 
+import { SidebarTrigger } from '@/components/ui/sidebar'
+
 import { Main } from './main'
 import { PageFooterProvider } from './page-footer'
 
@@ -86,16 +88,19 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
             <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
           )}
           <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4'>
-            <div
-              className={
-                props.stackActionsOnMobile
-                  ? 'min-w-0 flex-1 max-sm:basis-full'
-                  : 'min-w-0 flex-1'
-              }
-            >
-              <h2 className='truncate text-base font-bold tracking-tight sm:text-lg'>
-                {title}
-              </h2>
+            <div className='flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2'>
+              <SidebarTrigger variant='ghost' className='size-8 shrink-0' />
+              <div
+                className={
+                  props.stackActionsOnMobile
+                    ? 'min-w-0 flex-1 max-sm:basis-full'
+                    : 'min-w-0 flex-1'
+                }
+              >
+                <h2 className='truncate text-base font-bold tracking-tight sm:text-lg'>
+                  {title}
+                </h2>
+              </div>
             </div>
             {actions != null && (
               <div className='flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4'>

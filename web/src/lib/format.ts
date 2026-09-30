@@ -50,6 +50,35 @@ export function formatCompactNumber(
   }).format(value as number)
 }
 
+const COMPACT_COUNT_UNITS = [
+  { threshold: 1e9, suffix: 'B' },
+  { threshold: 1e6, suffix: 'M' },
+  { threshold: 1e3, suffix: 'K' },
+]
+
+/**
+ * Format a large count with fixed K/M/B suffixes regardless of the interface
+ * language, for the marketing copy that always spells the unit this way.
+ */
+export function formatCompactCount(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '-'
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+
+  let index = COMPACT_COUNT_UNITS.findIndex((unit) => abs >= unit.threshold)
+  if (index === -1) return `${sign}${Math.round(abs)}`
+
+  let text = ''
+  for (; index >= 0; index--) {
+    const { threshold, suffix } = COMPACT_COUNT_UNITS[index]
+    const scaled = abs / threshold
+    const digits = scaled >= 100 ? 0 : 1
+    text = `${scaled.toFixed(digits).replace(/\.0$/, '')}${suffix}`
+    if (Number.parseFloat(text) < 1000) break
+  }
+  return `${sign}${text}`
+}
+
 export function formatPercent(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value as number)) return '-'
   return Intl.NumberFormat(undefined, {

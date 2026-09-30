@@ -1484,6 +1484,14 @@ func updateUserQuotaUsedQuotaAndRequestCount(id int, quota int, usedQuota int, r
 	}
 }
 
+// GetTotalRequestCount returns how many requests every user has made so far,
+// which is the lifetime request total published on the landing page.
+func GetTotalRequestCount() (int64, error) {
+	var total int64
+	err := DB.Model(&User{}).Select("COALESCE(SUM(request_count), 0)").Scan(&total).Error
+	return total, err
+}
+
 // GetUsernameById gets username from Redis first, falls back to DB if needed
 func GetUsernameById(id int, fromDB bool) (username string, err error) {
 	defer func() {
