@@ -252,3 +252,55 @@ func TestPerformanceAggregationAndFlush(t *testing.T) {
 		})
 	}
 }
+
+func TestQueryMonitoringGroupsModelsByGroup(t *testing.T) {
+	t.Setenv("SQL_DSN", "")
+	oldDB, oldPath, oldMaster, oldRedis := model.DB, common.SQLitePath, common.IsMasterNode, common.RedisEnabled
+	oldType, oldLogType := common.MainDatabaseType(), common.LogDatabaseType()
+	common.SQLitePath, common.IsMasterNode, common.RedisEnabled = filepath.Join(t.TempDir(), "monitor.db"), false, false
+	hotBuckets.Clear()
+	t.Cleanup(func() {
+		model.DB, common.SQLitePath, common.IsMasterNode, common.RedisEnabled = oldDB, oldPath, oldMaster, oldRedis
+		common.SetDatabaseTypes(oldType, oldLogType)
+		hotBuckets.Clear()
+	})
+	require.NoError(t, model.InitDB())
+	db := model.DB
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+	require.NoError(t, db.Migrator().DropTable(&model.PerfMetric{}))
+	require.NoError(t, db.AutoMigrate(&model.PerfMetric{}))
+
+	now := time.Now()
+	hour := now.Unix() - now.Unix()%3600
+	for _, row := range []model.PerfMetric{
+		{ModelName: "gpt-5-mini", Group: "vip_1", BucketTs: hour - 3600, RequestCount: 100, SuccessCount: 99, TotalLatencyMs: 1760000, TtftCount: 100, TtftSumMs: 446000, OutputTokens: 10000, GenerationMs: 80000},
+		{ModelName: "gpt-5-nano", Group: "vip_1", BucketTs: hour - 3600, RequestCount: 20, SuccessCount: 19, TotalLatencyMs: 381000, TtftCount: 20, TtftSumMs: 102600, OutputTokens: 2000, GenerationMs: 20000},
+		{ModelName: "gpt-5-mini", Group: "other", BucketTs: hour - 3600, RequestCount: 50, SuccessCount: 50},
+	} {
+		require.NoError(t, model.UpsertPerfMetric(&row))
+	}
+
+	result, err := QueryMonitoring(24, []string{"vip_1", "auto"})
+	require.NoError(t, err)
+	require.Len(t, result.Groups, 1)
+
+	group := result.Groups[0]
+	assert.Equal(t, "vip_1", group.Group)
+	assert.Equal(t, int64(120), group.RequestCount)
+	assert.InDelta(t, 98.33, group.SuccessRate, 0.01)
+	require.Len(t, group.Models, 2)
+
+	// Models are sorted by request count descending.
+	assert.Equal(t, "gpt-5-mini", group.Models[0].ModelName)
+	assert.Equal(t, int64(100), group.Models[0].RequestCount)
+	assert.InDelta(t, 99.0, group.Models[0].SuccessRate, 0.01)
+	assert.Equal(t, int64(4460), group.Models[0].AvgTtftMs)
+	assert.Equal(t, int64(17600), group.Models[0].AvgLatencyMs)
+	assert.InDelta(t, 125.0, group.Models[0].AvgTps, 0.01)
+	require.NotEmpty(t, group.Models[0].RecentSuccessSeries)
+
+	assert.Equal(t, "gpt-5-nano", group.Models[1].ModelName)
+	assert.Equal(t, int64(20), group.Models[1].RequestCount)
+}

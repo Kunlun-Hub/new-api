@@ -74,3 +74,34 @@ export type PerfSummaryAllData = {
     models: PerfModelSummary[]
   }
 }
+
+export type MonitoringSuccessPoint = { ts: number; success_rate: number }
+
+export type MonitoringModel = {
+  model_name: string
+  request_count: number
+  avg_ttft_ms: number
+  avg_latency_ms: number
+  success_rate: number
+  avg_tps: number
+  recent_success_series?: MonitoringSuccessPoint[]
+}
+
+export type MonitoringGroup = {
+  group: string
+  request_count: number
+  success_rate: number
+  avg_ttft_ms: number
+  avg_latency_ms: number
+  models: MonitoringModel[]
+}
+
+export type MonitoringData = {
+  success: boolean
+  message?: string
+  data: {
+    window_start: number
+    window_end: number
+    groups: MonitoringGroup[]
+  }
+}

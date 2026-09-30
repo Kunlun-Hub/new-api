@@ -82,6 +82,31 @@ type SummaryAllResult struct {
 	Models      []ModelSummary `json:"models"`
 }
 
+type MonitoringModel struct {
+	ModelName           string             `json:"model_name"`
+	RequestCount        int64              `json:"request_count"`
+	AvgTtftMs           int64              `json:"avg_ttft_ms"`
+	AvgLatencyMs        int64              `json:"avg_latency_ms"`
+	SuccessRate         float64            `json:"success_rate"`
+	AvgTps              float64            `json:"avg_tps"`
+	RecentSuccessSeries []SuccessRatePoint `json:"recent_success_series,omitempty"`
+}
+
+type MonitoringGroup struct {
+	Group        string            `json:"group"`
+	RequestCount int64             `json:"request_count"`
+	SuccessRate  float64           `json:"success_rate"`
+	AvgTtftMs    int64             `json:"avg_ttft_ms"`
+	AvgLatencyMs int64             `json:"avg_latency_ms"`
+	Models       []MonitoringModel `json:"models"`
+}
+
+type MonitoringResult struct {
+	WindowStart int64             `json:"window_start"`
+	WindowEnd   int64             `json:"window_end"`
+	Groups      []MonitoringGroup `json:"groups"`
+}
+
 type bucketKey struct {
 	model    string
 	group    string

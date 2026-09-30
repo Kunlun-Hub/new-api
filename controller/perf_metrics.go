@@ -71,3 +71,29 @@ func GetPerfMetrics(c *gin.Context) {
 		"data":    result,
 	})
 }
+
+// GetPerfMetricsMonitoring returns per-group model performance stats
+// (TTFT, latency, throughput, success rate, trend) for the monitoring page.
+func GetPerfMetricsMonitoring(c *gin.Context) {
+	hours := 1
+	if rawHours := c.Query("hours"); rawHours != "" {
+		if parsed, err := strconv.Atoi(rawHours); err == nil {
+			hours = parsed
+		}
+	}
+
+	activeGroups := append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")
+	result, err := perfmetrics.QueryMonitoring(hours, activeGroups)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    result,
+	})
+}

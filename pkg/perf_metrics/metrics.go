@@ -261,6 +261,135 @@ func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
 	return SummaryAllResult{Summary: summarize(all), WindowStart: startTs, WindowEnd: endTs, Models: models}, nil
 }
 
+// QueryMonitoring aggregates per (group, model) performance stats inside the
+// window, merging persisted hourly buckets with hot in-memory buckets so the
+// current partial bucket is included. Groups and their models are sorted by
+// request count descending.
+func QueryMonitoring(hours int, groups []string) (MonitoringResult, error) {
+	startTs, endTs := queryWindow(time.Now(), hours)
+	allowedGroups := allowedGroupSet(groups)
+
+	merged := map[bucketKey]counters{}
+	rows, err := model.GetPerfMetricsGroupModelBuckets(startTs, endTs, groups)
+	if err != nil {
+		return MonitoringResult{}, err
+	}
+	for _, row := range rows {
+		mergeCounters(merged, bucketKey{
+			model:    row.ModelName,
+			group:    row.Group,
+			bucketTs: row.BucketTs,
+		}, counters{
+			requestCount:   row.RequestCount,
+			successCount:   row.SuccessCount,
+			totalLatencyMs: row.TotalLatencyMs,
+			ttftSumMs:      row.TtftSumMs,
+			ttftCount:      row.TtftCount,
+			outputTokens:   row.OutputTokens,
+			generationMs:   row.GenerationMs,
+		})
+	}
+
+	hotBuckets.Range(func(key, value any) bool {
+		k := key.(bucketKey)
+		if k.bucketTs < startTs || k.bucketTs > endTs {
+			return true
+		}
+		if allowedGroups != nil {
+			if _, ok := allowedGroups[k.group]; !ok {
+				return true
+			}
+		}
+		mergeCounters(merged, k, value.(*atomicBucket).snapshot())
+		return true
+	})
+
+	groupModels := map[string]map[string]*monitoringAccum{}
+	for key, value := range merged {
+		if value.requestCount == 0 {
+			continue
+		}
+		models, ok := groupModels[key.group]
+		if !ok {
+			models = map[string]*monitoringAccum{}
+			groupModels[key.group] = models
+		}
+		accum, ok := models[key.model]
+		if !ok {
+			accum = &monitoringAccum{buckets: map[int64]counters{}}
+			models[key.model] = accum
+		}
+		accum.total.requestCount += value.requestCount
+		accum.total.successCount += value.successCount
+		accum.total.totalLatencyMs += value.totalLatencyMs
+		accum.total.ttftSumMs += value.ttftSumMs
+		accum.total.ttftCount += value.ttftCount
+		accum.total.outputTokens += value.outputTokens
+		accum.total.generationMs += value.generationMs
+		bucket := accum.buckets[key.bucketTs]
+		bucket.requestCount += value.requestCount
+		bucket.successCount += value.successCount
+		accum.buckets[key.bucketTs] = bucket
+	}
+
+	groupNames := make([]string, 0, len(groupModels))
+	for group := range groupModels {
+		groupNames = append(groupNames, group)
+	}
+
+	resultGroups := make([]MonitoringGroup, 0, len(groupNames))
+	for _, group := range groupNames {
+		models := groupModels[group]
+		modelNames := make([]string, 0, len(models))
+		for name := range models {
+			modelNames = append(modelNames, name)
+		}
+		groupTotal := counters{}
+		monitoringModels := make([]MonitoringModel, 0, len(modelNames))
+		for _, name := range modelNames {
+			accum := models[name]
+			total := accum.total
+			groupTotal.requestCount += total.requestCount
+			groupTotal.successCount += total.successCount
+			groupTotal.totalLatencyMs += total.totalLatencyMs
+			groupTotal.ttftSumMs += total.ttftSumMs
+			groupTotal.ttftCount += total.ttftCount
+			monitoringModels = append(monitoringModels, MonitoringModel{
+				ModelName:           name,
+				RequestCount:        total.requestCount,
+				AvgTtftMs:           avg(total.ttftSumMs, total.ttftCount),
+				AvgLatencyMs:        avg(total.totalLatencyMs, total.requestCount),
+				SuccessRate:         math.Round(successRate(total)*100) / 100,
+				AvgTps:              math.Round(avgTps(total)*100) / 100,
+				RecentSuccessSeries: recentSuccessSeries(accum.buckets),
+			})
+		}
+		sort.Slice(monitoringModels, func(i, j int) bool {
+			return monitoringModels[i].RequestCount > monitoringModels[j].RequestCount
+		})
+		resultGroups = append(resultGroups, MonitoringGroup{
+			Group:        group,
+			RequestCount: groupTotal.requestCount,
+			SuccessRate:  math.Round(successRate(groupTotal)*100) / 100,
+			AvgTtftMs:    avg(groupTotal.ttftSumMs, groupTotal.ttftCount),
+			AvgLatencyMs: avg(groupTotal.totalLatencyMs, groupTotal.requestCount),
+			Models:       monitoringModels,
+		})
+	}
+	sort.Slice(resultGroups, func(i, j int) bool {
+		return resultGroups[i].RequestCount > resultGroups[j].RequestCount
+	})
+
+	return MonitoringResult{WindowStart: startTs, WindowEnd: endTs, Groups: resultGroups}, nil
+}
+
+// monitoringAccum holds the merged totals and per-bucket counters for one
+// (group, model) pair while building a monitoring result.
+type monitoringAccum struct {
+	total   counters
+	buckets map[int64]counters
+}
+
 func mergeModelTotals(totals map[string]counters, modelName string, value counters) {
 	if value.requestCount == 0 {
 		return
