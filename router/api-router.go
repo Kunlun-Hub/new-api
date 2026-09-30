@@ -34,12 +34,13 @@ func SetApiRouter(router *gin.Engine) {
 		//apiRouter.GET("/midjourney", controller.GetMidjourney)
 		apiRouter.GET("/home_page_content", controller.GetHomePageContent)
 		apiRouter.GET("/pricing", middleware.HeaderNavModuleAuth("pricing"), controller.GetPricing)
+		// The public monitoring page has its own header-nav module so it can be
+		// published independently of the pricing gate.
 		perfMetricsRoute := apiRouter.Group("/perf-metrics")
-		perfMetricsRoute.Use(middleware.HeaderNavModulePublicOrUserAuth("pricing"))
 		{
-			perfMetricsRoute.GET("/summary", controller.GetPerfMetricsSummary)
-			perfMetricsRoute.GET("/monitoring", controller.GetPerfMetricsMonitoring)
-			perfMetricsRoute.GET("", controller.GetPerfMetrics)
+			perfMetricsRoute.GET("/summary", middleware.HeaderNavModulePublicOrUserAuth("pricing"), controller.GetPerfMetricsSummary)
+			perfMetricsRoute.GET("/monitoring", middleware.HeaderNavModulePublicOrUserAuth("monitoring"), controller.GetPerfMetricsMonitoring)
+			perfMetricsRoute.GET("", middleware.HeaderNavModulePublicOrUserAuth("pricing"), controller.GetPerfMetrics)
 		}
 		apiRouter.GET("/rankings", middleware.HeaderNavModuleAuth("rankings"), controller.GetRankings)
 		apiRouter.GET("/verification", middleware.EmailVerificationRateLimit(), middleware.TurnstileCheck(), controller.SendEmailVerification)

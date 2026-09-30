@@ -82,8 +82,9 @@ func GetPerfMetricsMonitoring(c *gin.Context) {
 		}
 	}
 
-	activeGroups := append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")
-	result, err := perfmetrics.QueryMonitoring(hours, activeGroups)
+	groupRatios := ratio_setting.GetGroupRatioCopy()
+	activeGroups := append(lo.Keys(groupRatios), "auto")
+	result, err := perfmetrics.QueryMonitoring(hours, activeGroups, groupRatios)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

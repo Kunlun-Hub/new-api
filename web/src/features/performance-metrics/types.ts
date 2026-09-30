@@ -89,10 +89,12 @@ export type MonitoringModel = {
 
 export type MonitoringGroup = {
   group: string
+  ratio: number
   request_count: number
   success_rate: number
   avg_ttft_ms: number
   avg_latency_ms: number
+  recent_success_series?: MonitoringSuccessPoint[]
   models: MonitoringModel[]
 }
 

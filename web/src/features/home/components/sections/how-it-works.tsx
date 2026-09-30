@@ -16,73 +16,116 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Settings, Zap, BarChart3 } from 'lucide-react'
+import { KeyRound, UserPlus, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
+import { useStatus } from '@/hooks/use-status'
 
 export function HowItWorks() {
   const { t } = useTranslation()
+  const { status } = useStatus()
+  const baseUrl =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : (status?.server_address as string | undefined) || 'https://api.example.com'
 
   const steps = [
     {
       num: '1',
-      title: t('Configure'),
+      title: t('Sign up and top up'),
       desc: t(
-        'Add your API keys, set up channels and configure access permissions'
+        'Create an account and add credit to your balance. Pure pay-as-you-go, no subscription needed.'
       ),
-      icon: <Settings className='size-6' strokeWidth={1.5} />,
+      icon: <UserPlus className='size-6' strokeWidth={1.5} />,
     },
     {
       num: '2',
-      title: t('Connect'),
+      title: t('Create an API token'),
       desc: t(
-        'Connect through OpenAI, Claude, Gemini, and other compatible API routes'
+        'Generate your own API key in one click from the Tokens page in the dashboard.'
       ),
-      icon: <Zap className='size-6' strokeWidth={1.5} />,
+      icon: <KeyRound className='size-6' strokeWidth={1.5} />,
     },
     {
       num: '3',
-      title: t('Monitor'),
-      desc: t('Track usage, costs and performance with real-time analytics'),
-      icon: <BarChart3 className='size-6' strokeWidth={1.5} />,
+      title: t('Point and call'),
+      desc: t(
+        'Set the base URL to us, swap model names freely, and migrate without touching your code.'
+      ),
+      icon: <Zap className='size-6' strokeWidth={1.5} />,
     },
   ]
 
+  const code = `curl ${baseUrl}/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $API_KEY" \\
+  -d '{
+    "model": "gpt-4o",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'`
+
   return (
-    <section className='border-border/40 relative z-10 border-t px-6 py-24 md:py-32'>
+    <section className='border-border/40 bg-muted/20 relative z-10 border-y px-6 py-20 md:py-28'>
       <div className='mx-auto max-w-6xl'>
-        <AnimateInView className='mb-16 text-center md:mb-20'>
-          <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
-            {t('How It Works')}
+        <AnimateInView className='mx-auto mb-14 max-w-2xl text-center'>
+          <p className='mb-3 text-xs font-medium tracking-widest text-blue-600 uppercase dark:text-blue-400'>
+            {t('Quick start')}
           </p>
-          <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
-            {t('Three steps to get started')}
+          <h2 className='text-2xl leading-tight font-bold tracking-tight md:text-4xl'>
+            {t('A few lines of code to get going')}
           </h2>
+          <p className='text-muted-foreground mt-4 text-sm leading-relaxed md:text-base'>
+            {t(
+              'Works with any OpenAI-compatible client — just swap the key and base URL.'
+            )}
+          </p>
         </AnimateInView>
 
-        <div className='grid gap-8 md:grid-cols-3 md:gap-12'>
-          {steps.map((step, i) => (
-            <AnimateInView
-              key={step.num}
-              delay={i * 150}
-              animation='fade-up'
-              className='relative flex flex-col items-center text-center'
-            >
-              <div className='relative mb-6'>
-                <div className='text-muted-foreground border-border/50 bg-muted/30 flex size-16 items-center justify-center rounded-2xl border transition-colors'>
-                  {step.icon}
+        <div className='grid items-start gap-10 lg:grid-cols-2 lg:gap-14'>
+          <div className='flex flex-col gap-8'>
+            {steps.map((step, i) => (
+              <AnimateInView
+                key={step.num}
+                delay={i * 120}
+                animation='fade-up'
+                className='flex items-start gap-5'
+              >
+                <div className='relative shrink-0'>
+                  <div className='flex size-13 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/5 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400'>
+                    {step.icon}
+                  </div>
+                  <div className='bg-foreground text-background absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full text-xs font-bold'>
+                    {step.num}
+                  </div>
                 </div>
-                <div className='bg-foreground text-background absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full text-xs font-bold'>
-                  {step.num}
+                <div>
+                  <h3 className='mb-1.5 text-base font-semibold'>
+                    {step.title}
+                  </h3>
+                  <p className='text-muted-foreground text-sm leading-relaxed'>
+                    {step.desc}
+                  </p>
                 </div>
+              </AnimateInView>
+            ))}
+          </div>
+
+          <AnimateInView delay={150} animation='fade-up'>
+            <div className='border-border/50 bg-background overflow-hidden rounded-2xl border shadow-xl'>
+              <div className='border-border/50 flex items-center gap-2 border-b px-4 py-3'>
+                <span className='size-3 rounded-full bg-red-500/70' />
+                <span className='size-3 rounded-full bg-yellow-500/70' />
+                <span className='size-3 rounded-full bg-green-500/70' />
+                <span className='text-muted-foreground ml-2 text-xs'>
+                  terminal
+                </span>
               </div>
-              <h3 className='mb-2 text-base font-semibold'>{step.title}</h3>
-              <p className='text-muted-foreground max-w-[240px] text-sm leading-relaxed'>
-                {step.desc}
-              </p>
-            </AnimateInView>
-          ))}
+              <pre className='overflow-x-auto p-5 text-[13px] leading-relaxed'>
+                <code className='text-foreground/90 font-mono'>{code}</code>
+              </pre>
+            </div>
+          </AnimateInView>
         </div>
       </div>
     </section>

@@ -39,6 +39,7 @@ export type TopNavLink = {
  *   console: true,
  *   pricing: { enabled: true, requireAuth: false },
  *   rankings: { enabled: true, requireAuth: false },
+ *   monitoring: { enabled: true, requireAuth: false },
  *   docs: true,
  *   about: true
  * }
@@ -77,6 +78,13 @@ export function useTopNavLinks(): TopNavLink[] {
   if (pricing && typeof pricing === 'object' && pricing.enabled) {
     const requiresAuth = pricing.requireAuth && !isAuthed
     links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
+  }
+
+  // Model monitoring (public by default, mirrors the /monitoring page)
+  const monitoring = modules?.monitoring
+  if (monitoring && typeof monitoring === 'object' && monitoring.enabled) {
+    const requiresAuth = monitoring.requireAuth && !isAuthed
+    links.push({ title: t('Model Monitoring'), href: '/monitoring', requiresAuth })
   }
 
   // Rankings

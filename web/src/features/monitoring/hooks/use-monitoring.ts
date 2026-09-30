@@ -16,9 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { CTA } from './sections/cta'
-export { Features } from './sections/features'
-export { Hero } from './sections/hero'
-export { HowItWorks } from './sections/how-it-works'
-export { Stats } from './sections/stats'
-export { UseCases } from './sections/use-cases'
+import { useQuery } from '@tanstack/react-query'
+
+import { getPerfMetricsMonitoring } from '@/features/performance-metrics/api'
+import { requireServerSuccess } from '@/lib/server-error-message'
+
+export function useMonitoring(hours: number) {
+  return useQuery({
+    queryKey: ['perf-metrics-monitoring', hours],
+    queryFn: async () =>
+      requireServerSuccess(await getPerfMetricsMonitoring(hours)),
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    retry: false,
+  })
+}

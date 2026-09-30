@@ -16,9 +16,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { CTA } from './sections/cta'
-export { Features } from './sections/features'
-export { Hero } from './sections/hero'
-export { HowItWorks } from './sections/how-it-works'
-export { Stats } from './sections/stats'
-export { UseCases } from './sections/use-cases'
+export const MONITORING_WINDOW_HOURS = [1, 6, 24] as const
+
+export type MonitoringSort = 'default' | 'availability' | 'ttft' | 'requests'
+
+export const MONITORING_SORT_OPTIONS: readonly {
+  value: MonitoringSort
+  labelKey: string
+}[] = [
+  { value: 'default', labelKey: 'Default order' },
+  { value: 'availability', labelKey: 'By availability' },
+  { value: 'ttft', labelKey: 'By TTFT' },
+  { value: 'requests', labelKey: 'By requests' },
+]
+
+/** Models listed per group before the "show all" toggle appears. */
+export const MONITORING_MODEL_PREVIEW_LIMIT = 6

@@ -93,12 +93,14 @@ type MonitoringModel struct {
 }
 
 type MonitoringGroup struct {
-	Group        string            `json:"group"`
-	RequestCount int64             `json:"request_count"`
-	SuccessRate  float64           `json:"success_rate"`
-	AvgTtftMs    int64             `json:"avg_ttft_ms"`
-	AvgLatencyMs int64             `json:"avg_latency_ms"`
-	Models       []MonitoringModel `json:"models"`
+	Group               string             `json:"group"`
+	Ratio               float64            `json:"ratio"`
+	RequestCount        int64              `json:"request_count"`
+	SuccessRate         float64            `json:"success_rate"`
+	AvgTtftMs           int64              `json:"avg_ttft_ms"`
+	AvgLatencyMs        int64              `json:"avg_latency_ms"`
+	RecentSuccessSeries []SuccessRatePoint `json:"recent_success_series,omitempty"`
+	Models              []MonitoringModel  `json:"models"`
 }
 
 type MonitoringResult struct {

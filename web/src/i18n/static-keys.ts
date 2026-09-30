@@ -369,6 +369,12 @@ export const STATIC_I18N_KEYS = [
   'Existing account will be reused',
   'Not set yet',
 
+  // Model monitoring page sort options (dynamic labelKey)
+  'Default order',
+  'By availability',
+  'By TTFT',
+  'By requests',
+
   // Models section-registry nav (dynamic titleKey)
   'Grok',
 

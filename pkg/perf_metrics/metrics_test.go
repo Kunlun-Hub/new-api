@@ -37,6 +37,8 @@ func TestClassifyRelayOutcome(t *testing.T) {
 		{"upstream quota", context.Background(), types.InitOpenAIError("insufficient_quota", 429), OutcomeFailure},
 		{"upstream gateway quota", context.Background(), types.InitOpenAIError(types.ErrorCodeInsufficientUserQuota, 403), OutcomeFailure},
 		{"unavailable channel", context.Background(), types.NewErrorWithStatusCode(errors.New("disabled"), types.ErrorCodeGetChannelFailed, 403), OutcomeFailure},
+		{"local token count failure", context.Background(), types.NewError(errors.New("file"), types.ErrorCodeCountTokenFailed), OutcomeIgnored},
+		{"local unpriced model", context.Background(), types.NewError(errors.New("price"), types.ErrorCodeModelPriceError), OutcomeIgnored},
 		{"empty upstream response", context.Background(), types.NewError(errors.New("empty"), types.ErrorCodeEmptyResponse), OutcomeFailure},
 		{"network failure", context.Background(), types.NewOpenAIError(errors.New("connection refused"), types.ErrorCodeDoRequestFailed, 500), OutcomeFailure},
 		{"client cancellation", canceled, types.NewOpenAIError(errors.New("context canceled"), types.ErrorCodeDoRequestFailed, 500), OutcomeIgnored},
@@ -282,12 +284,14 @@ func TestQueryMonitoringGroupsModelsByGroup(t *testing.T) {
 		require.NoError(t, model.UpsertPerfMetric(&row))
 	}
 
-	result, err := QueryMonitoring(24, []string{"vip_1", "auto"})
+	result, err := QueryMonitoring(24, []string{"vip_1", "auto"}, map[string]float64{"vip_1": 1.5})
 	require.NoError(t, err)
 	require.Len(t, result.Groups, 1)
 
 	group := result.Groups[0]
 	assert.Equal(t, "vip_1", group.Group)
+	assert.Equal(t, 1.5, group.Ratio)
+	assert.NotEmpty(t, group.RecentSuccessSeries)
 	assert.Equal(t, int64(120), group.RequestCount)
 	assert.InDelta(t, 98.33, group.SuccessRate, 0.01)
 	require.Len(t, group.Models, 2)

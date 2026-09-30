@@ -22,13 +22,24 @@ import { readCachedStatus, statusQueryOptions } from '@/lib/status-query'
 
 export type ModuleAccess = { enabled: boolean; requireAuth: boolean }
 
-export type HeaderNavModule = 'rankings' | 'pricing'
+/**
+ * Header-nav modules that carry `{ enabled, requireAuth }` access flags.
+ * Every other key is a plain boolean toggle.
+ */
+export const ACCESS_HEADER_NAV_MODULES = [
+  'pricing',
+  'rankings',
+  'monitoring',
+] as const
+
+export type HeaderNavModule = (typeof ACCESS_HEADER_NAV_MODULES)[number]
 
 export type HeaderNavModules = {
   home: boolean
   console: boolean
   pricing: ModuleAccess
   rankings: ModuleAccess
+  monitoring: ModuleAccess
   docs: boolean
   about: boolean
   [key: string]: boolean | ModuleAccess
@@ -39,6 +50,7 @@ const DEFAULT_HEADER_NAV_MODULES: HeaderNavModules = {
   console: true,
   pricing: { enabled: true, requireAuth: false },
   rankings: { enabled: true, requireAuth: false },
+  monitoring: { enabled: true, requireAuth: false },
   docs: true,
   about: true,
 }
@@ -46,14 +58,15 @@ const DEFAULT_HEADER_NAV_MODULES: HeaderNavModules = {
 const DEFAULTS: Record<HeaderNavModule, ModuleAccess> = {
   pricing: DEFAULT_HEADER_NAV_MODULES.pricing,
   rankings: DEFAULT_HEADER_NAV_MODULES.rankings,
+  monitoring: DEFAULT_HEADER_NAV_MODULES.monitoring,
 }
 
 function cloneHeaderNavDefaults(): HeaderNavModules {
-  return {
-    ...DEFAULT_HEADER_NAV_MODULES,
-    pricing: { ...DEFAULT_HEADER_NAV_MODULES.pricing },
-    rankings: { ...DEFAULT_HEADER_NAV_MODULES.rankings },
-  }
+  const clone: HeaderNavModules = { ...DEFAULT_HEADER_NAV_MODULES }
+  ACCESS_HEADER_NAV_MODULES.forEach((module) => {
+    clone[module] = { ...DEFAULT_HEADER_NAV_MODULES[module] }
+  })
+  return clone
 }
 
 export function parseHeaderNavBoolean(
@@ -112,12 +125,9 @@ export function parseHeaderNavModules(raw: unknown): HeaderNavModules {
   if (!parsed) return result
 
   Object.entries(parsed).forEach(([key, value]) => {
-    if (key === 'pricing') {
-      result.pricing = parseAccess(value, result.pricing)
-      return
-    }
-    if (key === 'rankings') {
-      result.rankings = parseAccess(value, result.rankings)
+    if ((ACCESS_HEADER_NAV_MODULES as readonly string[]).includes(key)) {
+      const module = key as HeaderNavModule
+      result[module] = parseAccess(value, result[module])
       return
     }
 

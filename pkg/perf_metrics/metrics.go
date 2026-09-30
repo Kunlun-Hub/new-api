@@ -264,8 +264,9 @@ func QuerySummaryAll(hours int, groups []string) (SummaryAllResult, error) {
 // QueryMonitoring aggregates per (group, model) performance stats inside the
 // window, merging persisted hourly buckets with hot in-memory buckets so the
 // current partial bucket is included. Groups and their models are sorted by
-// request count descending.
-func QueryMonitoring(hours int, groups []string) (MonitoringResult, error) {
+// request count descending. groupRatios supplies the per-group quota multiplier
+// reported alongside each group; missing groups report a zero ratio.
+func QueryMonitoring(hours int, groups []string, groupRatios map[string]float64) (MonitoringResult, error) {
 	startTs, endTs := queryWindow(time.Now(), hours)
 	allowedGroups := allowedGroupSet(groups)
 
@@ -305,6 +306,7 @@ func QueryMonitoring(hours int, groups []string) (MonitoringResult, error) {
 	})
 
 	groupModels := map[string]map[string]*monitoringAccum{}
+	groupBuckets := map[string]map[int64]counters{}
 	for key, value := range merged {
 		if value.requestCount == 0 {
 			continue
@@ -314,6 +316,15 @@ func QueryMonitoring(hours int, groups []string) (MonitoringResult, error) {
 			models = map[string]*monitoringAccum{}
 			groupModels[key.group] = models
 		}
+		buckets, ok := groupBuckets[key.group]
+		if !ok {
+			buckets = map[int64]counters{}
+			groupBuckets[key.group] = buckets
+		}
+		groupBucket := buckets[key.bucketTs]
+		groupBucket.requestCount += value.requestCount
+		groupBucket.successCount += value.successCount
+		buckets[key.bucketTs] = groupBucket
 		accum, ok := models[key.model]
 		if !ok {
 			accum = &monitoringAccum{buckets: map[int64]counters{}}
@@ -368,12 +379,14 @@ func QueryMonitoring(hours int, groups []string) (MonitoringResult, error) {
 			return monitoringModels[i].RequestCount > monitoringModels[j].RequestCount
 		})
 		resultGroups = append(resultGroups, MonitoringGroup{
-			Group:        group,
-			RequestCount: groupTotal.requestCount,
-			SuccessRate:  math.Round(successRate(groupTotal)*100) / 100,
-			AvgTtftMs:    avg(groupTotal.ttftSumMs, groupTotal.ttftCount),
-			AvgLatencyMs: avg(groupTotal.totalLatencyMs, groupTotal.requestCount),
-			Models:       monitoringModels,
+			Group:               group,
+			Ratio:               groupRatios[group],
+			RequestCount:        groupTotal.requestCount,
+			SuccessRate:         math.Round(successRate(groupTotal)*100) / 100,
+			AvgTtftMs:           avg(groupTotal.ttftSumMs, groupTotal.ttftCount),
+			AvgLatencyMs:        avg(groupTotal.totalLatencyMs, groupTotal.requestCount),
+			RecentSuccessSeries: recentSuccessSeries(groupBuckets[group]),
+			Models:              monitoringModels,
 		})
 	}
 	sort.Slice(resultGroups, func(i, j int) bool {
