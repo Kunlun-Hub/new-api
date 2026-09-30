@@ -428,6 +428,13 @@ func TransferAffQuota(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if !model.IsInvitationUnlocked(user) {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "Invitation rewards are locked. Meet the unlock conditions first.",
+		})
+		return
+	}
 	err = user.TransferAffQuotaToQuota(tran.Quota)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserTransferFailed, map[string]any{"Error": err.Error()})
@@ -457,6 +464,41 @@ func GetAffCode(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data":    user.AffCode,
+	})
+	return
+}
+
+func GetInvitationInfo(c *gin.Context) {
+	id := c.GetInt("id")
+	user, err := model.GetUserById(id, true)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if user.AffCode == "" {
+		user.AffCode = common.GetRandomString(4)
+		if err := user.Update(false); err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"aff_code":            user.AffCode,
+			"aff_count":           user.AffCount,
+			"aff_quota":           user.AffQuota,
+			"aff_history_quota":   user.AffHistoryQuota,
+			"used_quota":          user.UsedQuota,
+			"unlocked":            model.IsInvitationUnlocked(user),
+			"unlock_enabled":      common.InvitationUnlockEnabled,
+			"unlock_min_invites":  common.InvitationUnlockMinInvites,
+			"unlock_min_consumed": common.InvitationUnlockMinConsumedQuota,
+		},
 	})
 	return
 }

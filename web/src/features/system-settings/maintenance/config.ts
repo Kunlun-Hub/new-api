@@ -76,9 +76,15 @@ export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
   },
   personal: {
     enabled: true,
-    topup: true,
+    ticket: true,
     personal: true,
     security: true,
+  },
+  finance: {
+    enabled: true,
+    topup: true,
+    invitation: true,
+    orders: true,
   },
   admin: {
     enabled: true,

@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -108,6 +109,16 @@ export function SignUpForm({
     status?.data?.oauth_register_enabled ??
     true
   const hasWeChatLogin = Boolean(status?.wechat_login)
+  const hasOAuthLogin = Boolean(
+    hasWeChatLogin ||
+      status?.github_oauth ||
+      status?.discord_oauth ||
+      status?.oidc_enabled ||
+      status?.linuxdo_oauth ||
+      status?.telegram_oauth ||
+      (status?.custom_oauth_providers?.length ?? 0) > 0
+  )
+  const showTopDivider = oauthRegisterEnabled && hasOAuthLogin
   const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
 
   const wechatQrCodeUrl = useMemo(() => {
@@ -248,56 +259,108 @@ export function SignUpForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        className={cn(
+          'w-full rounded-[28px] border bg-card px-6 py-8 shadow-sm sm:px-10',
+          className
+        )}
         {...props}
       >
-        {/* Username Field */}
-        <FormField
-          control={form.control}
-          name='username'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Username')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('Enter your username')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className='flex flex-col items-center text-center'>
+          <span className='rounded-full border px-3 py-1 text-xs text-muted-foreground'>
+            {t('Register account')}
+          </span>
+          <h1 className='mt-4 text-[28px] font-bold tracking-tight'>
+            {t('Create your account')}
+          </h1>
+          <p className='mt-2 text-sm text-muted-foreground'>
+            {t('Choose a social account, or sign up with email.')}
+          </p>
+        </div>
 
-        {/* Password Field */}
-        <FormField
-          control={form.control}
-          name='password'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Password')}</FormLabel>
-              <FormControl>
-                <PasswordInput
-                  placeholder={t('Enter password (8–128 characters)')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {showTopDivider && (
+          <div className='mt-6'>
+            <OAuthProviders
+              status={status}
+              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+              onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+              isWeChatLoading={isWeChatSubmitting}
+              showDivider={false}
+              buttonLayout='grid'
+              buttonClassName='h-12 rounded-full'
+            />
+          </div>
+        )}
 
-        {/* Confirm Password Field */}
-        <FormField
-          control={form.control}
-          name='confirmPassword'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Confirm password')}</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder={t('Confirm password')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {showTopDivider && (
+          <div className='relative my-6'>
+            <div className='absolute inset-0 flex items-center'>
+              <span className='w-full border-t' />
+            </div>
+            <div className='relative flex justify-center text-sm'>
+              <span className='bg-card text-muted-foreground px-4'>
+                {t('Or')}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className='grid gap-4'>
+          {/* Username Field */}
+          <FormField
+            control={form.control}
+            name='username'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Username')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('Enter your username')}
+                    className='h-12 rounded-full px-5'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Password Field */}
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Password')}</FormLabel>
+                <FormControl>
+                  <PasswordInput
+                    placeholder={t('Enter password (8–128 characters)')}
+                    className='[&_input]:h-12 [&_input]:rounded-full [&_input]:px-5 [&_input]:pr-12'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Confirm Password Field */}
+          <FormField
+            control={form.control}
+            name='confirmPassword'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Confirm password')}</FormLabel>
+                <FormControl>
+                  <PasswordInput
+                    placeholder={t('Confirm password')}
+                    className='[&_input]:h-12 [&_input]:rounded-full [&_input]:px-5 [&_input]:pr-12'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
         {/* Email Verification Section */}
         {emailVerificationRequired && (
@@ -315,6 +378,7 @@ export function SignUpForm({
                     <Input
                       placeholder={t('name@example.com')}
                       type='email'
+                      className='h-12 rounded-full px-5'
                       {...field}
                     />
                   </FormControl>
@@ -330,11 +394,13 @@ export function SignUpForm({
                   placeholder={t('Verification code')}
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
+                  className='h-12 rounded-full px-5'
                 />
               </div>
               <Button
                 variant='outline'
                 type='button'
+                className='h-12 rounded-full px-5'
                 disabled={
                   isLoading ||
                   isSendingCode ||
@@ -360,18 +426,19 @@ export function SignUpForm({
             />
           </div>
         )}
+        </div>
 
         <LegalConsent
           status={status}
           checked={agreedToLegal}
           onCheckedChange={setAgreedToLegal}
-          className='mt-1'
+          className='mt-6'
         />
 
         {/* Submit Button */}
         <Button
           type='submit'
-          className='mt-2 w-full justify-center gap-2'
+          className='bg-foreground text-background hover:bg-foreground/90 mt-6 h-12 w-full rounded-full text-[15px] font-medium'
           disabled={
             isLoading ||
             (requiresLegalConsent && !agreedToLegal) ||
@@ -382,15 +449,15 @@ export function SignUpForm({
           {t('Create account')}
         </Button>
 
-        {oauthRegisterEnabled && (
-          <OAuthProviders
-            status={status}
-            disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-            onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-            isWeChatLoading={isWeChatSubmitting}
-            className='pt-2'
-          />
-        )}
+        <p className='mt-6 text-center text-sm text-muted-foreground'>
+          {t('Already have an account?')}{' '}
+          <Link
+            to='/sign-in'
+            className='text-foreground font-medium underline underline-offset-4'
+          >
+            {t('Sign in')}
+          </Link>
+        </p>
       </form>
 
       {hasWeChatLogin && (

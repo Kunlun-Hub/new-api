@@ -39,6 +39,12 @@ type OAuthProvidersProps = {
   onWeChatLogin?: () => void
   isWeChatLoading?: boolean
   redirectTo?: string
+  /** Hide the "Or continue with" divider (caller renders its own) */
+  showDivider?: boolean
+  /** Render provider buttons in a 2-column grid instead of stacked */
+  buttonLayout?: 'stack' | 'grid'
+  /** Extra classes applied to each provider button */
+  buttonClassName?: string
 }
 
 type ProviderButton = {
@@ -56,6 +62,9 @@ export function OAuthProviders({
   onWeChatLogin,
   isWeChatLoading = false,
   redirectTo,
+  showDivider = true,
+  buttonLayout = 'stack',
+  buttonClassName,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -146,18 +155,24 @@ export function OAuthProviders({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className='relative'>
-        <div className='absolute inset-0 flex items-center'>
-          <span className='w-full border-t' />
+      {showDivider && (
+        <div className='relative'>
+          <div className='absolute inset-0 flex items-center'>
+            <span className='w-full border-t' />
+          </div>
+          <div className='relative flex justify-center text-xs uppercase'>
+            <span className='bg-background text-muted-foreground px-2'>
+              {t('Or continue with')}
+            </span>
+          </div>
         </div>
-        <div className='relative flex justify-center text-xs uppercase'>
-          <span className='bg-background text-muted-foreground px-2'>
-            {t('Or continue with')}
-          </span>
-        </div>
-      </div>
+      )}
 
-      <div className='flex flex-col gap-2'>
+      <div
+        className={
+          buttonLayout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2' : 'flex flex-col gap-2'
+        }
+      >
         {providerButtons.map(
           ({ key, label, onClick, icon, disabled: extraDisabled }) => (
             <Button
@@ -166,7 +181,10 @@ export function OAuthProviders({
               type='button'
               disabled={disabled || isLoading || extraDisabled}
               onClick={onClick}
-              className='h-11 w-full justify-center gap-2 rounded-lg'
+              className={cn(
+                'h-11 w-full justify-center gap-2 rounded-lg',
+                buttonClassName
+              )}
             >
               {icon}
               {label}

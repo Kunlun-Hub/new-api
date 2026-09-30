@@ -113,6 +113,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/passkey/verify/finish", middleware.UserCriticalRateLimit("security-verification"), middleware.DisableCache(), controller.PasskeyVerifyFinish)
 				selfRoute.DELETE("/passkey", middleware.DisableCache(), controller.PasskeyDelete)
 				selfRoute.GET("/aff", controller.GetAffCode)
+				selfRoute.GET("/invitation", controller.GetInvitationInfo)
 				selfRoute.GET("/topup/info", controller.GetTopUpInfo)
 				selfRoute.GET("/topup/self", controller.GetUserTopUps)
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
@@ -165,6 +166,26 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.GET("/2fa/stats", controller.Admin2FAStats)
 				adminRoute.DELETE("/:id/2fa", controller.AdminDisable2FA)
 			}
+		}
+
+		// Support tickets
+		ticketRoute := apiRouter.Group("/ticket")
+		ticketRoute.Use(middleware.UserAuth())
+		{
+			ticketRoute.GET("", controller.GetUserTickets)
+			ticketRoute.POST("", controller.CreateTicket)
+			ticketRoute.GET("/:id", controller.GetTicketDetail)
+			ticketRoute.POST("/:id/reply", controller.ReplyTicket)
+			ticketRoute.POST("/:id/close", controller.CloseTicket)
+		}
+
+		adminTicketRoute := apiRouter.Group("/ticket/admin")
+		adminTicketRoute.Use(middleware.AdminAuth())
+		{
+			adminTicketRoute.GET("", controller.AdminGetTickets)
+			adminTicketRoute.GET("/:id", controller.AdminGetTicket)
+			adminTicketRoute.POST("/:id/reply", controller.AdminReplyTicket)
+			adminTicketRoute.PUT("/:id", controller.AdminUpdateTicket)
 		}
 
 		// Subscription billing (plans, purchase, admin management)

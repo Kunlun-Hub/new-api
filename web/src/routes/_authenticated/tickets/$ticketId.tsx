@@ -17,18 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
 
-import { Profile } from '@/features/profile'
+import { TicketDetail } from '@/features/tickets/ticket-detail'
 
-const profileSearchSchema = z.object({
-  tab: z
-    .enum(['overview', 'bindings', 'notifications', 'security', 'storage'])
-    .optional()
-    .catch(undefined),
+export const Route = createFileRoute('/_authenticated/tickets/$ticketId')({
+  component: RouteComponent,
 })
 
-export const Route = createFileRoute('/_authenticated/profile/')({
-  validateSearch: profileSearchSchema,
-  component: Profile,
-})
+function RouteComponent() {
+  const { ticketId } = Route.useParams()
+  return <TicketDetail ticketId={ticketId} />
+}

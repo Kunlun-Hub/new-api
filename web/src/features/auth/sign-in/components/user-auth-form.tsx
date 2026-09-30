@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
-import { Loader2, LogIn, KeyRound } from 'lucide-react'
+import { KeyRound, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -120,9 +120,6 @@ export function UserAuthForm({
     status?.telegram_oauth ||
     (status?.custom_oauth_providers?.length ?? 0) > 0
   )
-  const hasAlternativeLogin =
-    passkeyLoginEnabled || hasWeChatLogin || hasOAuthLogin
-
   useEffect(() => {
     if (requiresLegalConsent) {
       setAgreedToLegal(false)
@@ -299,70 +296,71 @@ export function UserAuthForm({
     }
   }
 
-  const alternativeLoginMethods = (
-    <>
-      {passkeyLoginEnabled && (
-        <div className='mt-2 space-y-1'>
-          <Button
-            type='button'
-            variant='outline'
-            disabled={passkeyButtonDisabled}
-            onClick={handlePasskeyLogin}
-            className='h-11 w-full justify-center gap-2 rounded-lg'
-          >
-            {isPasskeyLoading ? (
-              <Loader2 className='h-4 w-4 animate-spin' />
-            ) : (
-              <KeyRound className='h-4 w-4' />
-            )}
-            {t('Sign in with Passkey')}
-          </Button>
-          <PasskeyDomainSelector
-            domains={passkeyDomains}
-            value={passkeyRPID}
-            onChange={setPasskeyRPID}
-            disabled={passkeyButtonDisabled}
-          />
-          {!passkeySupported && (
-            <p className='text-muted-foreground text-xs'>
-              {t('Passkey is not supported on this device.')}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* OAuth Providers */}
-      <OAuthProviders
-        status={status}
-        redirectTo={redirectTo}
-        disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-        onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-        isWeChatLoading={isWeChatSubmitting}
-      />
-    </>
-  )
+  const showTopDivider =
+    hasOAuthLogin && (passwordLoginEnabled || passkeyLoginEnabled)
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        className={cn(
+          'w-full rounded-[28px] border bg-card px-6 py-8 shadow-sm sm:px-10',
+          className
+        )}
         {...props}
       >
-        {hasAlternativeLogin && alternativeLoginMethods}
+        <div className='flex flex-col items-center text-center'>
+          <span className='rounded-full border px-3 py-1 text-xs text-muted-foreground'>
+            {t('Sign in to your account')}
+          </span>
+          <h1 className='mt-4 text-[28px] font-bold tracking-tight'>
+            {t('Access your account')}
+          </h1>
+          <p className='mt-2 text-sm text-muted-foreground'>
+            {t('Choose a social account, or continue with email and password.')}
+          </p>
+        </div>
+
+        {hasOAuthLogin && (
+          <div className='mt-6'>
+            <OAuthProviders
+              status={status}
+              redirectTo={redirectTo}
+              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+              onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+              isWeChatLoading={isWeChatSubmitting}
+              showDivider={false}
+              buttonLayout='grid'
+              buttonClassName='h-12 rounded-full'
+            />
+          </div>
+        )}
+
+        {showTopDivider && (
+          <div className='relative my-6'>
+            <div className='absolute inset-0 flex items-center'>
+              <span className='w-full border-t' />
+            </div>
+            <div className='relative flex justify-center text-sm'>
+              <span className='bg-card text-muted-foreground px-4'>
+                {t('Or')}
+              </span>
+            </div>
+          </div>
+        )}
 
         {passwordLoginEnabled && (
-          <>
-            {/* Username Field */}
+          <div className='grid gap-4'>
             <FormField
               control={form.control}
               name='username'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Username or Email')}</FormLabel>
+                  <FormLabel>{t('Username or email address')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t('Enter your username or email')}
+                      placeholder={t('Please enter your username or email')}
+                      className='h-12 rounded-full px-5'
                       {...field}
                     />
                   </FormControl>
@@ -371,43 +369,37 @@ export function UserAuthForm({
               )}
             />
 
-            {/* Password Field */}
             <FormField
               control={form.control}
               name='password'
               render={({ field }) => (
-                <FormItem className='relative'>
-                  <FormLabel>{t('Password')}</FormLabel>
+                <FormItem>
+                  <FormLabel>{t('Login password')}</FormLabel>
                   <FormControl>
                     <PasswordInput
-                      placeholder={t('Enter password')}
+                      placeholder={t('Please enter your login password')}
+                      className='[&_input]:h-12 [&_input]:rounded-full [&_input]:px-5 [&_input]:pr-12'
                       {...field}
                     />
                   </FormControl>
                   <FormMessage />
-                  <Link
-                    to='/forgot-password'
-                    className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-sm font-medium hover:opacity-75'
-                  >
-                    {t('Forgot password?')}
-                  </Link>
                 </FormItem>
               )}
             />
 
-            {/* Submit Button */}
             <Button
               type='submit'
-              className='mt-2 w-full justify-center gap-2'
+              className='bg-foreground text-background hover:bg-foreground/90 h-12 w-full rounded-full text-[15px] font-medium'
               disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
             >
-              {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
-              {t('Sign in')}
+              {isLoading ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : null}
+              {t('Continue with email')}
             </Button>
 
-            {/* Turnstile */}
             {isTurnstileEnabled && (
-              <div className='mt-2'>
+              <div className='flex justify-center'>
                 <Turnstile
                   key={turnstileWidgetKey}
                   siteKey={turnstileSiteKey}
@@ -416,17 +408,70 @@ export function UserAuthForm({
                 />
               </div>
             )}
-          </>
+          </div>
+        )}
+
+        {passkeyLoginEnabled && (
+          <div className='mt-4 space-y-1'>
+            <Button
+              type='button'
+              variant='outline'
+              disabled={passkeyButtonDisabled}
+              onClick={handlePasskeyLogin}
+              className='h-12 w-full justify-center gap-2 rounded-full'
+            >
+              {isPasskeyLoading ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <KeyRound className='h-4 w-4' />
+              )}
+              {t('Sign in with Passkey')}
+            </Button>
+            <PasskeyDomainSelector
+              domains={passkeyDomains}
+              value={passkeyRPID}
+              onChange={setPasskeyRPID}
+              disabled={passkeyButtonDisabled}
+            />
+            {!passkeySupported && (
+              <p className='text-muted-foreground text-xs'>
+                {t('Passkey is not supported on this device.')}
+              </p>
+            )}
+          </div>
         )}
 
         <LegalConsent
           status={status}
           checked={agreedToLegal}
           onCheckedChange={setAgreedToLegal}
-          className='mt-1'
+          className='mt-4'
         />
 
-        {!hasAlternativeLogin && alternativeLoginMethods}
+        <div className='mt-6 flex items-center justify-between text-sm'>
+          {status?.self_use_mode_enabled || status?.register_enabled === false ? (
+            <span />
+          ) : (
+            <p className='text-muted-foreground'>
+              {t('No account yet?')}{' '}
+              <Link
+                to='/sign-up'
+                className='font-medium underline underline-offset-4'
+              >
+                {t('Register account')}
+              </Link>
+            </p>
+          )}
+          <p className='text-muted-foreground'>
+            {t('Forgot password?')}{' '}
+            <Link
+              to='/forgot-password'
+              className='font-medium underline underline-offset-4'
+            >
+              {t('Reset password')}
+            </Link>
+          </p>
+        </div>
       </form>
 
       {hasWeChatLogin && (

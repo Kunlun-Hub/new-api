@@ -75,7 +75,11 @@ export function SidebarModulesSection({
     },
     personal: {
       title: t('Personal area'),
-      description: t('Wallet management and personal preferences.'),
+      description: t('Profile, tickets and personal preferences.'),
+    },
+    finance: {
+      title: t('Finance area'),
+      description: t('Recharge, invitation rewards and billing history.'),
     },
     admin: {
       title: t('Admin area'),
@@ -124,9 +128,9 @@ export function SidebarModulesSection({
       },
     },
     personal: {
-      topup: {
-        title: t('Wallet'),
-        description: t('Top up balance and view billing history.'),
+      ticket: {
+        title: t('Tickets'),
+        description: t('Customer support tickets and replies.'),
       },
       personal: {
         title: t('Profile'),
@@ -135,6 +139,20 @@ export function SidebarModulesSection({
       security: {
         title: t('Security & Access'),
         description: t('Manage your security settings and account access'),
+      },
+    },
+    finance: {
+      topup: {
+        title: t('Recharge'),
+        description: t('Top up balance and view billing history.'),
+      },
+      invitation: {
+        title: t('Invitation Plan'),
+        description: t('Referral rewards and invitation management.'),
+      },
+      orders: {
+        title: t('Orders & Invoices'),
+        description: t('Top-up orders and invoice records.'),
       },
     },
     admin: {

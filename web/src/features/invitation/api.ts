@@ -16,19 +16,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { api } from '@/lib/api'
 
-import { Profile } from '@/features/profile'
+import type { InvitationInfo } from './types'
 
-const profileSearchSchema = z.object({
-  tab: z
-    .enum(['overview', 'bindings', 'notifications', 'security', 'storage'])
-    .optional()
-    .catch(undefined),
-})
+interface InvitationInfoResponse {
+  success: boolean
+  message?: string
+  data: InvitationInfo
+}
 
-export const Route = createFileRoute('/_authenticated/profile/')({
-  validateSearch: profileSearchSchema,
-  component: Profile,
-})
+export async function getInvitationInfo(): Promise<InvitationInfoResponse> {
+  const res = await api.get<InvitationInfoResponse>('/api/user/invitation')
+  return res.data
+}

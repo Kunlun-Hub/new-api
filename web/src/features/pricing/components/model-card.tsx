@@ -42,6 +42,7 @@ import { formatPrice, formatRequestPrice } from '../lib/price'
 import { taskPriceLabel, taskUsageUnitLabel } from '../lib/task-price-display'
 import type { PricingModel, PriceType, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
+import { ModelCapabilityBadges } from './model-capability-badges'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
 
 export interface ModelCardProps {
@@ -254,11 +255,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   }
 
   return (
-    <Card className='hover:ring-foreground/20 h-full min-w-0 gap-3 transition-colors'>
-      <CardHeader className='flex flex-row items-start gap-3'>
+    <Card className='hover:ring-foreground/20 relative h-full min-w-0 gap-3 transition-colors'>
+      <CardHeader className='flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:text-left'>
         <div
           aria-hidden
-          className='bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-lg'
+          className='bg-muted/50 flex size-12 shrink-0 items-center justify-center rounded-xl sm:size-10 sm:rounded-lg'
         >
           {modelIcon || (
             <span className='text-muted-foreground text-sm font-bold'>
@@ -266,7 +267,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </span>
           )}
         </div>
-        <div className='min-w-0 flex-1'>
+        <div className='min-w-0 max-w-full flex-1'>
           <h3
             className='line-clamp-2 font-mono text-[15px] leading-snug font-semibold [overflow-wrap:anywhere]'
             title={props.model.model_name}
@@ -285,20 +286,20 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         <CopyButton
           value={props.model.model_name}
           tooltip={t('Copy model name')}
-          className='size-7'
+          className='size-7 max-sm:absolute max-sm:top-4 max-sm:right-4'
           iconClassName='size-3.5'
         />
       </CardHeader>
       <CardContent className='flex flex-1 flex-col gap-3'>
         <div className='flex min-w-0 flex-col gap-1.5'>
-          <p className='text-muted-foreground line-clamp-2 text-[13px] leading-5 break-words'>
+          <p className='text-muted-foreground line-clamp-2 text-center text-[13px] leading-5 break-words sm:text-left'>
             {props.model.description || t('No description available.')}
           </p>
           {tags.length > 0 && (
             <div
               role='group'
               aria-label={t('Tags')}
-              className='text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-xs'
+              className='text-muted-foreground flex min-w-0 items-baseline justify-center gap-1.5 text-xs sm:justify-start'
             >
               <span className='shrink-0'>{t('Tags')}</span>
               <span className='truncate' title={tags.join(', ')}>
@@ -311,6 +312,10 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               )}
             </div>
           )}
+          <ModelCapabilityBadges
+            model={props.model}
+            className='justify-center sm:justify-start'
+          />
         </div>
         <div
           role='group'

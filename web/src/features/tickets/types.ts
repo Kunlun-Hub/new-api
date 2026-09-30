@@ -16,19 +16,38 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 
-import { Profile } from '@/features/profile'
+export type TicketCategory = 'billing' | 'technical' | 'account' | 'other'
 
-const profileSearchSchema = z.object({
-  tab: z
-    .enum(['overview', 'bindings', 'notifications', 'security', 'storage'])
-    .optional()
-    .catch(undefined),
-})
+export interface Ticket {
+  id: number
+  user_id: number
+  title: string
+  category: string
+  priority: string
+  status: TicketStatus
+  created_at: number
+  updated_at: number
+}
 
-export const Route = createFileRoute('/_authenticated/profile/')({
-  validateSearch: profileSearchSchema,
-  component: Profile,
-})
+export interface TicketReply {
+  id: number
+  ticket_id: number
+  user_id: number
+  is_staff: boolean
+  content: string
+  created_at: number
+}
+
+export interface TicketDetail {
+  ticket: Ticket
+  replies: TicketReply[]
+}
+
+export interface TicketPage {
+  page: number
+  page_size: number
+  total: number
+  items: Ticket[]
+}

@@ -143,6 +143,9 @@ func InitOptionMap() {
 	common.OptionMap["QuotaForNewUser"] = strconv.Itoa(common.QuotaForNewUser)
 	common.OptionMap["QuotaForInviter"] = strconv.Itoa(common.QuotaForInviter)
 	common.OptionMap["QuotaForInvitee"] = strconv.Itoa(common.QuotaForInvitee)
+	common.OptionMap["InvitationUnlockEnabled"] = strconv.FormatBool(common.InvitationUnlockEnabled)
+	common.OptionMap["InvitationUnlockMinInvites"] = strconv.Itoa(common.InvitationUnlockMinInvites)
+	common.OptionMap["InvitationUnlockMinConsumedQuota"] = strconv.Itoa(common.InvitationUnlockMinConsumedQuota)
 	common.OptionMap["QuotaRemindThreshold"] = strconv.Itoa(common.QuotaRemindThreshold)
 	common.OptionMap["PreConsumedQuota"] = strconv.Itoa(common.PreConsumedQuota)
 	common.OptionMap["ModelRequestRateLimitCount"] = strconv.Itoa(setting.ModelRequestRateLimitCount)
@@ -376,6 +379,8 @@ func updateOptionMap(key string, value string) (err error) {
 			common.PasswordRegisterEnabled = boolValue
 		case "PasswordLoginEnabled":
 			common.PasswordLoginEnabled = boolValue
+		case "InvitationUnlockEnabled":
+			common.InvitationUnlockEnabled = boolValue
 		case "EmailVerificationEnabled":
 			common.EmailVerificationEnabled = boolValue
 		case "GitHubOAuthEnabled":
@@ -608,6 +613,10 @@ func updateOptionMap(key string, value string) (err error) {
 		common.QuotaForInviter, _ = strconv.Atoi(value)
 	case "QuotaForInvitee":
 		common.QuotaForInvitee, _ = strconv.Atoi(value)
+	case "InvitationUnlockMinInvites":
+		common.InvitationUnlockMinInvites, _ = strconv.Atoi(value)
+	case "InvitationUnlockMinConsumedQuota":
+		common.InvitationUnlockMinConsumedQuota, _ = strconv.Atoi(value)
 	case "QuotaRemindThreshold":
 		common.QuotaRemindThreshold, _ = strconv.Atoi(value)
 	case "PreConsumedQuota":

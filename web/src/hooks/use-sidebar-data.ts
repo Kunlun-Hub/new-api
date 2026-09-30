@@ -23,12 +23,14 @@ import {
   CreditCard,
   FileText,
   FlaskConical,
+  Gift,
   Key,
   LayoutDashboard,
-  ListTodo,
+  LifeBuoy,
   MessageSquare,
   PlugZap,
   Radio,
+  ReceiptText,
   ServerCog,
   Settings,
   ShieldCheck,
@@ -89,21 +91,27 @@ export function useSidebarData(): SidebarData {
             icon: Key,
           },
           {
-            title: t('Usage Logs'),
-            url: '/usage-logs/common',
+            title: t('Logs'),
             icon: FileText,
+            items: [
+              {
+                title: t('Usage Logs'),
+                url: '/usage-logs/common',
+              },
+              {
+                title: t('Drawing Logs'),
+                url: '/usage-logs/drawing',
+              },
+              {
+                title: t('Task Logs'),
+                url: '/usage-logs/task',
+              },
+            ],
           },
           {
             title: t('Audit Logs'),
             url: '/usage-logs/audit',
             icon: ClipboardList,
-          },
-          {
-            title: t('Task Logs'),
-            url: '/usage-logs/task',
-            activeUrls: ['/usage-logs/drawing'],
-            configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
-            icon: ListTodo,
           },
         ],
       },
@@ -112,19 +120,40 @@ export function useSidebarData(): SidebarData {
         title: t('Personal'),
         items: [
           {
-            title: t('Wallet'),
-            url: '/wallet',
-            icon: Wallet,
-          },
-          {
-            title: t('Profile'),
+            title: t('Personal Center'),
             url: '/profile',
             icon: User,
+          },
+          {
+            title: t('Tickets'),
+            url: '/tickets',
+            icon: LifeBuoy,
           },
           {
             title: t('Security & Access'),
             url: '/security',
             icon: ShieldCheck,
+          },
+        ],
+      },
+      {
+        id: 'finance',
+        title: t('Financial'),
+        items: [
+          {
+            title: t('Recharge'),
+            url: '/wallet',
+            icon: Wallet,
+          },
+          {
+            title: t('Invitation Plan'),
+            url: '/invitation',
+            icon: Gift,
+          },
+          {
+            title: t('Orders & Invoices'),
+            url: '/orders',
+            icon: ReceiptText,
           },
         ],
       },
@@ -156,6 +185,11 @@ export function useSidebarData(): SidebarData {
             title: t('Subscriptions'),
             url: '/subscriptions',
             icon: CreditCard,
+          },
+          {
+            title: t('Ticket management'),
+            url: '/admin/tickets',
+            icon: MessageSquare,
           },
           {
             title: t('System Info'),

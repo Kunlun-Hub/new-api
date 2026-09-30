@@ -594,6 +594,22 @@ func inviteUser(inviterId int) error {
 	return nil
 }
 
+// IsInvitationUnlocked reports whether the user has met the admin-configured
+// invitation reward unlock conditions. When the unlock feature is disabled,
+// every user is considered unlocked.
+func IsInvitationUnlocked(user *User) bool {
+	if !common.InvitationUnlockEnabled {
+		return true
+	}
+	if common.InvitationUnlockMinInvites > 0 && user.AffCount < common.InvitationUnlockMinInvites {
+		return false
+	}
+	if common.InvitationUnlockMinConsumedQuota > 0 && user.UsedQuota < common.InvitationUnlockMinConsumedQuota {
+		return false
+	}
+	return true
+}
+
 func (user *User) TransferAffQuotaToQuota(quota int) error {
 	// 检查quota是否小于最小额度
 	if float64(quota) < common.QuotaPerUnit {
