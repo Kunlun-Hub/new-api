@@ -904,6 +904,34 @@ func TestWebFallbackDoesNotCacheMissingAPIOrAssets(t *testing.T) {
 	assert.Equal(t, "no-cache", page.Header().Get("Cache-Control"))
 }
 
+func TestWebIndexPageUsesConfiguredSystemName(t *testing.T) {
+	originalName := common.SystemName
+	t.Cleanup(func() { common.SystemName = originalName })
+
+	indexPage := []byte(`<html><head><title>New API</title><meta name="title" content="New API" /></head><body></body></html>`)
+	cases := []struct {
+		name       string
+		systemName string
+		expected   string
+	}{
+		{name: "plain name", systemName: "四维API", expected: "<title>四维API</title>"},
+		{name: "escaping", systemName: `A "b" <c>`, expected: `<title>A &#34;b&#34; &lt;c&gt;</title>`},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			common.SystemName = tc.systemName
+			outer := gin.New()
+			SetWebRouter(outer, WebAssets{IndexPage: indexPage}, func(c *gin.Context) { c.Next() })
+
+			page := performPluginRequest(outer, http.MethodGet, "/dashboard/overview")
+			require.Equal(t, http.StatusOK, page.Code)
+			assert.Contains(t, page.Body.String(), tc.expected)
+			assert.NotContains(t, page.Body.String(), "New API")
+		})
+	}
+}
+
 func TestSecurityRoutesDisableCachingBeforeAuthentication(t *testing.T) {
 	outer := gin.New()
 	SetApiRouter(outer)
