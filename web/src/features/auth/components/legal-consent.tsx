@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 import type { SystemStatus } from '../types'
@@ -50,48 +49,41 @@ export function LegalConsent({
   }
 
   return (
-    <div
+    <label
       className={cn(
-        'border-border/60 bg-muted/40 flex items-start gap-3 rounded-md border p-3',
+        'text-muted-foreground flex items-center gap-2 text-sm',
         className
       )}
     >
       <Checkbox
-        id='legal-consent'
         checked={checked}
         onCheckedChange={handleChange}
-        className='mt-0.5'
+        className='border-primary rounded-[4px]'
       />
-      <Label
-        htmlFor='legal-consent'
-        className='text-muted-foreground items-start gap-1 text-left text-xs leading-5 font-normal'
-      >
-        <span>
-          {t('I have read and agree to the')}{' '}
-          {hasUserAgreement && (
-            <a
-              href='/user-agreement'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('User Agreement')}
-            </a>
-          )}
-          {hasUserAgreement && hasPrivacyPolicy && ' and the '}
-          {hasPrivacyPolicy && (
-            <a
-              href='/privacy-policy'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary hover:underline'
-            >
-              {t('Privacy Policy')}
-            </a>
-          )}
-          .
-        </span>
-      </Label>
-    </div>
+      <span>
+        {t('I agree to the')}
+        {hasUserAgreement && (
+          <a
+            href='/user-agreement'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='text-primary mx-1'
+          >
+            {t('Terms of Service')}
+          </a>
+        )}
+        {t('and')}
+        {hasPrivacyPolicy && (
+          <a
+            href='/privacy-policy'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='text-primary mx-1'
+          >
+            {t('Privacy Policy')}
+          </a>
+        )}
+      </span>
+    </label>
   )
 }

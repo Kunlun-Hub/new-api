@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowRight, House } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -24,24 +25,45 @@ import { Button } from '@/components/ui/button'
 export function NotFoundError() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { history } = useRouter()
+
   return (
-    <div className='h-svh'>
-      <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
-        <h1 className='text-[7rem] leading-tight font-bold'>404</h1>
-        <span className='font-medium'>{t('Oops! Page Not Found!')}</span>
-        <p className='text-muted-foreground text-center'>
-          {t("It seems like the page you're looking for")} <br />
-          {t('does not exist or might have been removed.')}
-        </p>
-        <div className='mt-6 flex gap-4'>
-          <Button variant='outline' onClick={() => history.go(-1)}>
-            {t('Go Back')}
-          </Button>
-          <Button onClick={() => navigate({ to: '/' })}>
-            {t('Back to Home')}
-          </Button>
-        </div>
+    <div className='relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-6 py-16 text-center'>
+      <div
+        aria-hidden
+        className='text-foreground pointer-events-none absolute inset-0 opacity-[0.04]'
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+        }}
+      />
+      <span className='from-foreground/60 to-foreground/5 bg-linear-to-b bg-clip-text text-[7rem] leading-none font-bold tracking-tight text-transparent sm:text-[9rem]'>
+        404
+      </span>
+      <h1 className='text-foreground mt-2 text-xl font-bold sm:text-2xl'>
+        {t('Page not found')}
+      </h1>
+      <p className='text-muted-foreground mt-3 max-w-md text-sm leading-relaxed'>
+        {t(
+          'The page you are visiting may have been removed, renamed, or is temporarily unavailable.'
+        )}
+      </p>
+      <div className='relative mt-8 flex flex-wrap items-center justify-center gap-3'>
+        <Button
+          className='rounded-full px-5'
+          onClick={() => navigate({ to: '/' })}
+        >
+          <House className='size-4' />
+          {t('Back to Home')}
+        </Button>
+        <Button
+          className='rounded-full px-5'
+          onClick={() => navigate({ to: '/pricing' })}
+          variant='outline'
+        >
+          {t('Browse Models')}
+          <ArrowRight className='size-4' />
+        </Button>
       </div>
     </div>
   )

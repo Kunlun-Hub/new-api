@@ -19,15 +19,17 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge, type StatusVariant } from '@/components/status-badge'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 import { getBillingModeLabelKey } from '../lib/billing-mode'
-import { isDynamicPricingModel } from '../lib/dynamic-price'
+import { hasTaskUsageSchema, isDynamicPricingModel } from '../lib/dynamic-price'
+import { isTokenBasedModel } from '../lib/model-helpers'
 import type { PricingModel } from '../types'
 
 interface ModelBillingModeBadgeProps {
   model: PricingModel
-  appearance?: 'default' | 'caption'
+  appearance?: 'default' | 'caption' | 'chip'
   className?: string
 }
 
@@ -36,6 +38,25 @@ export function ModelBillingModeBadge(props: ModelBillingModeBadgeProps) {
   const labelKey = getBillingModeLabelKey(props.model)
   const label = t(labelKey)
   const isCaption = props.appearance === 'caption'
+
+  if (props.appearance === 'chip') {
+    // The model square uses the short usage/pay-per-call wording, unlike the
+    // longer billing-mode labels shown in tables and admin views.
+    const isUsagePriced =
+      isTokenBasedModel(props.model) || hasTaskUsageSchema(props.model)
+    return (
+      <Badge
+        variant='outline'
+        className={cn(
+          'border-border/40 h-4.5 rounded-4xl px-2 py-0.5 text-[10px] font-medium',
+          props.className
+        )}
+      >
+        {isUsagePriced ? t('Per-token') : t('Per-call')}
+      </Badge>
+    )
+  }
+
   let variant: StatusVariant = 'purple'
 
   if (isDynamicPricingModel(props.model)) {

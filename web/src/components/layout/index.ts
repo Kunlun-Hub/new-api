@@ -34,6 +34,10 @@ export { Main } from './components/main'
 export { PageFooterPortal } from './components/page-footer'
 export { NavGroup } from './components/nav-group'
 export { SectionPageLayout } from './components/section-page-layout'
+export {
+  ConsoleBreadcrumb,
+  type ConsoleBreadcrumbItem,
+} from './components/console-breadcrumb'
 export { SidebarViewHeader } from './components/sidebar-view-header'
 export { SystemBrand } from './components/system-brand'
 export { TopNav } from './components/top-nav'

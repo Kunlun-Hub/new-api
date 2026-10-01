@@ -56,6 +56,19 @@ export const PAYMENT_ICON_COLORS = {
 } as const
 
 /**
+ * Default button colors per payment type, used when the configured payment
+ * method does not define its own color.
+ */
+export const PAYMENT_BUTTON_COLORS: Record<string, string> = {
+  [PAYMENT_TYPES.ALIPAY]: '#1677FF',
+  [PAYMENT_TYPES.WECHAT]: '#07C160',
+  [PAYMENT_TYPES.STRIPE]: '#635BFF',
+  [PAYMENT_TYPES.CREEM]: '#6366F1',
+  [PAYMENT_TYPES.WAFFO]: '#2563EB',
+  [PAYMENT_TYPES.WAFFO_PANCAKE]: '#F97316',
+}
+
+/**
  * Default discount rate (no discount)
  */
 export const DEFAULT_DISCOUNT_RATE = 1.0
