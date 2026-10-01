@@ -3,7 +3,8 @@
 - 参考站：https://gpt.ge （账号：674904341@qq.com）
 - 目标：页面 / 样式 / 按钮 / 弹窗 / 功能 逐页 1:1 复刻；参考站有而我们没有的能力，自行开发后端接口补齐
 - 状态含义：`✅ 完成` / `🟡 进行中` / `⬜ 未开始` / `➖ 不适用`
-- 最后更新：2026-10-01（第三十八轮：浏览器标签标题由网关按后台「系统名称」渲染，刷新不再闪 `New API`）
+- 最后更新：2026-10-01（第三十九轮：清空内置模型价格 —— 代码默认表 / 内置计费表达式 / 数据库持久化条目全部置空）
+- 上一轮：2026-10-01（第三十八轮：浏览器标签标题由网关按后台「系统名称」渲染，刷新不再闪 `New API`）
 - 上一轮：2026-10-01（第三十七轮：移除主页页脚署名行 + 控制台内容区不再被「居中钳制」（≥1600px 折叠侧边栏时的大间隙与分隔线错位））
 - 再上一轮：2026-10-01（第三十六轮：服务端视频封面抽帧 `POST /api/user/oss/video-cover` — 浏览器解不了的编码交给网关 ffmpeg 出图，补齐第三十三轮遗留差异②）
 - 上一轮：2026-10-01（第三十五轮：内容后端发布 + 工单 WebSocket 实时会话 + 功能开关 + 创作/登录态修复）
@@ -80,6 +81,14 @@
 - **金额格式（第十二轮实测）**：参考站余额/消耗/收益/实付这类**金额一律固定 2 位小数**（`$0.00`、`$0.30`、`$1.00`、`实付 60.00 元`），用 `formatQuotaFixed(quota)` 或 `formatCurrencyFromUSD(usd, { fixedFractionDigits: 2 })` / `formatLocalCurrencyAmount(amount, { fixedFractionDigits: 2 })`。反例（保持变长精度、勿改）：模型价格（`$0.014`、`$0.1`）、日志表格金额（`formatLogQuota`，6 位小数）、今日小卡金额（参考站就是 `$0`，不补零）、令牌页「已用 / 剩余」（无货币符号，单位在列头/详情里）。
 
 ## 3. 变更记录（倒序）
+
+### 2026-10-01（第三十九轮：清空内置模型价格）
+- **用户要求**：后台「系统设置 → Billing & Payment → Model Pricing」列表里自带的模型价格全部清空，用户会自行初始化。
+- **代码（根因：快照会把代码默认表并入列表）**：`setting/ratio_setting/model_ratio.go` 的 `defaultModelRatio` / `defaultModelPrice` / `defaultCompletionRatio` / `defaultImageRatio` / `defaultAudioRatio` / `defaultAudioCompletionRatio` 与 `setting/ratio_setting/cache_ratio.go` 的 `defaultCacheRatio` / `defaultCreateCacheRatio` 全部置空；`setting/billing_setting/builtin_billing.go` 的 `builtinBillingExpr`（`gpt-image-2` / `gpt-image-2.5-sunburst` / `gpt-image-2.5-flare` / `gpt-6-astra` 四个内置表达式）置空。`GetDefaultPricingMaps()` → `defaultPricingMaps()` → `GetModelPricingSnapshot()` 因此在无配置时返回空列表；「重置价格」与模型定价首写建行也只写空表；`InitRatioSettings()` 启动不再预置任何倍率。
+- **数据**：PostgreSQL `options` 表 11 个定价键（`ModelRatio` / `ModelPrice` / `CacheRatio` / `CreateCacheRatio` / `CompletionRatio` / `ImageRatio` / `AudioRatio` / `AudioCompletionRatio` / `billing_setting.billing_mode` / `billing_setting.billing_expr` / `billing_setting.plugin_billing_expr`）全部置 `{}`；本地开发库 `data/new-api.db`（SQLite）同样置空。
+- **测试**：删除只覆盖内置表达式的 `setting/billing_setting/builtin_billing_test.go`，并移除 `controller/model_management_test.go` 中依赖内置表达式重置的子块。`go build ./...` ✅、`go test ./...`（root module 全量）✅、`gofmt` 干净。
+- **验证**：`docker build -t new-api:local .` + `docker compose -f docker-compose.local.yml up -d` 重建重启后，DB 11 键仍为 `{}`（不被启动流程回填）；以临时探针 access token 调管理员接口 `GET /api/option/model_pricing` 返回 `entries: 0`（`options` 11 键均为 `{}`），随后 access token 已还原为 NULL；CDP 真实浏览器（临时把探针账号 `uicheck37` 提升 role=100，验证后已还原 role=1 并删除其 Redis 用户缓存）打开 `/system-settings/billing/model-pricing`，页面显示“No models configured. Use Add model to get started.”、表格 0 行，截图 `/tmp/pw/ge/model-pricing-cleared.png`。
+- **行为变化**：未配置价格的模型不再套用内置倍率/单价，relay 会走 `modelPriceNotConfiguredError`（除非用户显式开启“接受未配置价格模型”）；管理员在模型定价页添加模型后即按其配置计费。`getHardcodedCompletionModelRatio`（gpt-*/claude-*/gemini-* 等家族的 completion ratio 兜底）保留未动 —— 它不产生列表条目，如需一并清空需另行确认。
 
 ### 2026-10-01（第三十八轮：标签标题始终等于后台系统名称）
 - **现象**：刷新时浏览器标签短暂显示 `New API`。根因是 `web/index.html` 的 `<title>New API</title>` 是构建期默认值，页面外壳先到浏览器，`main.tsx` 的 `initSystemBranding()`（`readCachedStatus()` 优先、再用 `/api/status` 刷新）要等 JS 包执行完才改写标题，所以刷新瞬间必然暴露默认值。

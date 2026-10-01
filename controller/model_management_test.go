@@ -857,25 +857,6 @@ export function parseTaskResult() { return {}; }
 				change.ExpectedVersion = snapshot.Entries[0].Version
 				change.Pricing["billing_setting.billing_expr"] = `tier("base", u("undeclared") * 1)`
 				assert.Error(t, model.UpdateModelPricing([]model.ModelPricingChange{change}))
-				{
-					const name = "gpt-6-astra"
-					builtin, exists := billing_setting.GetBuiltinBillingExpr(name)
-					require.True(t, exists)
-					before, err := model.GetModelPricingSnapshot([]string{name})
-					require.NoError(t, err)
-					require.Empty(t, before.Entries[0].Configured)
-					change = model.ModelPricingChange{ModelName: name, ExpectedVersion: before.Entries[0].Version, Pricing: model.PricingValues{"ModelPrice": float64(0)}}
-					require.NoError(t, model.UpdateModelPricing([]model.ModelPricingChange{change}))
-					custom, err := model.GetModelPricingSnapshot([]string{name})
-					require.NoError(t, err)
-					assert.Equal(t, float64(0), custom.Entries[0].Effective["ModelPrice"])
-					change.ExpectedVersion, change.Pricing, change.Reset = custom.Entries[0].Version, nil, true
-					require.NoError(t, model.UpdateModelPricing([]model.ModelPricingChange{change}))
-					reset, err := model.GetModelPricingSnapshot([]string{name})
-					require.NoError(t, err)
-					assert.Empty(t, reset.Entries[0].Configured)
-					assert.Equal(t, builtin, reset.Entries[0].Effective["billing_setting.billing_expr"])
-				}
 			})
 			t.Run("concurrent_import_creates_one_record", func(t *testing.T) {
 				update := model.MetadataSyncUpdate{MetadataSyncSelection: model.MetadataSyncSelection{ModelName: "matrix-concurrent-import", RecordVersion: model.MetadataRecordVersion(nil, nil, nil), Create: true}, Values: model.MetadataValues{Description: "Imported", Status: 1}}
