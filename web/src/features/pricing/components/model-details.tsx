@@ -249,15 +249,16 @@ function ModelHeader(props: {
         {props.onTry && (
           <Button
             onClick={() => props.onTry?.(model.model_name)}
-            className='border-border/60 h-9 gap-1.5 rounded-full px-4 max-md:grow'
+            className='border-border/60 h-9 gap-1.5 rounded-full px-2.5 text-[0.8rem] max-md:grow'
             variant='outline'
           >
-            <Sparkles className='size-4' />
+            <Sparkles className='size-3.5' />
             {t('Online trial')}
           </Button>
         )}
         <CopyButton
-          className='border-border/60 h-9 gap-1.5 rounded-full px-4 text-[0.8rem] max-md:grow'
+          size='default'
+          className='border-border/60 gap-x-2 rounded-full px-4 max-md:grow'
           iconClassName='size-4'
           tooltip={t('Copy Link')}
           successTooltip={t('Copied!')}
