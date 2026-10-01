@@ -3,8 +3,9 @@
 - 参考站：https://gpt.ge （账号：674904341@qq.com）
 - 目标：页面 / 样式 / 按钮 / 弹窗 / 功能 逐页 1:1 复刻；参考站有而我们没有的能力，自行开发后端接口补齐
 - 状态含义：`✅ 完成` / `🟡 进行中` / `⬜ 未开始` / `➖ 不适用`
-- 最后更新：2026-10-01（第三十七轮：移除主页页脚署名行 + 控制台内容区不再被「居中钳制」（≥1600px 折叠侧边栏时的大间隙与分隔线错位））
-- 上一轮：2026-10-01（第三十六轮：服务端视频封面抽帧 `POST /api/user/oss/video-cover` — 浏览器解不了的编码交给网关 ffmpeg 出图，补齐第三十三轮遗留差异②）
+- 最后更新：2026-10-01（第三十八轮：浏览器标签标题由网关按后台「系统名称」渲染，刷新不再闪 `New API`）
+- 上一轮：2026-10-01（第三十七轮：移除主页页脚署名行 + 控制台内容区不再被「居中钳制」（≥1600px 折叠侧边栏时的大间隙与分隔线错位））
+- 再上一轮：2026-10-01（第三十六轮：服务端视频封面抽帧 `POST /api/user/oss/video-cover` — 浏览器解不了的编码交给网关 ffmpeg 出图，补齐第三十三轮遗留差异②）
 - 上一轮：2026-10-01（第三十五轮：内容后端发布 + 工单 WebSocket 实时会话 + 功能开关 + 创作/登录态修复）
 - 上一轮：2026-10-01（第三十四轮：视频封面重试队列 — 对齐参考站 `useVideoCoverRetry`：画廊变化时最多入队 4 条「已完成但缺封面」的视频，空闲时串行补封面，失败按错误分类退避（429 90s / 解码 2h 最多 3 次 / 404·413·无效 URL 直接停用 / 超时与 5xx 5m→24h）；新增 `use-video-cover-retry`、`video-cover-retry`、`generateStudioVideoCover`；生成与收藏转存见第三十三轮）
 - 上一轮：2026-10-01（第三十三轮：创作中心媒体转存个人桶 + 视频封面 + 收藏转存 — 生成完成与收藏都会把图片/视频转存（个人桶优先、网关本地 `data/studio-uploads` 兜底）并抽取视频首帧封面；新增 `POST /api/user/oss/object`、`service/studio_storage.go`、`persistStudioMedia` / `persistStudioVideo` / `extractVideoCover`（参考站抽帧算法：多采样点 + 有意义帧判定 + 640px + WebP 优先）/ `useArtworkFavorite`）
@@ -79,6 +80,12 @@
 - **金额格式（第十二轮实测）**：参考站余额/消耗/收益/实付这类**金额一律固定 2 位小数**（`$0.00`、`$0.30`、`$1.00`、`实付 60.00 元`），用 `formatQuotaFixed(quota)` 或 `formatCurrencyFromUSD(usd, { fixedFractionDigits: 2 })` / `formatLocalCurrencyAmount(amount, { fixedFractionDigits: 2 })`。反例（保持变长精度、勿改）：模型价格（`$0.014`、`$0.1`）、日志表格金额（`formatLogQuota`，6 位小数）、今日小卡金额（参考站就是 `$0`，不补零）、令牌页「已用 / 剩余」（无货币符号，单位在列头/详情里）。
 
 ## 3. 变更记录（倒序）
+
+### 2026-10-01（第三十八轮：标签标题始终等于后台系统名称）
+- **现象**：刷新时浏览器标签短暂显示 `New API`。根因是 `web/index.html` 的 `<title>New API</title>` 是构建期默认值，页面外壳先到浏览器，`main.tsx` 的 `initSystemBranding()`（`readCachedStatus()` 优先、再用 `/api/status` 刷新）要等 JS 包执行完才改写标题，所以刷新瞬间必然暴露默认值。
+- **修复（网关渲染外壳）**：`router/web-router.go` 新增 `renderIndexPage(page, systemName)`，在 SPA 兜底路由返回 `web/dist/index.html` 时把 `<title>` 与 `<meta name="title" content>` 换成 `common.SystemName`（`html.EscapeString` 转义、`ReplaceAllLiteral` 避免 `$` 展开），空名称时原样返回；HTML 仍是 `Cache-Control: no-cache`，改后台站名后下一次请求/刷新即刻生效。前端 `initSystemBranding()` 保留（负责改名后的即时更新与 favicon）。
+- **验证**：`router/plugin_router_test.go` 新增 `TestWebIndexPageUsesConfiguredSystemName`（普通名称 + 含 `"`/`<` 的转义两例，走真实 `SetWebRouter` 请求断言，且不再含 `New API`）；`go build ./...` ✅、`go test ./router/... -count=1` ✅、`gofmt` 干净。重建镜像并部署后实测：`curl /` 与深链 `/system-settings/site/system-info` 的原始 HTML 均为 `<title>四维API</title>`、`<meta name="title" content="四维API" />`；CDP 真实浏览器在 `domcontentloaded`（早期）与启动完成后均为 `四维API`。
+- **备注**：`web/index.html` 的静态标题保持构建期默认（仅在非 Go 托管/开发服务器下短暂出现），生产由网关每次请求注入。
 
 ### 2026-10-01（第三十七轮：移除主页页脚署名行 + 控制台内容区整宽）
 - **用户第 1 项（移除页脚署名行）**：`web/src/components/layout/components/footer.tsx` 删除 `ProjectAttribution` 组件与 `NEW_API_FOOTER_ATTRIBUTION_KEY`，页脚不再渲染「© {年} New API. 版权所有，由项目贡献者设计与开发。」。自定义页脚 HTML 分支的右侧块改为只在有协议/隐私文档链接时渲染；默认分支底行改为参考站样式的一行居中：`© {年} {后台系统名称}. {copyright}` + 协议/隐私链接，参考站对应行为 `© 2023-2026 V-API, All rights reserved`。同一行里的「New API」取的是后台「系统设置 → 站点与品牌 → 系统信息」的站点名称，用户改站名后即随之变化。
