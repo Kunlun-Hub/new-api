@@ -1,0 +1,6 @@
+export { StudioChat } from './chat'
+export { StudioDiscover } from './discover'
+export { StudioImage } from './image'
+export { StudioVideo } from './video'
+export { StudioNav } from './components/studio-nav'
+export { StudioShell } from './components/studio-shell'

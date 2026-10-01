@@ -16,16 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { PricingSidebar } from './pricing-sidebar'
+export { PricingFilterBar } from './pricing-filter-bar'
 export { PricingToolbar } from './pricing-toolbar'
+export { ModelCapabilityBadges } from './model-capability-badges'
 export { ModelCard } from './model-card'
 export { ModelCardGrid } from './model-card-grid'
+export { ModelTryDrawer } from './model-try-drawer'
 export { LoadingSkeleton } from './loading-skeleton'
 export { EmptyState } from './empty-state'
 export { SearchBar } from './search-bar'
-export {
-  ModelDetails,
-  ModelDetailsContent,
-  ModelDetailsDrawer,
-} from './model-details'
+export { ModelDetails, ModelDetailsContent } from './model-details'
 export { PricingTable } from './pricing-table'

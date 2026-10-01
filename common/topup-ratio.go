@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"maps"
 	"sync"
 )
 
@@ -27,6 +28,16 @@ func UpdateTopupGroupRatioByJSONString(jsonStr string) error {
 	defer topupGroupRatioMutex.Unlock()
 	topupGroupRatio = make(map[string]float64)
 	return json.Unmarshal([]byte(jsonStr), &topupGroupRatio)
+}
+
+// GetTopupGroupRatiosCopy 返回充值分组折扣配置的副本。
+func GetTopupGroupRatiosCopy() map[string]float64 {
+	topupGroupRatioMutex.RLock()
+	defer topupGroupRatioMutex.RUnlock()
+
+	ratios := make(map[string]float64)
+	maps.Copy(ratios, topupGroupRatio)
+	return ratios
 }
 
 func GetTopupGroupRatio(name string) float64 {
