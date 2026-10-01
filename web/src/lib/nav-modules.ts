@@ -210,12 +210,13 @@ export async function getModuleAccessForGuard(
 }
 
 /**
- * Resolve a plain boolean header-nav module (for example `studio`) for a
- * router `beforeLoad` guard. Fails closed when the status request fails.
+ * Resolve a plain boolean header-nav module (`studio`, `blog`, `help`, or
+ * `docs`) for a router `beforeLoad` guard. Fails closed when the status
+ * request fails.
  */
 export async function getBooleanModuleEnabledForGuard(
   queryClient: QueryClient,
-  module: 'studio' | 'blog' | 'help'
+  module: 'studio' | 'blog' | 'help' | 'docs'
 ): Promise<boolean> {
   try {
     const status = await queryClient.fetchQuery(statusQueryOptions)

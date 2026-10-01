@@ -3,7 +3,8 @@
 - 参考站：https://gpt.ge （账号：674904341@qq.com）
 - 目标：页面 / 样式 / 按钮 / 弹窗 / 功能 逐页 1:1 复刻；参考站有而我们没有的能力，自行开发后端接口补齐
 - 状态含义：`✅ 完成` / `🟡 进行中` / `⬜ 未开始` / `➖ 不适用`
-- 最后更新：2026-10-01（第四十一轮：模型详情页头部按钮 1:1 —— 「在线体验」「复制链接」改为参考站的独立胶囊按钮（复制链接按钮此前是 36px 圆形图标按钮却带可见文案，文字溢出到框外））
+- 最后更新：2026-10-01（第四十二轮：顶栏「文档」打不开（点击跳首页）修复 —— `/doc`、`/doc/$slug` 的守卫由 `help` 模块改为 `docs` 模块，并清掉被误填成后台设置页地址的 `general_setting.docs_link`）
+- 上一轮：2026-10-01（第四十一轮：模型详情页头部按钮 1:1 —— 「在线体验」「复制链接」改为参考站的独立胶囊按钮（复制链接按钮此前是 36px 圆形图标按钮却带可见文案，文字溢出到框外））
 - 上一轮：2026-10-01（第四十轮：模型广场「列表视图」按参考站 1:1 重做（7 列 / 53px 行高 / 复制模型名 / 24 段可用率 / 加载更多），并修好后台「模型定价」编辑区不跟随滚轮滚动）
 - 上一轮：2026-10-01（第三十九轮：清空内置模型价格 —— 代码默认表 / 内置计费表达式 / 数据库持久化条目全部置空）
 - 上一轮：2026-10-01（第三十七轮：移除主页页脚署名行 + 控制台内容区不再被「居中钳制」（≥1600px 折叠侧边栏时的大间隙与分隔线错位））
@@ -82,6 +83,13 @@
 - **金额格式（第十二轮实测）**：参考站余额/消耗/收益/实付这类**金额一律固定 2 位小数**（`$0.00`、`$0.30`、`$1.00`、`实付 60.00 元`），用 `formatQuotaFixed(quota)` 或 `formatCurrencyFromUSD(usd, { fixedFractionDigits: 2 })` / `formatLocalCurrencyAmount(amount, { fixedFractionDigits: 2 })`。反例（保持变长精度、勿改）：模型价格（`$0.014`、`$0.1`）、日志表格金额（`formatLogQuota`，6 位小数）、今日小卡金额（参考站就是 `$0`，不补零）、令牌页「已用 / 剩余」（无货币符号，单位在列头/详情里）。
 
 ## 3. 变更记录（倒序）
+
+### 2026-10-01（第四十二轮：顶栏「文档」点击跳首页修复）
+- **用户反馈**：顶栏「文档」点不了，点击就直接跳到首页。
+- **排查（CDP 真实浏览器复现）**：两处独立原因叠加——① `general_setting.docs_link` 被填成了本站后台设置页地址 `https://ai.4w.ink/system-settings/site/system-info`，`useTopNavLinks` 见其非空即渲染成 `target=_blank` 外链，点「文档」实际打开的是后台「系统信息」页（未登录时该页跳登录页/首页），首页 Hero 的 `帮助文档` 按钮同样受影响；② 即使清空该配置，回退到的内部 `/doc` 路由又被 `beforeLoad` 用 **`help`** 模块守卫（`getBooleanModuleEnabledForGuard(qc, 'help')`），而该站点 `HeaderNavModules` 里 `help:false`、`docs:true`，于是 `/doc`、`/tutorials/*`、`/help` 一起被判为关闭并 `redirect({to:'/'})`，最终落到首页——这就是「点文档跳首页」的直接来源（顶栏入口由 `docs` 开关控制，路由却由 `help` 开关控制，两者不一致）。
+- **修复**：`src/routes/doc/index.tsx`、`src/routes/doc/$slug.tsx` 的守卫改用 `docs` 模块（`getBooleanModuleEnabledForGuard` 的联合类型扩展为 `'studio' | 'blog' | 'help' | 'docs'`）；`/help`、`/tutorials/*` 仍由 `help` 控制，保持「帮助中心」开关语义。数据侧把 `general_setting.docs_link` 清空（后台「站点与品牌 → 系统信息 → 文档链接」可随时改回任意外链）。
+- **顺带修正**：`src/features/help/components/doc-pages.tsx` 的面包屑在 `help` 关闭时不再渲染「Help Center」链接（新增 `useHelpCenterEnabled()`），否则文档页里点面包屑又会弹回首页。
+- **验证（生产 3000，重建镜像后）**：顶栏「文档」`href="/doc"`（不再是外链）、点击后 URL `/doc`、标题 `Docs`、3 张文档卡片正常；`/doc/api-compatibility-openai-claude-gemini` 文章页正常；面包屑只显示 `Docs` / `Beginner guide`；Hero「帮助文档」同样指向 `/doc`。`bun run typecheck` ✅、`oxlint` / `oxfmt --check` 干净、`bunx vitest run src/features/help src/lib/__tests__` 7 文件 72 例全绿。
 
 ### 2026-10-01（第四十一轮：模型详情页头部按钮 1:1）
 - **用户反馈**：模型详情页右上角按钮样式不对（截图圈出「在线体验 / 复制链接」）。

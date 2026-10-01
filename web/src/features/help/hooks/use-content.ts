@@ -64,9 +64,9 @@ function usePublishedContent<T>(
 ): SiteContentRecord<T>[] | undefined {
   const { status } = useStatus()
   const enabled =
-    parseHeaderNavModulesFromStatus(
-      status as Record<string, unknown> | null
-    )[contentModuleOf(kind)] !== false
+    parseHeaderNavModulesFromStatus(status as Record<string, unknown> | null)[
+      contentModuleOf(kind)
+    ] !== false
 
   const query = useQuery({
     queryKey: ['site-content', kind],
@@ -85,6 +85,20 @@ function pickString(value: unknown, fallback: string): string {
 
 function pickToc(value: unknown): TocItem[] {
   return Array.isArray(value) ? (value as TocItem[]) : []
+}
+
+/**
+ * Whether the optional help-center module is enabled. The docs pages are
+ * gated by their own `docs` switch, so they must not link back to a help
+ * center that the site owner has turned off.
+ */
+export function useHelpCenterEnabled(): boolean {
+  const { status } = useStatus()
+
+  return (
+    parseHeaderNavModulesFromStatus(status as Record<string, unknown> | null)
+      .help !== false
+  )
 }
 
 export function useHelpDocs(): HelpDoc[] {
@@ -131,9 +145,8 @@ export function useHelpFaqs(): HelpFaq[] {
 }
 
 export function useTutorialCategories(): TutorialCategory[] {
-  const items = usePublishedContent<Partial<TutorialCategory>>(
-    'tutorial_category'
-  )
+  const items =
+    usePublishedContent<Partial<TutorialCategory>>('tutorial_category')
   return useMemo(() => {
     if (!items || items.length === 0) return staticTutorialCategories
     return items.map((item) => ({

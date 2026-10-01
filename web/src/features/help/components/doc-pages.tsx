@@ -21,7 +21,11 @@ import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/empty-state'
 
-import { useHelpDoc, useHelpDocs } from '../hooks/use-content'
+import {
+  useHelpCenterEnabled,
+  useHelpDoc,
+  useHelpDocs,
+} from '../hooks/use-content'
 import { ArticleContent } from './article-content'
 import { DocCard } from './help-center'
 import { HelpBreadcrumbs, HelpContainer } from './help-container'
@@ -29,11 +33,17 @@ import { HelpBreadcrumbs, HelpContainer } from './help-container'
 export function DocIndexPage() {
   const { t } = useTranslation()
   const docs = useHelpDocs()
+  const helpCenterEnabled = useHelpCenterEnabled()
 
   return (
     <HelpContainer>
       <HelpBreadcrumbs
-        items={[{ label: t('Help Center'), to: '/help' }, { label: t('Docs') }]}
+        items={[
+          ...(helpCenterEnabled
+            ? [{ label: t('Help Center'), to: '/help' }]
+            : []),
+          { label: t('Docs') },
+        ]}
       />
       <header className='mb-8'>
         <div className='flex items-center gap-2.5'>
@@ -73,6 +83,7 @@ export function DocIndexPage() {
 export function DocArticlePage(props: { slug: string }) {
   const { t } = useTranslation()
   const doc = useHelpDoc(props.slug)
+  const helpCenterEnabled = useHelpCenterEnabled()
 
   if (!doc) {
     return (
@@ -93,7 +104,9 @@ export function DocArticlePage(props: { slug: string }) {
         <article className='w-full max-w-3xl min-w-0'>
           <HelpBreadcrumbs
             items={[
-              { label: t('Help Center'), to: '/help' },
+              ...(helpCenterEnabled
+                ? [{ label: t('Help Center'), to: '/help' }]
+                : []),
               { label: t('Beginner guide'), to: '/doc' },
             ]}
           />

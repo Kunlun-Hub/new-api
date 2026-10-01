@@ -25,7 +25,7 @@ export const Route = createFileRoute('/doc/$slug')({
   beforeLoad: async ({ context }) => {
     const enabled = await getBooleanModuleEnabledForGuard(
       context.queryClient,
-      'help'
+      'docs'
     )
     if (!enabled) {
       throw redirect({ to: '/' })
