@@ -30,7 +30,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { STATUS_QUERY_KEY, type StatusData } from '@/lib/status-query'
 
-import { ApiKeysPrimaryButtons } from '../api-keys-primary-buttons'
+import { ApiAddressesButton } from '../api-addresses-button'
 import { ApiKeysProvider } from '../api-keys-provider'
 
 let client: QueryClient
@@ -53,7 +53,7 @@ function renderAddresses(status: StatusData) {
   return render(
     <QueryClientProvider client={client}>
       <ApiKeysProvider>
-        <ApiKeysPrimaryButtons />
+        <ApiAddressesButton />
       </ApiKeysProvider>
     </QueryClientProvider>
   )

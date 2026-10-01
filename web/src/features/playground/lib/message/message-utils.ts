@@ -21,6 +21,7 @@ import { nanoid } from 'nanoid'
 import { MESSAGE_ROLES, MESSAGE_STATUS } from '../../constants'
 import type {
   Message,
+  MessageAttachment,
   MessageVersion,
   ChatCompletionMessage,
   ContentPart,
@@ -76,13 +77,15 @@ export function updateCurrentVersionContent(
  */
 export function createUserMessage(
   content: string,
-  createdAt: number = Date.now()
+  createdAt: number = Date.now(),
+  attachments: MessageAttachment[] = []
 ): Message {
   return {
     key: nanoid(),
     from: MESSAGE_ROLES.USER,
     versions: [createMessageVersion(content)],
     createdAt,
+    ...(attachments.length > 0 ? { attachments } : {}),
   }
 }
 
@@ -154,9 +157,35 @@ export function getTextContent(content: string | ContentPart[]): string {
  */
 export function formatMessageForAPI(message: Message): ChatCompletionMessage {
   const currentVersion = getCurrentVersion(message)
+  const attachments = (message.attachments ?? []).filter(
+    (attachment) => attachment.status !== 'uploading' && attachment.url
+  )
+
+  if (attachments.length === 0) {
+    return {
+      role: message.from,
+      content: currentVersion.content,
+    }
+  }
+
+  const parts: ContentPart[] = []
+  if (currentVersion.content) {
+    parts.push({ type: 'text', text: currentVersion.content })
+  }
+  for (const attachment of attachments) {
+    if (attachment.isImage) {
+      parts.push({ type: 'image_url', image_url: { url: attachment.url } })
+    } else {
+      parts.push({
+        type: 'file',
+        file: { filename: attachment.name, file_data: attachment.url },
+      })
+    }
+  }
+
   return {
     role: message.from,
-    content: currentVersion.content,
+    content: parts,
   }
 }
 

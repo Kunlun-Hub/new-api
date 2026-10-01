@@ -177,6 +177,9 @@ func runMidjourneyTaskUpdateOnce(ctx context.Context, report func(processed, tot
 			task.ImageUrl = responseItem.ImageUrl
 			task.Status = responseItem.Status
 			task.FailReason = responseItem.FailReason
+			if responseItem.Mode != "" {
+				task.Mode = service.ResolveMidjourneyMode(responseItem.Mode, task.Prompt)
+			}
 			if responseItem.Properties != nil {
 				propertiesStr, _ := common.Marshal(responseItem.Properties)
 				task.Properties = string(propertiesStr)
@@ -252,6 +255,9 @@ func checkMjTaskNeedUpdate(oldTask *model.Midjourney, newTask dto.MidjourneyDto)
 		return true
 	}
 	if oldTask.FailReason != newTask.FailReason {
+		return true
+	}
+	if newTask.Mode != "" && oldTask.Mode != newTask.Mode {
 		return true
 	}
 	if oldTask.FinishTime != newTask.FinishTime {

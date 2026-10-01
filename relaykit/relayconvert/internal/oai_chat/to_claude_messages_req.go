@@ -2,6 +2,7 @@ package oaichat
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"context"
@@ -261,6 +262,30 @@ func OpenAIChatRequestToClaudeMessages(c context.Context, info convmeta.Meta, te
 						})
 					}
 				default:
+					// A file part that carries a remote URL is forwarded to Claude as a
+					// URL source so the upstream fetches it directly. Studio clients put
+					// that URL in file_data, other callers use the explicit file_url field.
+					if file := mediaMessage.GetFile(); file != nil {
+						fileUrl := file.FileUrl
+						if fileUrl == "" && strings.HasPrefix(file.FileData, "http") {
+							fileUrl = file.FileData
+						}
+						if fileUrl != "" {
+							blockType := "document"
+							switch strings.ToLower(path.Ext(file.FileName)) {
+							case ".png", ".jpg", ".jpeg", ".gif", ".webp":
+								blockType = "image"
+							}
+							claudeMediaMessages = append(claudeMediaMessages, dto.ClaudeMediaMessage{
+								Type: blockType,
+								Source: &dto.ClaudeMessageSource{
+									Type: "url",
+									Url:  fileUrl,
+								},
+							})
+							continue
+						}
+					}
 					source := mediaMessage.ToFileSource()
 					if source == nil {
 						continue

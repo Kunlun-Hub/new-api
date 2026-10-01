@@ -17,7 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useNavigate } from '@tanstack/react-router'
-import { User, Wallet, LogOut, Settings, ShieldCheck } from 'lucide-react'
+import {
+  ChevronsUpDown,
+  User,
+  Wallet,
+  LogOut,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -31,6 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SidebarMenuButton } from '@/components/ui/sidebar'
 import useDialogState from '@/hooks/use-dialog'
 import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { useUserDisplay } from '@/hooks/use-user-display'
@@ -40,7 +48,7 @@ import { useAuthStore } from '@/stores/auth-store'
 
 const avatarFallbackClassName = 'font-semibold text-white'
 
-export function ProfileDropdown() {
+export function ProfileDropdown(props: { variant?: 'icon' | 'card' }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [open, setOpen] = useDialogState()
@@ -55,21 +63,54 @@ export function ProfileDropdown() {
     () => getUserAvatarStyle(avatarName),
     [avatarName]
   )
+  const email = user?.email ? String(user.email) : ''
 
   return (
     <>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger
-          render={<Button variant='ghost' className='relative size-6 p-0' />}
+          render={
+            props.variant === 'card' ? (
+              <SidebarMenuButton size='lg' className='h-auto py-2' />
+            ) : (
+              <Button
+                variant='outline'
+                size='icon'
+                className='relative size-8 rounded-lg'
+              />
+            )
+          }
         >
-          <Avatar className='size-6'>
-            <AvatarFallback
-              className={`${avatarFallbackClassName} text-[11px]`}
-              style={avatarFallbackStyle}
-            >
-              {avatarFallback}
-            </AvatarFallback>
-          </Avatar>
+          {props.variant === 'card' ? (
+            <>
+              <Avatar className='size-8'>
+                <AvatarFallback
+                  className={`${avatarFallbackClassName} text-xs`}
+                  style={avatarFallbackStyle}
+                >
+                  {avatarFallback}
+                </AvatarFallback>
+              </Avatar>
+              <span className='flex min-w-0 flex-1 flex-col gap-0.5 text-start'>
+                <span className='text-foreground truncate text-sm font-semibold'>
+                  {displayName}
+                </span>
+                <span className='text-muted-foreground truncate text-xs'>
+                  {email}
+                </span>
+              </span>
+              <ChevronsUpDown className='text-muted-foreground size-4 shrink-0' />
+            </>
+          ) : (
+            <Avatar className='size-6 rounded-md after:rounded-md'>
+              <AvatarFallback
+                className={`${avatarFallbackClassName} rounded-md text-[11px]`}
+                style={avatarFallbackStyle}
+              >
+                {avatarFallback}
+              </AvatarFallback>
+            </Avatar>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' sideOffset={8} className='w-56'>
           <div className='flex items-center gap-2 px-1.5 py-1.5'>

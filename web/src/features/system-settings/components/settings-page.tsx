@@ -21,7 +21,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState } from '@/components/error-state'
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 
 import { useSystemOptions, getOptionValue } from '../hooks/use-system-options'
 import type { SystemOption } from '../types'
@@ -57,6 +57,7 @@ type SettingsPageFrameProps = {
 }
 
 function SettingsPageFrame(props: SettingsPageFrameProps) {
+  const { t } = useTranslation()
   const [actionsContainer, setActionsContainer] =
     useState<HTMLDivElement | null>(null)
   const [titleStatusContainer, setTitleStatusContainer] =
@@ -68,6 +69,17 @@ function SettingsPageFrame(props: SettingsPageFrameProps) {
       titleStatusContainer={titleStatusContainer}
     >
       <SectionPageLayout>
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Dashboard'), href: '/dashboard/overview' },
+              { label: t('System Settings'), href: '/system-settings' },
+              ...(typeof props.title === 'string'
+                ? [{ label: props.title }]
+                : []),
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>
           <span className='inline-flex max-w-full min-w-0 items-center gap-2 align-middle'>
             <span className='truncate'>{props.title}</span>

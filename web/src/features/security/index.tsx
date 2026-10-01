@@ -20,6 +20,7 @@ import { Link2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ConsoleBreadcrumb } from '@/components/layout'
 import { SectionPageLayout } from '@/components/layout/components/section-page-layout'
 import { Button } from '@/components/ui/button'
 import {
@@ -138,6 +139,14 @@ export function Security() {
 
   return (
     <SectionPageLayout>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb
+          items={[
+            { label: t('Dashboard'), href: '/dashboard/overview' },
+            { label: t('Security & Access') },
+          ]}
+        />
+      </SectionPageLayout.Breadcrumb>
       <SectionPageLayout.Title>
         {t('Security & Access')}
       </SectionPageLayout.Title>

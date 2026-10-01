@@ -230,6 +230,7 @@ func RequestWaffoPay(c *gin.Context) {
 		PaymentProvider: model.PaymentProviderWaffo,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
+		Type:            model.TopUpTypeOnline,
 	}
 	if err := topUp.Insert(); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("Waffo 创建充值订单失败 user_id=%d trade_no=%s amount=%d error=%q", id, merchantOrderId, req.Amount, err.Error()))

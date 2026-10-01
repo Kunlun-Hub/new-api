@@ -16,115 +16,49 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Monitor, Sun, MoonStar } from 'lucide-react'
-import { motion } from 'motion/react'
+import { Moon, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useTheme } from '@/context/theme-provider'
-import { cn } from '@/lib/utils'
+
+const THEME_OPTIONS = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+] as const
 
 export function ThemeQuickSwitcher() {
   const { t } = useTranslation()
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
 
   return (
-    <div className='px-2 pt-1.5 pb-1'>
-      <div className='flex w-full items-center justify-between gap-3'>
-        <span
-          id='theme-switcher-label'
-          className='text-muted-foreground text-sm select-none'
-        >
-          {t('Theme')}
-        </span>
-        <div
-          role='radiogroup'
-          aria-labelledby='theme-switcher-label'
-          className='border-muted/50 bg-muted/40 inline-flex w-auto items-center gap-1.5 rounded-lg border px-1.5 py-1'
-        >
-          <Button
-            variant='ghost'
-            size='icon'
-            role='radio'
-            aria-label={t('System')}
-            aria-checked={theme === 'system'}
-            onClick={() => setTheme('system')}
-            className={cn(
-              'relative size-7',
-              theme === 'system' && 'text-accent-foreground'
-            )}
-          >
-            {theme === 'system' && (
-              <motion.span
-                layoutId='theme-switcher-active'
-                className='bg-accent ring-border absolute inset-0 rounded-md ring-1'
-                transition={{
-                  type: 'spring',
-                  stiffness: 500,
-                  damping: 30,
-                  mass: 0.2,
-                }}
-                animate={{ rotate: 360 }}
-              />
-            )}
-            <Monitor className='relative z-10 size-[0.95rem]' />
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger
+        render={
+          <Button variant='ghost' size='icon' className='size-8'>
+            <Sun className='h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90' />
+            <Moon className='absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0' />
+            <span className='sr-only'>{t('Toggle theme')}</span>
           </Button>
-          <Button
-            variant='ghost'
-            size='icon'
-            role='radio'
-            aria-label={t('Light')}
-            aria-checked={theme === 'light'}
-            onClick={() => setTheme('light')}
-            className={cn(
-              'relative size-7',
-              theme === 'light' && 'text-accent-foreground'
-            )}
+        }
+      />
+      <DropdownMenuContent align='end'>
+        {THEME_OPTIONS.map((option) => (
+          <DropdownMenuItem
+            key={option.value}
+            onClick={() => setTheme(option.value)}
           >
-            {theme === 'light' && (
-              <motion.span
-                layoutId='theme-switcher-active'
-                className='bg-accent ring-border absolute inset-0 rounded-md ring-1'
-                transition={{
-                  type: 'spring',
-                  stiffness: 500,
-                  damping: 30,
-                  mass: 0.2,
-                }}
-                animate={{ rotate: 360 }}
-              />
-            )}
-            <Sun className='relative z-10 size-[0.95rem]' />
-          </Button>
-          <Button
-            variant='ghost'
-            size='icon'
-            role='radio'
-            aria-label={t('Dark')}
-            aria-checked={theme === 'dark'}
-            onClick={() => setTheme('dark')}
-            className={cn(
-              'relative size-7',
-              theme === 'dark' && 'text-accent-foreground'
-            )}
-          >
-            {theme === 'dark' && (
-              <motion.span
-                layoutId='theme-switcher-active'
-                className='bg-accent ring-border absolute inset-0 rounded-md ring-1'
-                transition={{
-                  type: 'spring',
-                  stiffness: 500,
-                  damping: 30,
-                  mass: 0.2,
-                }}
-                animate={{ rotate: 360 }}
-              />
-            )}
-            <MoonStar className='relative z-10 size-[0.95rem]' />
-          </Button>
-        </div>
-      </div>
-    </div>
+            {t(option.label)}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

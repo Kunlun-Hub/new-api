@@ -17,8 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
+import { requireServerSuccess } from '@/lib/server-error-message'
 
-import type { Ticket, TicketDetail, TicketPage, TicketReply } from './types'
+import type {
+  Ticket,
+  TicketAttachment,
+  TicketDetail,
+  TicketPage,
+  TicketReply,
+} from './types'
 
 interface ApiResponse<T> {
   success: boolean
@@ -43,7 +50,17 @@ export async function listTickets(
   const res = await api.get<ApiResponse<TicketPage>>(
     `/api/ticket${query({ status, p: page, page_size: pageSize })}`
   )
-  return res.data.data
+  return requireServerSuccess(res.data).data
+}
+
+export async function getTicketStats(): Promise<
+  Record<'pending' | 'resolved' | 'closed', number>
+> {
+  const res =
+    await api.get<
+      ApiResponse<Record<'pending' | 'resolved' | 'closed', number>>
+    >('/api/ticket/stats')
+  return requireServerSuccess(res.data).data
 }
 
 export async function createTicket(input: {
@@ -52,12 +69,12 @@ export async function createTicket(input: {
   content: string
 }): Promise<Ticket> {
   const res = await api.post<ApiResponse<Ticket>>('/api/ticket', input)
-  return res.data.data
+  return requireServerSuccess(res.data).data
 }
 
 export async function getTicketDetail(id: number): Promise<TicketDetail> {
   const res = await api.get<ApiResponse<TicketDetail>>(`/api/ticket/${id}`)
-  return res.data.data
+  return requireServerSuccess(res.data).data
 }
 
 export async function replyTicket(
@@ -68,12 +85,12 @@ export async function replyTicket(
     `/api/ticket/${id}/reply`,
     { content }
   )
-  return res.data.data
+  return requireServerSuccess(res.data).data
 }
 
 export async function closeTicket(id: number): Promise<Ticket> {
   const res = await api.post<ApiResponse<Ticket>>(`/api/ticket/${id}/close`)
-  return res.data.data
+  return requireServerSuccess(res.data).data
 }
 
 export async function adminListTickets(
@@ -109,6 +126,21 @@ export async function adminUpdateTicket(
   id: number,
   input: { status?: string; priority?: string }
 ): Promise<Ticket> {
-  const res = await api.put<ApiResponse<Ticket>>(`/api/ticket/admin/${id}`, input)
+  const res = await api.put<ApiResponse<Ticket>>(
+    `/api/ticket/admin/${id}`,
+    input
+  )
   return res.data.data
+}
+
+export async function uploadTicketAttachment(
+  file: File
+): Promise<TicketAttachment> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await api.post<ApiResponse<TicketAttachment>>(
+    '/api/ticket/attachment',
+    form
+  )
+  return requireServerSuccess(res.data).data
 }

@@ -125,6 +125,7 @@ func (*StripeAdaptor) RequestPay(c *gin.Context, req *StripePayRequest) {
 		PaymentProvider: model.PaymentProviderStripe,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
+		Type:            model.TopUpTypeOnline,
 	}
 	err = topUp.Insert()
 	if err != nil {

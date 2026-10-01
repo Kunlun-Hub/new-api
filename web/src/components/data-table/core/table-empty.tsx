@@ -27,6 +27,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { TableRow, TableCell } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 
 interface TableEmptyProps {
   /**
@@ -49,6 +50,11 @@ interface TableEmptyProps {
    */
   icon?: React.ReactNode
   /**
+   * ClassName for the spanning cell — override the reserved height when the
+   * surrounding layout is shorter than the default placeholder.
+   */
+  cellClassName?: string
+  /**
    * Additional content to display (e.g., buttons)
    */
   children?: React.ReactNode
@@ -63,6 +69,7 @@ export function TableEmpty({
   title,
   description,
   icon,
+  cellClassName,
   children,
 }: TableEmptyProps) {
   const { t } = useTranslation()
@@ -71,13 +78,16 @@ export function TableEmpty({
     description ?? t('No records found. Try adjusting your filters.')
   return (
     <TableRow>
-      <TableCell colSpan={colSpan} className='h-[400px] p-0'>
+      <TableCell
+        colSpan={colSpan}
+        className={cn('h-[400px] p-0', cellClassName)}
+      >
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant='icon'>
+            <EmptyMedia variant={icon ? 'default' : 'icon'}>
               {icon || <Database className='size-6' />}
             </EmptyMedia>
-            <EmptyTitle>{resolvedTitle}</EmptyTitle>
+            {resolvedTitle ? <EmptyTitle>{resolvedTitle}</EmptyTitle> : null}
             <EmptyDescription>{resolvedDescription}</EmptyDescription>
           </EmptyHeader>
           {children}

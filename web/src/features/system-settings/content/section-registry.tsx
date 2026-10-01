@@ -23,7 +23,10 @@ import { ApiInfoSection } from './api-info-section'
 import { ChatSettingsSection } from './chat-settings-section'
 import { DashboardSection } from './dashboard-section'
 import { DrawingSettingsSection } from './drawing-settings-section'
+import { FeatureSwitchesSection } from './features-section'
+import { PublishingSection } from './publishing-section'
 import { FAQSection } from './faq-section'
+import { PriceNoticeSection } from './price-notice-section'
 import { UptimeKumaSection } from './uptime-kuma-section'
 
 /**
@@ -64,6 +67,16 @@ const CONTENT_SECTIONS = [
     ),
   },
   {
+    id: 'price-notice',
+    titleKey: 'Price Updates',
+    build: (settings: ContentSettings) => (
+      <PriceNoticeSection
+        enabled={settings['console_setting.price_notice_enabled']}
+        data={settings['console_setting.price_notice']}
+      />
+    ),
+  },
+  {
     id: 'api-info',
     titleKey: 'API Addresses',
     build: (settings: ContentSettings) => (
@@ -90,6 +103,22 @@ const CONTENT_SECTIONS = [
       <UptimeKumaSection
         enabled={settings['console_setting.uptime_kuma_enabled']}
         data={settings['console_setting.uptime_kuma_groups']}
+      />
+    ),
+  },
+  {
+    id: 'publishing',
+    titleKey: 'Content Publishing',
+    build: () => <PublishingSection />,
+  },
+  {
+    id: 'features',
+    titleKey: 'Feature Switches',
+    build: (settings: ContentSettings) => (
+      <FeatureSwitchesSection
+        orders={settings['console_setting.orders_enabled']}
+        invoices={settings['console_setting.invoices_enabled']}
+        tickets={settings['console_setting.tickets_enabled']}
       />
     ),
   },

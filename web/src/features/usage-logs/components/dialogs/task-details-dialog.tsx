@@ -18,15 +18,18 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { Shield01Icon, Wrench01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyButton } from '@/components/copy-button'
 import { Dialog } from '@/components/dialog'
-import { StatusBadge } from '@/components/status-badge'
+import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { formatLogQuota, formatTimestampToDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { taskActionMapper, taskStatusMapper } from '../../lib/mappers'
+import { getTaskArtifacts } from '../../api'
+import { taskStatusMapper } from '../../lib/mappers'
 import { resolveTaskDetailAccess } from '../../lib/task-details'
 import type { TaskLog } from '../../types'
 import { PluginAuthorLink } from '../plugin-author-link'
@@ -74,7 +77,7 @@ function formatTaskTimestamp(value?: number): string {
 }
 
 interface TaskDetailsDialogProps {
-  log: TaskLog
+  log: TaskLog | null
   isAdmin: boolean
   isRoot: boolean
   open: boolean
@@ -83,62 +86,151 @@ interface TaskDetailsDialogProps {
 
 export function TaskDetailsDialog(props: TaskDetailsDialogProps) {
   const { t } = useTranslation()
-  const access = resolveTaskDetailAccess(props.log, props.isAdmin, props.isRoot)
+  const taskId = props.log?.task_id ?? ''
+  const hasInlineData = props.log?.data != null
+  // Task lists omit the persisted snapshot, so the dialog loads it on demand
+  // the same way the artifact preview does.
+  const snapshotQuery = useQuery({
+    queryKey: ['usage-logs', 'task-snapshot', taskId],
+    queryFn: async () => getTaskArtifacts(taskId, { includeData: true }),
+    enabled: props.open && !hasInlineData && taskId.length > 0,
+    retry: false,
+    staleTime: 30_000,
+  })
+
+  if (!props.log) {
+    return null
+  }
+
+  const log = props.log
+  const access = resolveTaskDetailAccess(log, props.isAdmin, props.isRoot)
   const plugin = access.plugin
   const runtime = access.runtime
-  const properties = props.log.properties
+  const properties = log.properties
+  const status = log.status ?? ''
+  const statusClassName = taskStatusMapper.getBadgeClassName(status)
+  const taskData = JSON.stringify(
+    log.data ?? snapshotQuery.data?.taskData ?? {},
+    null,
+    2
+  )
 
   return (
     <Dialog
       open={props.open}
       onOpenChange={props.onOpenChange}
+      contentClassName='bg-linear-to-br from-foreground/6 via-transparent to-transparent md:max-w-160 md:rounded-2xl md:p-6'
+      headerClassName='gap-1 mb-5'
       title={
-        <span className='flex items-center gap-2'>
-          {t('Task Details')}
-          <StatusBadge
-            label={t(
-              taskStatusMapper.getLabel(
-                props.log.status,
-                props.log.status || 'Submitting'
-              )
-            )}
-            variant={taskStatusMapper.getVariant(props.log.status)}
-            size='sm'
-            copyable={false}
-          />
-        </span>
+        <div className='flex items-center gap-2'>
+          <Badge>{log.platform}</Badge>
+          <span className='font-mono text-base'>
+            {(log.action ?? '').toUpperCase()}
+          </span>
+        </div>
       }
-      description={t('View the complete details for this task')}
-      contentClassName='min-w-0 overflow-hidden sm:max-w-2xl'
-      contentHeight='min(72dvh, 720px)'
-      bodyClassName='pr-2 sm:pr-4'
+      description={
+        log.task_id ? (
+          <CopyButton
+            value={log.task_id}
+            position='right'
+            className='h-auto w-auto min-w-0 justify-start bg-transparent! p-0'
+            iconClassName='size-3'
+          >
+            <span className='ml-1 font-mono text-xs'>{log.task_id}</span>
+          </CopyButton>
+        ) : (
+          formatTaskTimestamp(log.created_at)
+        )
+      }
+      bodyClassName='space-y-4'
     >
-      <div className='space-y-3'>
-        <DetailSection label={t('Basic Information')}>
-          <DetailRow label={t('Task ID')} value={props.log.task_id} mono />
-          <DetailRow label={t('Platform')} value={props.log.platform} mono />
+      <section>
+        <dl className='grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm'>
+          <dt className='text-muted-foreground min-w-18 whitespace-nowrap'>
+            {t('Status')}
+          </dt>
+          <dd className='text-foreground'>
+            <Badge
+              variant={statusClassName ? 'default' : 'outline'}
+              className={statusClassName}
+            >
+              {t(taskStatusMapper.getLabel(status, 'Unknown'))}
+            </Badge>
+          </dd>
+          {(status === 'FAILURE' || status === 'UNKNOWN') && log.fail_reason ? (
+            <>
+              <dt className='text-muted-foreground min-w-18 whitespace-nowrap'>
+                {t('Fail Reason')}
+              </dt>
+              <dd className='text-red-500'>{log.fail_reason}</dd>
+            </>
+          ) : null}
+          <dt className='text-muted-foreground min-w-18 whitespace-nowrap'>
+            {t('Submit Time')}
+          </dt>
+          <dd className='text-foreground'>
+            {formatTaskTimestamp(log.submit_time)}
+          </dd>
+          {log.start_time && log.start_time > 0 ? (
+            <>
+              <dt className='text-muted-foreground min-w-18 whitespace-nowrap'>
+                {t('Start Time')}
+              </dt>
+              <dd className='text-foreground'>
+                {formatTaskTimestamp(log.start_time)}
+              </dd>
+            </>
+          ) : null}
+          {log.finish_time && log.finish_time > 0 ? (
+            <>
+              <dt className='text-muted-foreground min-w-18 whitespace-nowrap'>
+                {t('Finish Time')}
+              </dt>
+              <dd className='text-foreground'>
+                {formatTaskTimestamp(log.finish_time)}
+              </dd>
+            </>
+          ) : null}
+        </dl>
+      </section>
+
+      <section className='space-y-3'>
+        <h4 className='text-sm font-semibold'>{t('Task Data')}</h4>
+        <div className='relative'>
+          <div className='absolute top-2 right-2 z-1'>
+            <CopyButton
+              value={taskData}
+              className='size-6 p-0'
+              iconClassName='size-3.5'
+            />
+          </div>
+          <pre className='border-border/40 bg-muted/30 rounded-lg border p-3 pr-8 text-xs wrap-break-word whitespace-pre-wrap'>
+            {taskData}
+          </pre>
+        </div>
+      </section>
+
+      {props.isAdmin ? (
+        <DetailSection
+          label={t('Admin Only')}
+          icon={
+            <HugeiconsIcon
+              icon={Shield01Icon}
+              className='size-3.5 text-blue-500'
+              strokeWidth={2}
+            />
+          }
+        >
           <DetailRow
-            label={t('Action')}
-            value={t(taskActionMapper.getLabel(props.log.action))}
+            label={t('User')}
+            value={log.username || String(log.user_id)}
           />
+          <DetailRow label={t('Channel')} value={`#${log.channel_id}`} mono />
+          <DetailRow label={t('Group')} value={log.group || '-'} />
           <DetailRow
-            label={t('Progress')}
-            value={props.log.progress || '-'}
-            mono
-          />
-          <DetailRow
-            label={t('Submit Time')}
-            value={formatTaskTimestamp(props.log.submit_time)}
-            mono
-          />
-          <DetailRow
-            label={t('Start Time')}
-            value={formatTaskTimestamp(props.log.start_time)}
-            mono
-          />
-          <DetailRow
-            label={t('Finish Time')}
-            value={formatTaskTimestamp(props.log.finish_time)}
+            label={t('Quota')}
+            value={formatLogQuota(log.quota)}
             mono
           />
           {properties?.origin_model_name ? (
@@ -155,112 +247,80 @@ export function TaskDetailsDialog(props: TaskDetailsDialogProps) {
               mono
             />
           ) : null}
-          {props.log.fail_reason ? (
-            <DetailRow label={t('Fail Reason')} value={props.log.fail_reason} />
+          {log.admin_info?.request_id ? (
+            <DetailRow
+              label={t('Request ID')}
+              value={log.admin_info.request_id}
+              mono
+            />
+          ) : null}
+          {log.admin_info?.request_path ? (
+            <DetailRow
+              label={t('Request Path')}
+              value={log.admin_info.request_path}
+              mono
+            />
+          ) : null}
+          {plugin ? (
+            <>
+              <DetailRow
+                label={t('Task Plugin')}
+                value={plugin.name || plugin.key}
+              />
+              <DetailRow label={t('Plugin key')} value={plugin.key} mono />
+              <DetailRow
+                label={t('Version')}
+                value={plugin.version || '-'}
+                mono
+              />
+              {plugin.author ? (
+                <DetailRow
+                  label={t('Plugin author')}
+                  value={<PluginAuthorLink author={plugin.author} showUrl />}
+                />
+              ) : null}
+            </>
           ) : null}
         </DetailSection>
+      ) : null}
 
-        {props.isAdmin ? (
-          <DetailSection
-            label={t('Admin Only')}
-            icon={
-              <HugeiconsIcon
-                icon={Shield01Icon}
-                className='size-3.5 text-blue-500'
-                strokeWidth={2}
-              />
-            }
-          >
-            <DetailRow
-              label={t('User')}
-              value={props.log.username || String(props.log.user_id)}
+      {props.isRoot && log.root_info ? (
+        <DetailSection
+          label={t('Root Diagnostics')}
+          icon={
+            <HugeiconsIcon
+              icon={Wrench01Icon}
+              className='size-3.5 text-amber-500'
+              strokeWidth={2}
             />
+          }
+        >
+          {runtime ? (
+            <>
+              <DetailRow
+                label={t('API Version')}
+                value={String(runtime.api_version)}
+                mono
+              />
+              <DetailRow
+                label={t('Plugin Generation')}
+                value={String(runtime.generation)}
+                mono
+              />
+            </>
+          ) : null}
+          {access.upstreamTaskId ? (
             <DetailRow
-              label={t('Channel')}
-              value={`#${props.log.channel_id}`}
+              label={t('Upstream Task ID')}
+              value={access.upstreamTaskId}
               mono
             />
-            <DetailRow label={t('Group')} value={props.log.group || '-'} />
-            <DetailRow
-              label={t('Quota')}
-              value={formatLogQuota(props.log.quota)}
-              mono
-            />
-            {props.log.admin_info?.request_id ? (
-              <DetailRow
-                label={t('Request ID')}
-                value={props.log.admin_info.request_id}
-                mono
-              />
-            ) : null}
-            {props.log.admin_info?.request_path ? (
-              <DetailRow
-                label={t('Request Path')}
-                value={props.log.admin_info.request_path}
-                mono
-              />
-            ) : null}
-            {plugin ? (
-              <>
-                <DetailRow
-                  label={t('Task Plugin')}
-                  value={plugin.name || plugin.key}
-                />
-                <DetailRow label={t('Plugin key')} value={plugin.key} mono />
-                <DetailRow
-                  label={t('Version')}
-                  value={plugin.version || '-'}
-                  mono
-                />
-                {plugin.author ? (
-                  <DetailRow
-                    label={t('Plugin author')}
-                    value={<PluginAuthorLink author={plugin.author} showUrl />}
-                  />
-                ) : null}
-              </>
-            ) : null}
-          </DetailSection>
-        ) : null}
-
-        {props.isRoot && props.log.root_info ? (
-          <DetailSection
-            label={t('Root Diagnostics')}
-            icon={
-              <HugeiconsIcon
-                icon={Wrench01Icon}
-                className='size-3.5 text-amber-500'
-                strokeWidth={2}
-              />
-            }
-          >
-            {runtime ? (
-              <>
-                <DetailRow
-                  label={t('API Version')}
-                  value={String(runtime.api_version)}
-                  mono
-                />
-                <DetailRow
-                  label={t('Plugin Generation')}
-                  value={String(runtime.generation)}
-                  mono
-                />
-              </>
-            ) : null}
-            {access.upstreamTaskId ? (
-              <DetailRow
-                label={t('Upstream Task ID')}
-                value={access.upstreamTaskId}
-                mono
-              />
-            ) : null}
-            {access.nodeName ? (
-              <DetailRow label={t('Node Name')} value={access.nodeName} mono />
-            ) : null}
-          </DetailSection>
-        ) : null}
-      </div>
+          ) : null}
+          {access.nodeName ? (
+            <DetailRow label={t('Node Name')} value={access.nodeName} mono />
+          ) : null}
+        </DetailSection>
+      ) : null}
     </Dialog>
   )
 }

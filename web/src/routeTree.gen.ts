@@ -29,11 +29,21 @@ import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as AuthenticatedChat2linkRouteImport } from './routes/_authenticated/chat2link'
 import { Route as AuthenticatedSystemSettingsRouteRouteImport } from './routes/_authenticated/system-settings/route'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as DocIndexRouteImport } from './routes/doc/index'
+import { Route as DocSlugRouteImport } from './routes/doc/$slug'
+import { Route as HelpIndexRouteImport } from './routes/help/index'
 import { Route as MonitoringIndexRouteImport } from './routes/monitoring/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
 import { Route as PricingIndexRouteImport } from './routes/pricing/index'
 import { Route as RankingsIndexRouteImport } from './routes/rankings/index'
 import { Route as SetupIndexRouteImport } from './routes/setup/index'
+import { Route as StudioIndexRouteImport } from './routes/studio/index'
+import { Route as StudioChatRouteImport } from './routes/studio/chat'
+import { Route as StudioImageRouteImport } from './routes/studio/image'
+import { Route as StudioVideoRouteImport } from './routes/studio/video'
+import { Route as TutorialsIndexRouteImport } from './routes/tutorials/index'
 import { Route as authUserResetRouteImport } from './routes/(auth)/user/reset'
 import { Route as AuthenticatedChannelsIndexRouteImport } from './routes/_authenticated/channels/index'
 import { Route as AuthenticatedChatChatIdRouteImport } from './routes/_authenticated/chat/$chatId'
@@ -44,6 +54,7 @@ import { Route as AuthenticatedInvitationIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authenticated/keys/index'
 import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
 import { Route as AuthenticatedModelsSectionRouteImport } from './routes/_authenticated/models/$section'
+import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedPlaygroundIndexRouteImport } from './routes/_authenticated/playground/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
 import { Route as AuthenticatedRedemptionCodesIndexRouteImport } from './routes/_authenticated/redemption-codes/index'
@@ -59,7 +70,10 @@ import { Route as AuthenticatedUsageLogsSectionRouteImport } from './routes/_aut
 import { Route as AuthenticatedUsageLogsAuditRouteImport } from './routes/_authenticated/usage-logs/audit'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedWalletIndexRouteImport } from './routes/_authenticated/wallet/index'
+import { Route as BlogCategoryCategoryRouteImport } from './routes/blog/category/$category'
 import { Route as PricingModelIdIndexRouteImport } from './routes/pricing/$modelId/index'
+import { Route as TutorialsCategoryIndexRouteImport } from './routes/tutorials/$category/index'
+import { Route as TutorialsCategorySlugRouteImport } from './routes/tutorials/$category/$slug'
 import { Route as AuthenticatedAdminTicketsIndexRouteImport } from './routes/_authenticated/admin/tickets/index'
 import { Route as AuthenticatedAdminTicketsTicketIdRouteImport } from './routes/_authenticated/admin/tickets/$ticketId'
 import { Route as AuthenticatedSystemSettingsAuthIndexRouteImport } from './routes/_authenticated/system-settings/auth/index'
@@ -178,6 +192,31 @@ const AboutIndexRoute = AboutIndexRouteImport.update({
   path: '/about/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocIndexRoute = DocIndexRouteImport.update({
+  id: '/doc/',
+  path: '/doc/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocSlugRoute = DocSlugRouteImport.update({
+  id: '/doc/$slug',
+  path: '/doc/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpIndexRoute = HelpIndexRouteImport.update({
+  id: '/help/',
+  path: '/help/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MonitoringIndexRoute = MonitoringIndexRouteImport.update({
   id: '/monitoring/',
   path: '/monitoring/',
@@ -201,6 +240,31 @@ const RankingsIndexRoute = RankingsIndexRouteImport.update({
 const SetupIndexRoute = SetupIndexRouteImport.update({
   id: '/setup/',
   path: '/setup/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioIndexRoute = StudioIndexRouteImport.update({
+  id: '/studio/',
+  path: '/studio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioChatRoute = StudioChatRouteImport.update({
+  id: '/studio/chat',
+  path: '/studio/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioImageRoute = StudioImageRouteImport.update({
+  id: '/studio/image',
+  path: '/studio/image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudioVideoRoute = StudioVideoRouteImport.update({
+  id: '/studio/video',
+  path: '/studio/video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialsIndexRoute = TutorialsIndexRouteImport.update({
+  id: '/tutorials/',
+  path: '/tutorials/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authUserResetRoute = authUserResetRouteImport.update({
@@ -258,6 +322,12 @@ const AuthenticatedModelsSectionRoute =
   AuthenticatedModelsSectionRouteImport.update({
     id: '/models/$section',
     path: '/models/$section',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrdersIndexRoute =
+  AuthenticatedOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPlaygroundIndexRoute =
@@ -349,9 +419,24 @@ const AuthenticatedWalletIndexRoute =
     path: '/wallet/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
+  id: '/blog/category/$category',
+  path: '/blog/category/$category',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingModelIdIndexRoute = PricingModelIdIndexRouteImport.update({
   id: '/pricing/$modelId/',
   path: '/pricing/$modelId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialsCategoryIndexRoute = TutorialsCategoryIndexRouteImport.update({
+  id: '/tutorials/$category/',
+  path: '/tutorials/$category/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialsCategorySlugRoute = TutorialsCategorySlugRouteImport.update({
+  id: '/tutorials/$category/$slug',
+  path: '/tutorials/$category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminTicketsIndexRoute =
@@ -481,12 +566,22 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/chat2link': typeof AuthenticatedChat2linkRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/doc/$slug': typeof DocSlugRoute
   '/oauth/$provider': typeof OauthProviderRoute
+  '/studio/chat': typeof StudioChatRoute
+  '/studio/image': typeof StudioImageRoute
+  '/studio/video': typeof StudioVideoRoute
   '/about/': typeof AboutIndexRoute
+  '/blog/': typeof BlogIndexRoute
+  '/doc/': typeof DocIndexRoute
+  '/help/': typeof HelpIndexRoute
   '/monitoring/': typeof MonitoringIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/studio/': typeof StudioIndexRoute
+  '/tutorials/': typeof TutorialsIndexRoute
   '/user/reset': typeof authUserResetRoute
   '/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
@@ -495,11 +590,14 @@ export interface FileRoutesByFullPath {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
+  '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/tutorials/$category/$slug': typeof TutorialsCategorySlugRoute
   '/channels/': typeof AuthenticatedChannelsIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/invitation/': typeof AuthenticatedInvitationIndexRoute
   '/keys/': typeof AuthenticatedKeysIndexRoute
   '/models/': typeof AuthenticatedModelsIndexRoute
+  '/orders/': typeof AuthenticatedOrdersIndexRoute
   '/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/redemption-codes/': typeof AuthenticatedRedemptionCodesIndexRoute
@@ -513,6 +611,7 @@ export interface FileRoutesByFullPath {
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/wallet/': typeof AuthenticatedWalletIndexRoute
   '/pricing/$modelId/': typeof PricingModelIdIndexRoute
+  '/tutorials/$category/': typeof TutorialsCategoryIndexRoute
   '/admin/tickets/$ticketId': typeof AuthenticatedAdminTicketsTicketIdRoute
   '/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
   '/system-settings/billing/$section': typeof AuthenticatedSystemSettingsBillingSectionRoute
@@ -549,12 +648,22 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/chat2link': typeof AuthenticatedChat2linkRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/doc/$slug': typeof DocSlugRoute
   '/oauth/$provider': typeof OauthProviderRoute
+  '/studio/chat': typeof StudioChatRoute
+  '/studio/image': typeof StudioImageRoute
+  '/studio/video': typeof StudioVideoRoute
   '/about': typeof AboutIndexRoute
+  '/blog': typeof BlogIndexRoute
+  '/doc': typeof DocIndexRoute
+  '/help': typeof HelpIndexRoute
   '/monitoring': typeof MonitoringIndexRoute
   '/pricing': typeof PricingIndexRoute
   '/rankings': typeof RankingsIndexRoute
   '/setup': typeof SetupIndexRoute
+  '/studio': typeof StudioIndexRoute
+  '/tutorials': typeof TutorialsIndexRoute
   '/user/reset': typeof authUserResetRoute
   '/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
@@ -563,11 +672,14 @@ export interface FileRoutesByTo {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
+  '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/tutorials/$category/$slug': typeof TutorialsCategorySlugRoute
   '/channels': typeof AuthenticatedChannelsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/invitation': typeof AuthenticatedInvitationIndexRoute
   '/keys': typeof AuthenticatedKeysIndexRoute
   '/models': typeof AuthenticatedModelsIndexRoute
+  '/orders': typeof AuthenticatedOrdersIndexRoute
   '/playground': typeof AuthenticatedPlaygroundIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/redemption-codes': typeof AuthenticatedRedemptionCodesIndexRoute
@@ -581,6 +693,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/wallet': typeof AuthenticatedWalletIndexRoute
   '/pricing/$modelId': typeof PricingModelIdIndexRoute
+  '/tutorials/$category': typeof TutorialsCategoryIndexRoute
   '/admin/tickets/$ticketId': typeof AuthenticatedAdminTicketsTicketIdRoute
   '/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
   '/system-settings/billing/$section': typeof AuthenticatedSystemSettingsBillingSectionRoute
@@ -621,12 +734,22 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/chat2link': typeof AuthenticatedChat2linkRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/doc/$slug': typeof DocSlugRoute
   '/oauth/$provider': typeof OauthProviderRoute
+  '/studio/chat': typeof StudioChatRoute
+  '/studio/image': typeof StudioImageRoute
+  '/studio/video': typeof StudioVideoRoute
   '/about/': typeof AboutIndexRoute
+  '/blog/': typeof BlogIndexRoute
+  '/doc/': typeof DocIndexRoute
+  '/help/': typeof HelpIndexRoute
   '/monitoring/': typeof MonitoringIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
   '/setup/': typeof SetupIndexRoute
+  '/studio/': typeof StudioIndexRoute
+  '/tutorials/': typeof TutorialsIndexRoute
   '/(auth)/user/reset': typeof authUserResetRoute
   '/_authenticated/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/_authenticated/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
@@ -635,11 +758,14 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/_authenticated/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
+  '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/tutorials/$category/$slug': typeof TutorialsCategorySlugRoute
   '/_authenticated/channels/': typeof AuthenticatedChannelsIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/invitation/': typeof AuthenticatedInvitationIndexRoute
   '/_authenticated/keys/': typeof AuthenticatedKeysIndexRoute
   '/_authenticated/models/': typeof AuthenticatedModelsIndexRoute
+  '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/redemption-codes/': typeof AuthenticatedRedemptionCodesIndexRoute
@@ -653,6 +779,7 @@ export interface FileRoutesById {
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/wallet/': typeof AuthenticatedWalletIndexRoute
   '/pricing/$modelId/': typeof PricingModelIdIndexRoute
+  '/tutorials/$category/': typeof TutorialsCategoryIndexRoute
   '/_authenticated/admin/tickets/$ticketId': typeof AuthenticatedAdminTicketsTicketIdRoute
   '/_authenticated/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
   '/_authenticated/system-settings/billing/$section': typeof AuthenticatedSystemSettingsBillingSectionRoute
@@ -692,12 +819,22 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/chat2link'
+    | '/blog/$slug'
+    | '/doc/$slug'
     | '/oauth/$provider'
+    | '/studio/chat'
+    | '/studio/image'
+    | '/studio/video'
     | '/about/'
+    | '/blog/'
+    | '/doc/'
+    | '/help/'
     | '/monitoring/'
     | '/pricing/'
     | '/rankings/'
     | '/setup/'
+    | '/studio/'
+    | '/tutorials/'
     | '/user/reset'
     | '/chat/$chatId'
     | '/dashboard/$section'
@@ -706,11 +843,14 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/usage-logs/$section'
     | '/usage-logs/audit'
+    | '/blog/category/$category'
+    | '/tutorials/$category/$slug'
     | '/channels/'
     | '/dashboard/'
     | '/invitation/'
     | '/keys/'
     | '/models/'
+    | '/orders/'
     | '/playground/'
     | '/profile/'
     | '/redemption-codes/'
@@ -724,6 +864,7 @@ export interface FileRouteTypes {
     | '/users/'
     | '/wallet/'
     | '/pricing/$modelId/'
+    | '/tutorials/$category/'
     | '/admin/tickets/$ticketId'
     | '/system-settings/auth/$section'
     | '/system-settings/billing/$section'
@@ -760,12 +901,22 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/chat2link'
+    | '/blog/$slug'
+    | '/doc/$slug'
     | '/oauth/$provider'
+    | '/studio/chat'
+    | '/studio/image'
+    | '/studio/video'
     | '/about'
+    | '/blog'
+    | '/doc'
+    | '/help'
     | '/monitoring'
     | '/pricing'
     | '/rankings'
     | '/setup'
+    | '/studio'
+    | '/tutorials'
     | '/user/reset'
     | '/chat/$chatId'
     | '/dashboard/$section'
@@ -774,11 +925,14 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/usage-logs/$section'
     | '/usage-logs/audit'
+    | '/blog/category/$category'
+    | '/tutorials/$category/$slug'
     | '/channels'
     | '/dashboard'
     | '/invitation'
     | '/keys'
     | '/models'
+    | '/orders'
     | '/playground'
     | '/profile'
     | '/redemption-codes'
@@ -792,6 +946,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/wallet'
     | '/pricing/$modelId'
+    | '/tutorials/$category'
     | '/admin/tickets/$ticketId'
     | '/system-settings/auth/$section'
     | '/system-settings/billing/$section'
@@ -831,12 +986,22 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/chat2link'
+    | '/blog/$slug'
+    | '/doc/$slug'
     | '/oauth/$provider'
+    | '/studio/chat'
+    | '/studio/image'
+    | '/studio/video'
     | '/about/'
+    | '/blog/'
+    | '/doc/'
+    | '/help/'
     | '/monitoring/'
     | '/pricing/'
     | '/rankings/'
     | '/setup/'
+    | '/studio/'
+    | '/tutorials/'
     | '/(auth)/user/reset'
     | '/_authenticated/chat/$chatId'
     | '/_authenticated/dashboard/$section'
@@ -845,11 +1010,14 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/usage-logs/$section'
     | '/_authenticated/usage-logs/audit'
+    | '/blog/category/$category'
+    | '/tutorials/$category/$slug'
     | '/_authenticated/channels/'
     | '/_authenticated/dashboard/'
     | '/_authenticated/invitation/'
     | '/_authenticated/keys/'
     | '/_authenticated/models/'
+    | '/_authenticated/orders/'
     | '/_authenticated/playground/'
     | '/_authenticated/profile/'
     | '/_authenticated/redemption-codes/'
@@ -863,6 +1031,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users/'
     | '/_authenticated/wallet/'
     | '/pricing/$modelId/'
+    | '/tutorials/$category/'
     | '/_authenticated/admin/tickets/$ticketId'
     | '/_authenticated/system-settings/auth/$section'
     | '/_authenticated/system-settings/billing/$section'
@@ -894,13 +1063,26 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  BlogSlugRoute: typeof BlogSlugRoute
+  DocSlugRoute: typeof DocSlugRoute
   OauthProviderRoute: typeof OauthProviderRoute
+  StudioChatRoute: typeof StudioChatRoute
+  StudioImageRoute: typeof StudioImageRoute
+  StudioVideoRoute: typeof StudioVideoRoute
   AboutIndexRoute: typeof AboutIndexRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+  DocIndexRoute: typeof DocIndexRoute
+  HelpIndexRoute: typeof HelpIndexRoute
   MonitoringIndexRoute: typeof MonitoringIndexRoute
   PricingIndexRoute: typeof PricingIndexRoute
   RankingsIndexRoute: typeof RankingsIndexRoute
   SetupIndexRoute: typeof SetupIndexRoute
+  StudioIndexRoute: typeof StudioIndexRoute
+  TutorialsIndexRoute: typeof TutorialsIndexRoute
+  BlogCategoryCategoryRoute: typeof BlogCategoryCategoryRoute
+  TutorialsCategorySlugRoute: typeof TutorialsCategorySlugRoute
   PricingModelIdIndexRoute: typeof PricingModelIdIndexRoute
+  TutorialsCategoryIndexRoute: typeof TutorialsCategoryIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1045,6 +1227,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/doc/': {
+      id: '/doc/'
+      path: '/doc'
+      fullPath: '/doc/'
+      preLoaderRoute: typeof DocIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/doc/$slug': {
+      id: '/doc/$slug'
+      path: '/doc/$slug'
+      fullPath: '/doc/$slug'
+      preLoaderRoute: typeof DocSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/': {
+      id: '/help/'
+      path: '/help'
+      fullPath: '/help/'
+      preLoaderRoute: typeof HelpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/monitoring/': {
       id: '/monitoring/'
       path: '/monitoring'
@@ -1078,6 +1295,41 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup/'
       preLoaderRoute: typeof SetupIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/': {
+      id: '/studio/'
+      path: '/studio'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof StudioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/chat': {
+      id: '/studio/chat'
+      path: '/studio/chat'
+      fullPath: '/studio/chat'
+      preLoaderRoute: typeof StudioChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/image': {
+      id: '/studio/image'
+      path: '/studio/image'
+      fullPath: '/studio/image'
+      preLoaderRoute: typeof StudioImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio/video': {
+      id: '/studio/video'
+      path: '/studio/video'
+      fullPath: '/studio/video'
+      preLoaderRoute: typeof StudioVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorials/': {
+      id: '/tutorials/'
+      path: '/tutorials'
+      fullPath: '/tutorials/'
+      preLoaderRoute: typeof TutorialsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/user/reset': {
@@ -1148,6 +1400,13 @@ declare module '@tanstack/react-router' {
       path: '/models/$section'
       fullPath: '/models/$section'
       preLoaderRoute: typeof AuthenticatedModelsSectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orders/': {
+      id: '/_authenticated/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AuthenticatedOrdersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/playground/': {
@@ -1255,11 +1514,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/blog/category/$category': {
+      id: '/blog/category/$category'
+      path: '/blog/category/$category'
+      fullPath: '/blog/category/$category'
+      preLoaderRoute: typeof BlogCategoryCategoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing/$modelId/': {
       id: '/pricing/$modelId/'
       path: '/pricing/$modelId'
       fullPath: '/pricing/$modelId/'
       preLoaderRoute: typeof PricingModelIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorials/$category/': {
+      id: '/tutorials/$category/'
+      path: '/tutorials/$category'
+      fullPath: '/tutorials/$category/'
+      preLoaderRoute: typeof TutorialsCategoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorials/$category/$slug': {
+      id: '/tutorials/$category/$slug'
+      path: '/tutorials/$category/$slug'
+      fullPath: '/tutorials/$category/$slug'
+      preLoaderRoute: typeof TutorialsCategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/tickets/': {
@@ -1495,6 +1775,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvitationIndexRoute: typeof AuthenticatedInvitationIndexRoute
   AuthenticatedKeysIndexRoute: typeof AuthenticatedKeysIndexRoute
   AuthenticatedModelsIndexRoute: typeof AuthenticatedModelsIndexRoute
+  AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
   AuthenticatedPlaygroundIndexRoute: typeof AuthenticatedPlaygroundIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedRedemptionCodesIndexRoute: typeof AuthenticatedRedemptionCodesIndexRoute
@@ -1526,6 +1807,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvitationIndexRoute: AuthenticatedInvitationIndexRoute,
   AuthenticatedKeysIndexRoute: AuthenticatedKeysIndexRoute,
   AuthenticatedModelsIndexRoute: AuthenticatedModelsIndexRoute,
+  AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
   AuthenticatedPlaygroundIndexRoute: AuthenticatedPlaygroundIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedRedemptionCodesIndexRoute:
@@ -1557,13 +1839,26 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  BlogSlugRoute: BlogSlugRoute,
+  DocSlugRoute: DocSlugRoute,
   OauthProviderRoute: OauthProviderRoute,
+  StudioChatRoute: StudioChatRoute,
+  StudioImageRoute: StudioImageRoute,
+  StudioVideoRoute: StudioVideoRoute,
   AboutIndexRoute: AboutIndexRoute,
+  BlogIndexRoute: BlogIndexRoute,
+  DocIndexRoute: DocIndexRoute,
+  HelpIndexRoute: HelpIndexRoute,
   MonitoringIndexRoute: MonitoringIndexRoute,
   PricingIndexRoute: PricingIndexRoute,
   RankingsIndexRoute: RankingsIndexRoute,
   SetupIndexRoute: SetupIndexRoute,
+  StudioIndexRoute: StudioIndexRoute,
+  TutorialsIndexRoute: TutorialsIndexRoute,
+  BlogCategoryCategoryRoute: BlogCategoryCategoryRoute,
+  TutorialsCategorySlugRoute: TutorialsCategorySlugRoute,
   PricingModelIdIndexRoute: PricingModelIdIndexRoute,
+  TutorialsCategoryIndexRoute: TutorialsCategoryIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

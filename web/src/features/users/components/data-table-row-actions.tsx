@@ -179,7 +179,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuItem>
         )}
 
-        {isAdmin && !isRoot && (
+        {isAdmin && (
           <DropdownMenuItem onClick={() => handleManage('demote')}>
             {t('Demote')}
             <DropdownMenuShortcut>

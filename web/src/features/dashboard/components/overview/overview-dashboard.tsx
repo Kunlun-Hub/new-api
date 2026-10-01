@@ -16,87 +16,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
-import { CreditCard, KeyRound, TerminalSquare } from 'lucide-react'
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
-import { Button } from '@/components/ui/button'
-import { toIntlLocale } from '@/i18n/languages'
-import { useAuthStore } from '@/stores/auth-store'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 
 import { useDashboardContentVisibility } from '../../hooks/use-status-data'
-import { AnnouncementsPanel } from './announcements-panel'
-import { SummaryCards } from './summary-cards'
-import { TodayPanel } from './today-panel'
-
-function getGreetingKey(hour: number): string {
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
-function WelcomeHeader() {
-  const { t, i18n } = useTranslation()
-  const user = useAuthStore((state) => state.auth.user)
-
-  const greetingKey = useMemo(
-    () => getGreetingKey(new Date().getHours()),
-    []
-  )
-  const dateLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat(toIntlLocale(i18n.language) ?? 'en', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long',
-      }).format(new Date()),
-    [i18n.language]
-  )
-
-  return (
-    <div className='flex flex-wrap items-center justify-between gap-3'>
-      <div className='min-w-0'>
-        <h2 className='truncate text-xl font-bold tracking-tight sm:text-2xl'>
-          {t(greetingKey)}
-          {user?.username ? `，${user.username}` : ''}
-        </h2>
-        <p className='text-muted-foreground mt-1 text-sm'>{dateLabel}</p>
-      </div>
-      <div className='flex flex-wrap items-center gap-2'>
-        <Button size='sm' render={<Link to='/keys' />}>
-          <KeyRound data-icon='inline-start' />
-          {t('Create API Key')}
-        </Button>
-        <Button size='sm' variant='outline' render={<Link to='/wallet' />}>
-          <CreditCard data-icon='inline-start' />
-          {t('Add credits')}
-        </Button>
-        <Button size='sm' variant='outline' render={<Link to='/playground' />}>
-          <TerminalSquare data-icon='inline-start' />
-          {t('Playground')}
-        </Button>
-      </div>
-    </div>
-  )
-}
+import { AccountStatCards } from './account-stat-cards'
+import { ModelUsageStatisticsCard } from './model-usage-statistics-card'
+import { NoticeCard } from './notice-card'
+import { TodayStatCards } from './today-stat-cards'
+import { WelcomeHeader } from './welcome-header'
 
 export function OverviewDashboard() {
   const { t } = useTranslation()
-  const { announcements: showAnnouncementsPanel } =
-    useDashboardContentVisibility()
+  const { announcements: showNoticeCard } = useDashboardContentVisibility()
 
   return (
     <SectionPageLayout>
-      <SectionPageLayout.Title>{t('Overview')}</SectionPageLayout.Title>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb items={[{ label: t('Dashboard') }]} />
+      </SectionPageLayout.Breadcrumb>
       <SectionPageLayout.Content>
-        <div className='flex flex-col gap-4'>
+        <div className='space-y-6'>
           <WelcomeHeader />
-          <SummaryCards />
-          <TodayPanel />
-          {showAnnouncementsPanel && <AnnouncementsPanel />}
+          <AccountStatCards />
+          <TodayStatCards />
+          {showNoticeCard ? (
+            <div className='grid gap-4 xl:grid-cols-3'>
+              <ModelUsageStatisticsCard className='xl:col-span-2' />
+              <NoticeCard />
+            </div>
+          ) : (
+            <ModelUsageStatisticsCard />
+          )}
         </div>
       </SectionPageLayout.Content>
     </SectionPageLayout>

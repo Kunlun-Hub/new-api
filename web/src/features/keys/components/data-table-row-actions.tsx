@@ -18,59 +18,36 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { Row } from '@tanstack/react-table'
 import {
-  Trash2,
-  Edit,
-  Power,
-  PowerOff,
   ExternalLink,
-  ArrowRightLeft,
-  Copy,
-  Link,
-  Loader2,
+  MessageCircle,
+  MessageSquare,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { DataTableRowActionMenu } from '@/components/data-table/core/row-action-menu'
 import { Button } from '@/components/ui/button'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuShortcut,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Popconfirm } from '@/components/ui/popconfirm'
+import { Separator } from '@/components/ui/separator'
 import { useChatPresets } from '@/features/chat/hooks/use-chat-presets'
 import { resolveChatUrl, type ChatPreset } from '@/features/chat/lib/chat-links'
 import { sendToFluent } from '@/features/chat/lib/send-to-fluent'
-import { encodeChannelConnectionInfo } from '@/lib/channel-connection-info'
-import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { handleServerError } from '@/lib/handle-server-error'
 
-import { updateApiKeyStatus } from '../api'
-import { API_KEY_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
+import { deleteApiKey } from '../api'
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import { apiKeySchema } from '../types'
 import { useApiKeys } from './api-keys-provider'
-
-function getServerAddress(): string {
-  try {
-    const raw = localStorage.getItem('status')
-    if (raw) {
-      const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address as string
-    }
-  } catch {
-    /* empty */
-  }
-  return window.location.origin
-}
 
 type DataTableRowActionsProps<TData> = {
   row: Row<TData>
@@ -85,17 +62,10 @@ export function DataTableRowActions<TData>({
     setOpen,
     setCurrentRow,
     triggerRefresh,
-    setResolvedKey,
     resolveRealKey,
-    loadingKeys,
+    setResolvedKey,
   } = useApiKeys()
-  const isEnabled = apiKey.status === API_KEY_STATUS.ENABLED
   const { chatPresets, serverAddress } = useChatPresets()
-  const [isTogglingStatus, setIsTogglingStatus] = useState(false)
-  const isRealKeyLoading = Boolean(loadingKeys[apiKey.id])
-
-  const hasChatPresets = chatPresets.length > 0
-  const toggleLabel = isEnabled ? t('Disable') : t('Enable')
 
   const handleOpenChatPreset = useCallback(
     async (preset: ChatPreset) => {
@@ -138,169 +108,104 @@ export function DataTableRowActions<TData>({
     [resolveRealKey, apiKey.id, serverAddress, t]
   )
 
-  const handleToggleStatus = async (
-    event?: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event?.stopPropagation()
-    const newStatus = isEnabled
-      ? API_KEY_STATUS.DISABLED
-      : API_KEY_STATUS.ENABLED
-
-    setIsTogglingStatus(true)
+  const handleDelete = useCallback(async () => {
     try {
-      const result = await updateApiKeyStatus(apiKey.id, newStatus)
+      const result = await deleteApiKey(apiKey.id)
       if (result.success) {
-        const message = isEnabled
-          ? t(SUCCESS_MESSAGES.API_KEY_DISABLED)
-          : t(SUCCESS_MESSAGES.API_KEY_ENABLED)
-        toast.success(message)
+        toast.success(t(SUCCESS_MESSAGES.API_KEY_DELETED))
         triggerRefresh()
       } else {
-        handleServerError(result, t(ERROR_MESSAGES.STATUS_UPDATE_FAILED))
+        handleServerError(result, t(ERROR_MESSAGES.DELETE_FAILED))
       }
     } catch (error) {
       handleServerError(error, t(ERROR_MESSAGES.UNEXPECTED))
-    } finally {
-      setIsTogglingStatus(false)
     }
-  }
-
-  let statusIcon = <Power className='size-4' />
-  if (isTogglingStatus) {
-    statusIcon = <Loader2 className='size-4 animate-spin' />
-  } else if (isEnabled) {
-    statusIcon = <PowerOff className='size-4' />
-  }
+  }, [apiKey.id, t, triggerRefresh])
 
   return (
-    <div className='-ml-1.5 flex items-center gap-1'>
-      <Tooltip>
-        <TooltipTrigger
+    <div className='flex items-center justify-end gap-1'>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger
           render={
             <Button
+              size='sm'
               variant='ghost'
-              size='icon-sm'
-              onClick={handleToggleStatus}
-              disabled={isTogglingStatus}
-              aria-label={toggleLabel}
-              className={
-                isEnabled
-                  ? 'text-destructive hover:text-destructive'
-                  : 'text-emerald-600 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-400'
-              }
+              aria-label={t('Connect App')}
+              className='data-popup-open:bg-muted'
             />
           }
         >
-          {statusIcon}
-        </TooltipTrigger>
-        <TooltipContent>{toggleLabel}</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant='ghost'
-              size='icon-sm'
-              onClick={() => {
+          <MessageSquare className='size-3.5' aria-hidden='true' />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end' className='min-w-60'>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              className='flex items-center gap-2'
+              onClick={async () => {
+                const realKey = await resolveRealKey(apiKey.id)
+                if (!realKey) return
+                setResolvedKey(realKey)
                 setCurrentRow(apiKey)
-                setOpen('update')
+                setOpen('cc-switch')
               }}
-              aria-label={t('Edit')}
-            />
-          }
-        >
-          <Edit />
-        </TooltipTrigger>
-        <TooltipContent>{t('Edit')}</TooltipContent>
-      </Tooltip>
+            >
+              <span
+                className='bg-card flex size-6 shrink-0 items-center justify-center rounded-md border'
+                aria-hidden='true'
+              >
+                <ExternalLink strokeWidth={2.5} className='size-3' />
+              </span>
+              <span>{t('Configure CC Switch')}</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          {chatPresets.length > 0 && <DropdownMenuSeparator />}
+          <DropdownMenuGroup>
+            {chatPresets.map((preset) => (
+              <DropdownMenuItem
+                key={preset.id}
+                className='flex items-center gap-2'
+                onClick={() => void handleOpenChatPreset(preset)}
+              >
+                <span className='bg-card flex size-6 shrink-0 items-center justify-center rounded-md border'>
+                  <MessageCircle className='size-3 fill-cyan-500/10' />
+                </span>
+                <span>{preset.name}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      <DataTableRowActionMenu
-        ariaLabel={t('Open menu')}
-        contentClassName='w-[200px]'
-        modal={false}
+      <Separator orientation='vertical' className='h-2 self-center' />
+
+      <Button
+        size='sm'
+        variant='ghost'
+        aria-label={t('Edit')}
+        onClick={() => {
+          setCurrentRow(apiKey)
+          setOpen('update')
+        }}
       >
-        <DropdownMenuItem
-          disabled={isRealKeyLoading}
-          onClick={async () => {
-            const realKey = await resolveRealKey(apiKey.id)
-            if (!realKey) return
-            const ok = await copyToClipboard(realKey)
-            if (ok) toast.success(t('Copied'))
-          }}
-        >
-          {t('Copy Key')}
-          <DropdownMenuShortcut>
-            <Copy size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={isRealKeyLoading}
-          onClick={async () => {
-            const realKey = await resolveRealKey(apiKey.id)
-            if (!realKey) return
-            const connStr = encodeChannelConnectionInfo(
-              realKey,
-              getServerAddress()
-            )
-            const ok = await copyToClipboard(connStr)
-            if (ok) toast.success(t('Copied'))
-          }}
-        >
-          {t('Copy Connection Info')}
-          <DropdownMenuShortcut>
-            <Link size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={async () => {
-            const realKey = await resolveRealKey(apiKey.id)
-            if (!realKey) return
-            setResolvedKey(realKey)
-            setCurrentRow(apiKey)
-            setOpen('cc-switch')
-          }}
-        >
-          {t('CC Switch')}
-          <DropdownMenuShortcut>
-            <ArrowRightLeft size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        {hasChatPresets && (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>{t('Chat')}</DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              {chatPresets.map((preset) => (
-                <DropdownMenuItem
-                  key={preset.id}
-                  onClick={() => handleOpenChatPreset(preset)}
-                >
-                  {preset.name}
-                  {preset.type !== 'web' && (
-                    <DropdownMenuShortcut>
-                      <ExternalLink size={16} />
-                    </DropdownMenuShortcut>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            setCurrentRow(apiKey)
-            setOpen('delete')
-          }}
-          className='text-destructive focus:text-destructive'
-        >
-          {t('Delete')}
-          <DropdownMenuShortcut>
-            <Trash2 size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-      </DataTableRowActionMenu>
+        <Pencil className='size-3.5' aria-hidden='true' />
+      </Button>
+
+      <Separator orientation='vertical' className='h-2 self-center' />
+
+      <Popconfirm
+        title={t('Are you sure you want to delete "{{name}}"?', {
+          name: apiKey.name,
+        })}
+        description={t('This action cannot be undone.')}
+        confirmText={t('Delete')}
+        cancelText={t('Cancel')}
+        destructive
+        onConfirm={handleDelete}
+      >
+        <Button size='sm' variant='ghost' aria-label={t('Delete')}>
+          <Trash2 className='size-3.5' aria-hidden='true' />
+        </Button>
+      </Popconfirm>
     </div>
   )
 }

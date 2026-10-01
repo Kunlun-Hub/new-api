@@ -59,7 +59,7 @@ export function getQuotaTypeLabels(
   t: TFunction
 ): Record<QuotaTypeOption, string> {
   return {
-    [QUOTA_TYPES.ALL]: t('All Models'),
+    [QUOTA_TYPES.ALL]: t('All'),
     [QUOTA_TYPES.TOKEN]: t('Token-based'),
     [QUOTA_TYPES.REQUEST]: t('Per Request'),
     [QUOTA_TYPES.TASK]: t('Task billing'),
@@ -87,7 +87,7 @@ export function getEndpointTypeLabels(
   t: TFunction
 ): Record<EndpointTypeOption, string> {
   return {
-    [ENDPOINT_TYPES.ALL]: t('All Types'),
+    [ENDPOINT_TYPES.ALL]: t('All'),
     [ENDPOINT_TYPES.OPENAI]: 'Chat',
     [ENDPOINT_TYPES.OPENAI_RESPONSE]: 'Response',
     [ENDPOINT_TYPES.ANTHROPIC]: 'Anthropic',
@@ -144,4 +144,4 @@ export const VIEW_MODES = {
 export type ViewMode = (typeof VIEW_MODES)[keyof typeof VIEW_MODES]
 
 /** Default page size for pricing table */
-export const DEFAULT_PRICING_PAGE_SIZE = 20
+export const DEFAULT_PRICING_PAGE_SIZE = 30

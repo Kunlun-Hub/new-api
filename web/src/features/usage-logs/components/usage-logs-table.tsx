@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -27,6 +27,7 @@ import {
   DataTableRow,
   useDataTable,
 } from '@/components/data-table'
+import { TableRowsIllustration } from '@/components/empty-illustrations'
 import {
   getAdminPlans,
   getSelfSubscriptionFull,
@@ -46,11 +47,27 @@ import { shouldShowBillingSource } from '../lib/billing-source'
 import { useColumnsByCategory } from '../lib/columns'
 import { parseLogOther } from '../lib/format'
 import { fetchLogsByCategory } from '../lib/utils'
-import type { LogCategory } from '../types'
+import type { LogCategory, MidjourneyLog, TaskLog } from '../types'
 import { CommonLogsFilterBar } from './common-logs-filter-bar'
+import { DrawingTaskDialog } from './dialogs/drawing-task-dialog'
+import { TaskDetailsDialog } from './dialogs/task-details-dialog'
+import { LogsFooterNote } from './logs-footer-note'
 import { TaskLogsFilterBar } from './task-logs-filter-bar'
 import { UsageLogsMobileList } from './usage-logs-mobile-card'
 import { useLogsViewScope, type LogsViewAccess } from './usage-logs-provider'
+
+/** Drawing logs hide media and failure details by default, matching the reference console. */
+const INITIAL_DRAWING_COLUMN_VISIBILITY = {
+  image_url: false,
+  fail_reason: false,
+  code: false,
+}
+
+/** Task logs keep our extra columns (task plugin, artifacts) behind the column chooser. */
+const INITIAL_TASK_COLUMN_VISIBILITY = {
+  plugin: false,
+  artifacts: false,
+}
 
 const route = getRouteApi('/_authenticated/usage-logs/$section')
 
@@ -131,7 +148,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
   } = useTableUrlState({
     search: route.useSearch(),
     navigate: route.useNavigate(),
-    pagination: { defaultPage: 1, defaultPageSize: isMobile ? 20 : 100 },
+    pagination: { defaultPage: 1, defaultPageSize: 10 },
     globalFilter: { enabled: false },
     columnFilters: [
       {
@@ -207,10 +224,20 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
   )
   const isLoadingData = isLoading || (isFetching && !data)
 
+  // The reference console keeps image and failure details in the column
+  // chooser only, so they start hidden until the user enables them.
+  let initialColumnVisibility: Record<string, boolean> | undefined
+  if (logCategory === 'drawing') {
+    initialColumnVisibility = INITIAL_DRAWING_COLUMN_VISIBILITY
+  } else if (logCategory === 'task') {
+    initialColumnVisibility = INITIAL_TASK_COLUMN_VISIBILITY
+  }
+
   const { table } = useDataTable({
     data: logs as Record<string, unknown>[],
     columns: columns as ColumnDef<Record<string, unknown>>[],
     columnFilters,
+    initialColumnVisibility,
     columnVisibilityStorageKey: getColumnVisibilityStorageKey(
       logCategory,
       viewAccess
@@ -226,62 +253,106 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
   })
 
   const isCommon = logCategory === 'common'
+  const [selectedDrawingTask, setSelectedDrawingTask] =
+    useState<MidjourneyLog | null>(null)
+  const [selectedTaskLog, setSelectedTaskLog] = useState<TaskLog | null>(null)
 
   return (
-    <DataTablePage
-      table={table}
-      compactPagination={isMobile && isCommon}
-      columns={columns as ColumnDef<Record<string, unknown>>[]}
-      isLoading={isLoadingData}
-      isFetching={isFetching}
-      emptyTitle={t('No Logs Found')}
-      emptyDescription={t(
-        'No usage logs available. Logs will appear here once API calls are made.'
-      )}
-      skeletonKeyPrefix='usage-log-skeleton'
-      applyHeaderSize
-      tableClassName={cn(
-        '[&_[data-slot=table]]:text-[13px] [&_[data-slot=table]_td]:text-[13px] [&_[data-slot=table]_td_*]:text-[13px] [&_[data-slot=table]_th]:text-[13px] [&_[data-slot=table]_th_*]:text-[13px]'
-      )}
-      mobile={
-        <UsageLogsMobileList
-          table={table}
-          isLoading={isLoadingData}
-          logCategory={logCategory}
-        />
-      }
-      toolbar={
-        isCommon ? (
-          <CommonLogsFilterBar table={table} />
-        ) : (
-          <TaskLogsFilterBar table={table} logCategory={logCategory} />
-        )
-      }
-      renderRow={(row) => {
-        const logType = (row.original as Record<string, unknown>).type as
-          | number
-          | undefined
-        let tintClass =
-          isCommon && logType != null ? (logTypeRowTint[logType] ?? '') : ''
-        if (isCommon && isAdmin) {
-          const other = parseLogOther(
-            ((row.original as Record<string, unknown>).other as string) ?? ''
-          )
-          if (other?.admin_info?.quota_saturation) {
-            tintClass = quotaSaturationRowTint
-          }
-        }
-
-        return (
-          <DataTableRow
-            key={row.id}
-            row={row}
-            className={cn('transition-colors', tintClass)}
-            getColumnClassName={getColumnClassName}
-            cellRenderColumns={table.options.columns}
+    <>
+      <DataTablePage
+        table={table}
+        fixedHeight={false}
+        cardSurface
+        cardSurfaceToolbar={false}
+        compactPagination={isMobile && isCommon}
+        columns={columns as ColumnDef<Record<string, unknown>>[]}
+        isLoading={isLoadingData}
+        isFetching={isFetching}
+        emptyTitle=''
+        emptyDescription={t('No data')}
+        emptyIcon={<TableRowsIllustration />}
+        emptyCellClassName='h-[320px] p-0'
+        afterTable={<LogsFooterNote logCategory={logCategory} />}
+        skeletonKeyPrefix='usage-log-skeleton'
+        applyHeaderSize
+        tableClassName={cn(
+          '[&_[data-slot=table]]:text-[13px] [&_[data-slot=table]_td]:text-[13px] [&_[data-slot=table]_td_*]:text-[13px] [&_[data-slot=table]_th]:text-[13px] [&_[data-slot=table]_th_*]:text-[13px]'
+        )}
+        mobile={
+          <UsageLogsMobileList
+            table={table}
+            isLoading={isLoadingData}
+            logCategory={logCategory}
           />
-        )
-      }}
-    />
+        }
+        toolbar={
+          isCommon ? (
+            <CommonLogsFilterBar table={table} />
+          ) : (
+            <TaskLogsFilterBar table={table} logCategory={logCategory} />
+          )
+        }
+        renderRow={(row) => {
+          const logType = (row.original as Record<string, unknown>).type as
+            | number
+            | undefined
+          let tintClass =
+            isCommon && logType != null ? (logTypeRowTint[logType] ?? '') : ''
+          if (isCommon && isAdmin) {
+            const other = parseLogOther(
+              ((row.original as Record<string, unknown>).other as string) ?? ''
+            )
+            if (other?.admin_info?.quota_saturation) {
+              tintClass = quotaSaturationRowTint
+            }
+          }
+
+          let onRowClick: (() => void) | undefined
+          if (logCategory === 'drawing') {
+            onRowClick = () =>
+              setSelectedDrawingTask(row.original as unknown as MidjourneyLog)
+          } else if (logCategory === 'task') {
+            onRowClick = () =>
+              setSelectedTaskLog(row.original as unknown as TaskLog)
+          }
+
+          return (
+            <DataTableRow
+              key={row.id}
+              row={row}
+              className={cn(
+                'transition-colors',
+                tintClass,
+                (logCategory === 'drawing' || logCategory === 'task') &&
+                  'cursor-pointer hover:[background-color:color-mix(in_oklch,var(--muted)_50%,var(--background))]'
+              )}
+              onClick={onRowClick}
+              getColumnClassName={getColumnClassName}
+              cellRenderColumns={table.options.columns}
+            />
+          )
+        }}
+      />
+      <DrawingTaskDialog
+        log={selectedDrawingTask}
+        open={selectedDrawingTask !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedDrawingTask(null)
+          }
+        }}
+      />
+      <TaskDetailsDialog
+        log={selectedTaskLog}
+        isAdmin={isAdmin}
+        isRoot={isRoot}
+        open={selectedTaskLog !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskLog(null)
+          }
+        }}
+      />
+    </>
   )
 }

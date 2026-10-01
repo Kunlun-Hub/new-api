@@ -108,6 +108,15 @@ export function formatQuota(quota: number): string {
 }
 
 /**
+ * Format quota as a fixed two-decimal amount, the way the console shows
+ * balances, accumulated spend and earnings (`$0.00`, `$0.30`, `$1.00`).
+ * Model prices and log rows keep using {@link formatQuota}.
+ */
+export function formatQuotaFixed(quota: number): string {
+  return formatQuotaWithCurrency(quota, { fixedFractionDigits: 2 })
+}
+
+/**
  * Parse quota from the current display input back to quota units.
  */
 export function parseQuotaFromDollars(amount: number): number {
@@ -202,6 +211,16 @@ export function formatTimestampToDate(
   }
   const ms = unit === 'seconds' ? timestamp * 1000 : timestamp
   return dayjs(ms).format('YYYY-MM-DD HH:mm:ss')
+}
+
+/**
+ * Format timestamp (seconds) to YYYY-MM-DD HH:mm, matching the panel tables.
+ */
+export function formatTimestampToMinute(timestamp?: number): string {
+  if (!timestamp || timestamp === -1 || timestamp === 0) {
+    return '-'
+  }
+  return dayjs(timestamp * 1000).format('YYYY-MM-DD HH:mm')
 }
 
 /**

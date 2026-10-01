@@ -18,7 +18,31 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/fr'
+import 'dayjs/locale/ja'
+import 'dayjs/locale/ru'
+import 'dayjs/locale/vi'
+import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/zh-tw'
 
 dayjs.extend(relativeTime)
+
+const DAYJS_LOCALES: Record<string, string> = {
+  en: 'en',
+  zhCN: 'zh-cn',
+  zhTW: 'zh-tw',
+  fr: 'fr',
+  ru: 'ru',
+  ja: 'ja',
+  vi: 'vi',
+}
+
+/**
+ * Align dayjs (relative time, month names) with the interface language so
+ * `fromNow()` and friends follow the selected locale.
+ */
+export function syncDayjsLocale(language?: string) {
+  dayjs.locale(DAYJS_LOCALES[language ?? ''] ?? 'en')
+}
 
 export default dayjs

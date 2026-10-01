@@ -16,19 +16,36 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ExternalLink, Info, RefreshCw } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Combobox } from '@/components/ui/combobox'
+import { ComboboxInput } from '@/components/ui/combobox-input'
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { getUserModels } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
+
+import { useApiAddresses } from '../../hooks/use-api-addresses'
 
 const APP_CONFIGS = {
   claude: {
@@ -36,9 +53,17 @@ const APP_CONFIGS = {
     defaultName: 'My Claude',
     modelFields: [
       { key: 'model', labelKey: 'Primary Model', required: true },
-      { key: 'haikuModel', labelKey: 'Haiku Model', required: false },
-      { key: 'sonnetModel', labelKey: 'Sonnet Model', required: false },
-      { key: 'opusModel', labelKey: 'Opus Model', required: false },
+      {
+        key: 'haikuModel',
+        labelKey: 'Haiku Model (optional)',
+        required: false,
+      },
+      {
+        key: 'sonnetModel',
+        labelKey: 'Sonnet Model (optional)',
+        required: false,
+      },
+      { key: 'opusModel', labelKey: 'Opus Model (optional)', required: false },
     ],
   },
   codex: {
@@ -55,26 +80,13 @@ const APP_CONFIGS = {
 
 type AppType = keyof typeof APP_CONFIGS
 
-function getServerAddress(): string {
-  try {
-    const raw = localStorage.getItem('status')
-    if (raw) {
-      const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address
-    }
-  } catch {
-    /* empty */
-  }
-  return window.location.origin
-}
-
 function buildCCSwitchURL(
   app: string,
   name: string,
   models: Record<string, string>,
-  apiKey: string
+  apiKey: string,
+  serverAddress: string
 ): string {
-  const serverAddress = getServerAddress()
   const endpoint = app === 'codex' ? `${serverAddress}/v1` : serverAddress
   const params = new URLSearchParams()
   params.set('resource', 'provider')
@@ -94,15 +106,19 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   tokenKey: string
+  tokenName?: string
 }
 
 export function CCSwitchDialog(props: Props) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { addresses } = useApiAddresses()
   const [app, setApp] = useState<AppType>('claude')
   const [name, setName] = useState<string>(APP_CONFIGS.claude.defaultName)
+  const [baseUrl, setBaseUrl] = useState<string>('')
   const [models, setModels] = useState<Record<string, string>>({})
 
-  const { data: modelsData } = useQuery({
+  const { data: modelsData, isFetching } = useQuery({
     queryKey: ['user-models-ccswitch'],
     queryFn: async () => requireServerSuccess(await getUserModels()),
     enabled: props.open,
@@ -111,38 +127,56 @@ export function CCSwitchDialog(props: Props) {
 
   const modelOptions = useMemo(() => {
     const items = modelsData?.data ?? []
-    return items.map((m) => ({ value: m, label: m }))
+    return items.map((model) => ({ value: model, label: model }))
   }, [modelsData?.data])
 
+  const wasOpen = useRef(false)
+  const primaryAddress = addresses[0]?.url ?? ''
+
   useEffect(() => {
-    if (props.open) {
+    if (!props.open) {
+      wasOpen.current = false
+      return
+    }
+    if (!wasOpen.current) {
+      wasOpen.current = true
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setModels({})
 
       setApp('claude')
 
-      setName(APP_CONFIGS.claude.defaultName)
+      setName(props.tokenName || APP_CONFIGS.claude.defaultName)
     }
-  }, [props.open])
+    if (!baseUrl && primaryAddress) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBaseUrl(primaryAddress)
+    }
+  }, [props.open, props.tokenName, baseUrl, primaryAddress])
 
   const currentConfig = APP_CONFIGS[app]
 
-  const handleAppChange = (val: string) => {
-    const appVal = val as AppType
-    setApp(appVal)
-    setName(APP_CONFIGS[appVal].defaultName)
+  const handleAppChange = (values: string[]) => {
+    const nextApp = (values[0] ?? 'claude') as AppType
+    setApp(nextApp)
     setModels({})
   }
+
+  const handleRefreshModels = () => {
+    void queryClient.invalidateQueries({ queryKey: ['user-models-ccswitch'] })
+  }
+
+  const selectedAddress = addresses.find((address) => address.url === baseUrl)
 
   const handleSubmit = () => {
     if (!models.model) {
       toast.warning(t('Please select a primary model'))
       return
     }
+    const serverAddress = baseUrl || addresses[0]?.url || ''
     const key = props.tokenKey.startsWith('sk-')
       ? props.tokenKey
       : `sk-${props.tokenKey}`
-    const url = buildCCSwitchURL(app, name, models, key)
+    const url = buildCCSwitchURL(app, name, models, key, serverAddress)
     window.open(url, '_blank')
     props.onOpenChange(false)
   }
@@ -151,72 +185,124 @@ export function CCSwitchDialog(props: Props) {
     <Dialog
       open={props.open}
       onOpenChange={props.onOpenChange}
-      title={t('Import to CC Switch')}
-      contentClassName='sm:max-w-md'
+      title={t('Configure CC Switch')}
+      description={t(
+        'Pick a line and models, then open the installed CC Switch'
+      )}
+      contentClassName='sm:max-w-lg'
       contentHeight='auto'
-      bodyClassName='space-y-4'
       footer={
         <>
           <Button variant='outline' onClick={() => props.onOpenChange(false)}>
             {t('Cancel')}
           </Button>
-          <Button onClick={handleSubmit}>{t('Open CC Switch')}</Button>
+          <Button onClick={handleSubmit} disabled={!models.model}>
+            <ExternalLink aria-hidden='true' />
+            {t('Fill into CC Switch')}
+          </Button>
         </>
       }
     >
-      <div className='space-y-4'>
-        <div className='space-y-2'>
-          <Label>{t('Application')}</Label>
-          <RadioGroup
-            value={app}
+      <FieldGroup className='gap-5'>
+        <Field>
+          <FieldLabel>{t('Application')}</FieldLabel>
+          <ToggleGroup
+            variant='outline'
+            value={[app]}
             onValueChange={handleAppChange}
-            className='flex gap-4'
+            className='w-fit'
           >
-            {(
-              Object.entries(APP_CONFIGS) as [
-                AppType,
-                (typeof APP_CONFIGS)[AppType],
-              ][]
-            ).map(([key, cfg]) => (
-              <div key={key} className='flex items-center gap-2'>
-                <RadioGroupItem value={key} id={`app-${key}`} />
-                <Label htmlFor={`app-${key}`} className='cursor-pointer'>
-                  {cfg.label}
-                </Label>
-              </div>
+            {Object.entries(APP_CONFIGS).map(([key, config]) => (
+              <ToggleGroupItem key={key} value={key}>
+                {config.label}
+              </ToggleGroupItem>
             ))}
-          </RadioGroup>
-        </div>
+          </ToggleGroup>
+        </Field>
 
-        <div className='space-y-2'>
-          <Label htmlFor='cc-switch-name'>{t('Name')}</Label>
+        <Field>
+          <FieldLabel htmlFor='cc-switch-name'>{t('Name')}</FieldLabel>
           <Input
             id='cc-switch-name'
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder={currentConfig.defaultName}
           />
-        </div>
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor='cc-switch-base-url'>{t('BaseURL')}</FieldLabel>
+          <Select
+            items={addresses.map((address) => ({
+              value: address.url,
+              label: `${address.route} · ${address.url}`,
+            }))}
+            value={baseUrl}
+            onValueChange={(value) => setBaseUrl(value ?? '')}
+          >
+            <SelectTrigger id='cc-switch-base-url' className='w-full'>
+              <SelectValue placeholder={t('Select an API address')} />
+            </SelectTrigger>
+            <SelectContent alignItemWithTrigger={false}>
+              <SelectGroup>
+                {addresses.map((address) => (
+                  <SelectItem key={address.url} value={address.url}>
+                    {address.route} · {address.url}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          {selectedAddress?.description ? (
+            <FieldDescription>{selectedAddress.description}</FieldDescription>
+          ) : null}
+        </Field>
+
+        <Alert>
+          <Info aria-hidden='true' />
+          <AlertDescription>
+            {t(
+              'Available models depend on the current token permissions and group. Edit the token to change its group.'
+            )}
+          </AlertDescription>
+        </Alert>
 
         {currentConfig.modelFields.map((field) => (
-          <div key={field.key} className='space-y-2'>
-            <Label htmlFor={`cc-switch-${field.key}`} required={field.required}>
-              {t(field.labelKey)}
-            </Label>
-            <Combobox
+          <Field key={field.key}>
+            <div className='flex items-center justify-between'>
+              <FieldLabel htmlFor={`cc-switch-${field.key}`}>
+                {t(field.labelKey)}
+              </FieldLabel>
+              {field.required && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={handleRefreshModels}
+                >
+                  <RefreshCw
+                    aria-hidden='true'
+                    className={isFetching ? 'animate-spin' : undefined}
+                  />
+                  {t('Refresh')}
+                </Button>
+              )}
+            </div>
+            <ComboboxInput
               id={`cc-switch-${field.key}`}
               aria-label={t(field.labelKey)}
               options={modelOptions}
               value={models[field.key] || ''}
-              onValueChange={(v) =>
-                setModels((prev) => ({ ...prev, [field.key]: v ?? '' }))
+              onValueChange={(value) =>
+                setModels((prev) => ({ ...prev, [field.key]: value }))
               }
-              placeholder={t('Select or enter model name')}
+              placeholder={t('Search and select a model')}
               emptyText={t('No models found')}
+              allowCustomValue
             />
-          </div>
+          </Field>
         ))}
-      </div>
+      </FieldGroup>
     </Dialog>
   )
 }

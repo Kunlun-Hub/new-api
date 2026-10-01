@@ -103,6 +103,20 @@ export function mapStatusDataToConfig(
   }
 }
 
+/**
+ * Notification rate limit advertised by the backend, in minutes.
+ * Returns 0 when the value is unknown or unusable.
+ */
+export function getNotificationLimitMinutes(
+  status: StatusData | undefined | null
+): number {
+  if (!status) return 0
+  return Math.max(
+    0,
+    Math.trunc(toNumber(status.notification_limit_duration_minute, 0))
+  )
+}
+
 /** Read the last known status from localStorage (survives reload, may be stale). */
 export function readCachedStatus(): StatusData | null {
   try {

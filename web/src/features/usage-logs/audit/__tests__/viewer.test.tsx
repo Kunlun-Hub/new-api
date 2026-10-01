@@ -31,6 +31,7 @@ import { createInstance } from 'i18next'
 import { I18nextProvider } from 'react-i18next'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
+import { SidebarProvider } from '@/components/ui/sidebar'
 import en from '@/i18n/locales/en.json'
 import fr from '@/i18n/locales/fr.json'
 import ja from '@/i18n/locales/ja.json'
@@ -270,10 +271,10 @@ it('uses the shared log toolbar and opens details in a keyboard-accessible dialo
   })
   renderViewer()
   expect(screen.getByRole('button', { name: 'Date Range' })).toBeVisible()
-  expect(screen.getByRole('button', { name: 'Search' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Query' })).toBeVisible()
   expect(
     await screen.findByRole('button', { name: 'Go to next page' })
-  ).toBeDisabled()
+  ).toHaveAttribute('aria-disabled', 'true')
   const trigger = await screen.findByRole('button', { name: 'Details' })
   const row = screen.getByRole('row', { name: /127.0.0.1/ })
   const clientCell = within(row).getByRole('cell', {
@@ -491,7 +492,7 @@ it('administrator scope uses the admin endpoint and exposes the username filter'
     data: { success: true, data: { items: [], total: 0 } },
   })
   renderViewer('all')
-  await userEvent.click(screen.getByRole('button', { name: 'Expand' }))
+  await userEvent.click(screen.getByRole('button', { name: 'More filters' }))
   fireEvent.change(screen.getByLabelText('Username'), {
     target: { value: 'alice' },
   })
@@ -545,7 +546,9 @@ it.each([10, 100])(
     })
     render(
       <QueryClientProvider client={client}>
-        <AuditLogs />
+        <SidebarProvider>
+          <AuditLogs />
+        </SidebarProvider>
       </QueryClientProvider>
     )
     expect(screen.getByRole('tab', { name: 'All' })).toHaveAttribute(
@@ -587,7 +590,9 @@ it.each([1, 10])(
     })
     render(
       <QueryClientProvider client={client}>
-        <AuditLogs />
+        <SidebarProvider>
+          <AuditLogs />
+        </SidebarProvider>
       </QueryClientProvider>
     )
     await waitFor(() =>
@@ -669,7 +674,9 @@ it('clears global records and open details on revocation, falls back to self, an
   client.setQueryData(['audit', 99, 'all'], { items: ['separate-session'] })
   render(
     <QueryClientProvider client={client}>
-      <AuditLogs />
+      <SidebarProvider>
+        <AuditLogs />
+      </SidebarProvider>
     </QueryClientProvider>
   )
   await screen.findByText('other-account')
@@ -736,7 +743,7 @@ it('mobile access history keeps pagination visible and puts result filters in a 
         params: expect.objectContaining({ success: 'false', p: 1 }),
       })
     )
-    await user.click(within(drawer).getByRole('button', { name: 'Search' }))
+    await user.click(within(drawer).getByRole('button', { name: 'Query' }))
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     )

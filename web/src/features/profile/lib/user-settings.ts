@@ -20,18 +20,49 @@ import {
   DEFAULT_QUOTA_WARNING_THRESHOLD,
   NOTIFICATION_METHODS,
 } from '../constants'
-import type { NotifyType, UpdateUserSettingsRequest } from '../types'
+import type {
+  NotificationMethod,
+  NotifyType,
+  UpdateUserSettingsRequest,
+} from '../types'
 import { parseUserSettings } from './format'
+
+const NOTIFY_TYPES = new Set<string>([
+  'email',
+  'webhook',
+  'wecom',
+  'dingtalk',
+  'feishu',
+  'telegram',
+  'bark',
+  'gotify',
+])
+
+/** Keep every stored channel, including the legacy Bark/Gotify values. */
+function toNotifyType(value: unknown): NotifyType {
+  return typeof value === 'string' && NOTIFY_TYPES.has(value)
+    ? (value as NotifyType)
+    : 'email'
+}
+
+/**
+ * Channel shown in the profile UI. Legacy channels fall back to email so the
+ * radio group always has a selection.
+ */
+export function toNotificationMethod(value: unknown): NotificationMethod {
+  const notifyType = toNotifyType(value)
+  return (
+    NOTIFICATION_METHODS.find((method) => method.value === notifyType)?.value ??
+    'email'
+  )
+}
 
 export function normalizeUserSettings(
   setting?: string
-): Required<UpdateUserSettingsRequest> & { notify_type: NotifyType } {
+): Required<UpdateUserSettingsRequest> {
   const parsed = parseUserSettings(setting)
-  const notifyType =
-    NOTIFICATION_METHODS.find((method) => method.value === parsed.notify_type)
-      ?.value ?? 'email'
   return {
-    notify_type: notifyType,
+    notify_type: toNotifyType(parsed.notify_type),
     quota_warning_threshold:
       parsed.quota_warning_threshold ?? DEFAULT_QUOTA_WARNING_THRESHOLD,
     notification_email: parsed.notification_email ?? '',
@@ -46,5 +77,15 @@ export function normalizeUserSettings(
     record_ip_log: parsed.record_ip_log || false,
     upstream_model_update_notify_enabled:
       parsed.upstream_model_update_notify_enabled || false,
+    wecom_url: parsed.wecom_url ?? '',
+    dingtalk_url: parsed.dingtalk_url ?? '',
+    feishu_url: parsed.feishu_url ?? '',
+    telegram_bot_token: parsed.telegram_bot_token ?? '',
+    telegram_chat_id: parsed.telegram_chat_id ?? '',
+    subscribe_quota_insufficient: parsed.subscribe_quota_insufficient ?? true,
+    subscribe_discount: parsed.subscribe_discount ?? true,
+    subscribe_keepalive: parsed.subscribe_keepalive ?? true,
+    subscribe_system_notice: parsed.subscribe_system_notice ?? false,
+    subscribe_model_price_change: parsed.subscribe_model_price_change ?? true,
   }
 }

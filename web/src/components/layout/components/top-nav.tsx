@@ -25,11 +25,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
 import type { TopNavLink } from '../types'
+import { TopNavMenu } from './top-nav-menu'
 
 type TopNavProps = React.HTMLAttributes<HTMLElement> & {
   links: TopNavLink[]
@@ -39,7 +41,7 @@ type TopNavProps = React.HTMLAttributes<HTMLElement> & {
  * 顶部导航栏组件
  * 在大屏幕显示水平导航，在小屏幕显示下拉菜单
  */
-export function TopNav({ className, links, ...props }: TopNavProps) {
+export function TopNav({ className, links }: TopNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   // 规范化链接，确保所有可选属性都有默认值；
@@ -74,79 +76,82 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
             <Menu />
           </DropdownMenuTrigger>
           <DropdownMenuContent side='bottom' align='start'>
-            {normalizedLinks.map(
-              ({ title, href, isActive, disabled, external }) => (
-                <DropdownMenuItem
-                  key={`${title}-${href}`}
-                  render={
-                    external ? (
-                      <a
-                        href={href}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className={
-                          isActive
-                            ? 'text-foreground font-medium'
-                            : 'text-muted-foreground'
+            {normalizedLinks.flatMap(
+              ({ title, href, isActive, disabled, external, items }) => {
+                const linkClassName = isActive
+                  ? 'text-foreground font-medium'
+                  : 'text-muted-foreground'
+
+                if (items?.length) {
+                  return [
+                    <DropdownMenuLabel
+                      key={`group-${title}`}
+                      className='text-muted-foreground text-xs font-normal'
+                    >
+                      {title}
+                    </DropdownMenuLabel>,
+                    ...items.map((item) => (
+                      <DropdownMenuItem
+                        key={`${item.title}-${item.href}`}
+                        render={
+                          <Link to={item.href} className={linkClassName}>
+                            <span className='flex items-center gap-2'>
+                              <span
+                                className={cn(
+                                  'flex size-5 shrink-0 items-center justify-center rounded-md bg-linear-to-br text-white',
+                                  item.gradient
+                                )}
+                              >
+                                {item.icon ? (
+                                  <item.icon className='size-3' />
+                                ) : null}
+                              </span>
+                              {item.title}
+                            </span>
+                          </Link>
                         }
-                      >
-                        {title}
-                      </a>
-                    ) : (
-                      <Link
-                        to={href}
-                        className={
-                          isActive
-                            ? 'text-foreground font-medium'
-                            : 'text-muted-foreground'
-                        }
-                        disabled={disabled}
-                      >
-                        {title}
-                      </Link>
-                    )
-                  }
-                />
-              )
+                      />
+                    )),
+                  ]
+                }
+
+                return [
+                  <DropdownMenuItem
+                    key={`${title}-${href}`}
+                    render={
+                      external ? (
+                        <a
+                          href={href}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className={linkClassName}
+                        >
+                          {title}
+                        </a>
+                      ) : (
+                        <Link
+                          to={href}
+                          className={linkClassName}
+                          disabled={disabled}
+                        >
+                          {title}
+                        </Link>
+                      )
+                    }
+                  />,
+                ]
+              }
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
       {/* 桌面端水平导航 */}
-      <nav
-        className={cn('hidden items-center gap-2 lg:flex', className)}
-        {...props}
-      >
-        {normalizedLinks.map(({ title, href, isActive, disabled, external }) => {
-          const linkClassName = cn(
-            'rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-            isActive
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          )
-          return external ? (
-            <a
-              key={`${title}-${href}`}
-              href={href}
-              target='_blank'
-              rel='noopener noreferrer'
-              className={linkClassName}
-            >
-              {title}
-            </a>
-          ) : (
-            <Link
-              key={`${title}-${href}`}
-              to={href}
-              disabled={disabled}
-              className={linkClassName}
-            >
-              {title}
-            </Link>
-          )
-        })}
-      </nav>
+      <TopNavMenu
+        className={cn('hidden lg:flex', className)}
+        links={normalizedLinks}
+        isLinkActive={(link) => Boolean(link.isActive)}
+      />
     </>
   )
 }

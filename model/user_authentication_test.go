@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -18,6 +19,31 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
+
+func TestSuggestUsernameFromEmail(t *testing.T) {
+	require.Equal(t, "674904341", SuggestUsernameFromEmail("674904341@qq.com"))
+	require.Equal(t, "alice.wang", SuggestUsernameFromEmail("  Alice.Wang@Example.COM "))
+	require.Equal(t, "alice", SuggestUsernameFromEmail("alice.@example.com"))
+	require.Equal(t, "user", SuggestUsernameFromEmail("@example.com"))
+	require.Equal(t, "user", SuggestUsernameFromEmail("张三@example.com"))
+	require.Len(t, SuggestUsernameFromEmail("averyveryverylonglocalpart@example.com"), UsernameMaxLength)
+}
+
+func TestEnsureUniqueUsernameAppendsSuffix(t *testing.T) {
+	truncateTables(t)
+	require.NoError(t, DB.Create(&User{Username: "alice", AffCode: "ua01"}).Error)
+	require.NoError(t, DB.Create(&User{Username: "alice1", AffCode: "ua02"}).Error)
+
+	got, err := EnsureUniqueUsername("alice")
+	require.NoError(t, err)
+	require.Equal(t, "alice2", got)
+
+	long := strings.Repeat("a", UsernameMaxLength)
+	require.NoError(t, DB.Create(&User{Username: long, AffCode: "ua03"}).Error)
+	got, err = EnsureUniqueUsername(long)
+	require.NoError(t, err)
+	require.Equal(t, long[:UsernameMaxLength-1]+"1", got)
+}
 
 func TestHardDeleteUserFailsClosedWhenAuthFenceCannotPublish(t *testing.T) {
 	truncateTables(t)

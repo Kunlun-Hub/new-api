@@ -21,7 +21,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useState, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { FadeIn } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -323,6 +323,14 @@ export function Dashboard() {
 
   return (
     <SectionPageLayout>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb
+          items={[
+            { label: t('Dashboard'), href: '/dashboard/overview' },
+            { label: t(meta.titleKey) },
+          ]}
+        />
+      </SectionPageLayout.Breadcrumb>
       <SectionPageLayout.Title>{t(meta.titleKey)}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='space-y-3 sm:space-y-4'>

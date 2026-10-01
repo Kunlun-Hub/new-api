@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useEffect, useState, type ReactNode } from 'react'
+
 import { PlaygroundChat } from './components/chat/playground-chat'
 import { PlaygroundInput } from './components/input/playground-input'
 import {
@@ -24,22 +26,129 @@ import {
   usePlaygroundOptions,
   usePlaygroundState,
 } from './hooks'
+import type { MessageStateUpdater } from './lib'
+import type {
+  GroupOption,
+  Message,
+  MessageAttachment,
+  ModelOption,
+  ParameterEnabled,
+  PlaygroundConfig,
+} from './types'
 
-export function Playground() {
+/**
+ * Playground state that a host surface (for example the studio chat) owns
+ * itself, so conversations can be stored outside the playground.
+ */
+export type PlaygroundState = {
+  config: PlaygroundConfig
+  parameterEnabled: ParameterEnabled
+  messages: Message[]
+  isLoadingMessages: boolean
+  updateMessages: (updater: MessageStateUpdater) => void
+  updateConfig: <K extends keyof PlaygroundConfig>(
+    key: K,
+    value: PlaygroundConfig[K]
+  ) => void
+  /** Only needed by the default playground composer. */
+  updateParameterEnabled?: (key: keyof ParameterEnabled, value: boolean) => void
+  clearMessages: () => void
+}
+
+/**
+ * Values handed to a host-provided composer, so a surface can render its own
+ * input area while reuse of the conversation and request handling stays here.
+ */
+export type PlaygroundInputRenderProps = {
+  config: PlaygroundConfig
+  disabled: boolean
+  groups: GroupOption[]
+  isGenerating: boolean
+  isModelLoading: boolean
+  hasMessages: boolean
+  models: ModelOption[]
+  onClearMessages: () => void
+  onConfigChange: <K extends keyof PlaygroundConfig>(
+    key: K,
+    value: PlaygroundConfig[K]
+  ) => void
+  onGroupChange: (value: string) => void
+  onModelChange: (value: string) => void
+  onParameterEnabledChange: (
+    key: keyof ParameterEnabled,
+    value: boolean
+  ) => void
+  onStop: () => void
+  onSubmit: (text: string, attachments?: MessageAttachment[]) => void
+}
+
+const noopParameterEnabledUpdate = () => {}
+
+type PlaygroundProps = {
+  initialModel?: string
+  emptyState?: ReactNode
+  state?: PlaygroundState
+  renderInput?: (props: PlaygroundInputRenderProps) => ReactNode
+}
+
+export function Playground(props: PlaygroundProps) {
+  if (props.state) {
+    return (
+      <PlaygroundSurface
+        emptyState={props.emptyState}
+        initialModel={props.initialModel}
+        renderInput={props.renderInput}
+        state={props.state}
+      />
+    )
+  }
+
+  return (
+    <PlaygroundWithLocalState
+      emptyState={props.emptyState}
+      initialModel={props.initialModel}
+      renderInput={props.renderInput}
+    />
+  )
+}
+
+/** Default playground: conversations are stored in this browser tab's storage. */
+function PlaygroundWithLocalState(props: {
+  initialModel?: string
+  emptyState?: ReactNode
+  renderInput?: (props: PlaygroundInputRenderProps) => ReactNode
+}) {
+  const state = usePlaygroundState()
+
+  return (
+    <PlaygroundSurface
+      emptyState={props.emptyState}
+      initialModel={props.initialModel}
+      renderInput={props.renderInput}
+      state={state}
+    />
+  )
+}
+
+function PlaygroundSurface(props: {
+  state: PlaygroundState
+  initialModel?: string
+  emptyState?: ReactNode
+  renderInput?: (props: PlaygroundInputRenderProps) => ReactNode
+}) {
   const {
     config,
     parameterEnabled,
     messages,
     isLoadingMessages,
-    models,
-    groups,
     updateMessages,
-    setModels,
-    setGroups,
     updateConfig,
     updateParameterEnabled,
     clearMessages,
-  } = usePlaygroundState()
+  } = props.state
+
+  const [models, setModels] = useState<ModelOption[]>([])
+  const [groups, setGroups] = useState<GroupOption[]>([])
 
   const { sendChat, stopGeneration, isGenerating } = useChatHandler({
     config,
@@ -66,6 +175,14 @@ export function Playground() {
     clearMessages()
   }
 
+  const initialModel = props.initialModel
+
+  useEffect(() => {
+    if (initialModel && initialModel !== config.model) {
+      updateConfig('model', initialModel)
+    }
+  }, [initialModel, config.model, updateConfig])
+
   const { isLoadingModels } = usePlaygroundOptions({
     currentGroup: config.group,
     currentModel: config.model,
@@ -74,11 +191,39 @@ export function Playground() {
     updateConfig,
   })
 
+  const inputRenderProps: PlaygroundInputRenderProps = {
+    config,
+    disabled: isGenerating,
+    groups,
+    isGenerating,
+    isModelLoading: isLoadingModels,
+    hasMessages: messages.length > 0,
+    models,
+    onClearMessages: handleClearMessages,
+    onConfigChange: updateConfig,
+    onGroupChange: (value) => updateConfig('group', value),
+    onModelChange: (value) => updateConfig('model', value),
+    onParameterEnabledChange:
+      updateParameterEnabled ?? noopParameterEnabledUpdate,
+    onStop: stopGeneration,
+    onSubmit: handleSendMessage,
+  }
+
+  // Hosts may center a custom composer together with their empty state
+  if (props.renderInput && messages.length === 0 && !isLoadingMessages) {
+    return (
+      <div className='relative flex size-full min-h-0 flex-col overflow-hidden'>
+        {props.renderInput(inputRenderProps)}
+      </div>
+    )
+  }
+
   return (
     <div className='relative flex size-full min-h-0 flex-col overflow-hidden'>
       {/* Full-width scroll container: scrolling works even over side whitespace */}
       <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
         <PlaygroundChat
+          emptyState={props.emptyState}
           messages={messages}
           isLoadingMessages={isLoadingMessages}
           onRegenerateMessage={handleRegenerateMessage}
@@ -93,28 +238,34 @@ export function Playground() {
         />
       </div>
 
-      {/* Input area: center content and constrain to the same container width */}
-      <div className='mx-auto w-full max-w-4xl'>
-        <PlaygroundInput
-          config={config}
-          disabled={isGenerating}
-          groups={groups}
-          groupValue={config.group}
-          isGenerating={isGenerating}
-          isModelLoading={isLoadingModels}
-          modelValue={config.model}
-          models={models}
-          onGroupChange={(value) => updateConfig('group', value)}
-          onConfigChange={updateConfig}
-          onClearMessages={handleClearMessages}
-          onModelChange={(value) => updateConfig('model', value)}
-          onParameterEnabledChange={updateParameterEnabled}
-          onStop={stopGeneration}
-          onSubmit={handleSendMessage}
-          parameterEnabled={parameterEnabled}
-          hasMessages={messages.length > 0}
-        />
-      </div>
+      {/* Input area: hosts may replace the composer while sharing chat state */}
+      {props.renderInput ? (
+        props.renderInput(inputRenderProps)
+      ) : (
+        <div className='mx-auto w-full max-w-4xl'>
+          <PlaygroundInput
+            config={config}
+            disabled={isGenerating}
+            groups={groups}
+            groupValue={config.group}
+            isGenerating={isGenerating}
+            isModelLoading={isLoadingModels}
+            modelValue={config.model}
+            models={models}
+            onGroupChange={(value) => updateConfig('group', value)}
+            onConfigChange={updateConfig}
+            onClearMessages={handleClearMessages}
+            onModelChange={(value) => updateConfig('model', value)}
+            onParameterEnabledChange={
+              updateParameterEnabled ?? noopParameterEnabledUpdate
+            }
+            onStop={stopGeneration}
+            onSubmit={handleSendMessage}
+            parameterEnabled={parameterEnabled}
+            hasMessages={messages.length > 0}
+          />
+        </div>
+      )}
     </div>
   )
 }

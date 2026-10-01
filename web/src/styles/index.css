@@ -152,6 +152,23 @@ For commercial licensing, please contact support@quantumnous.com
   animation: skeleton-shimmer 1.8s ease-in-out infinite;
 }
 
+/* Indeterminate progress bar of the studio artwork placeholders. */
+@keyframes progress-slide {
+  0% {
+    margin-left: 0%;
+  }
+  50% {
+    margin-left: 60%;
+  }
+  100% {
+    margin-left: 0%;
+  }
+}
+
+.animate-progress-slide {
+  animation: progress-slide 1.6s ease-in-out infinite;
+}
+
 @keyframes skeleton-shimmer {
   0% {
     background-position: 100% 50%;
@@ -529,6 +546,27 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
+@keyframes landing-model-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes landing-model-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
 .landing-animate-fade-up {
   animation: landing-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -544,13 +582,21 @@ For commercial licensing, please contact support@quantumnous.com
 .landing-animate-fade-right {
   animation: landing-fade-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+.landing-animate-model-in {
+  animation: landing-model-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.landing-animate-model-out {
+  animation: landing-model-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .landing-animate-fade-up,
   .landing-animate-fade-in,
   .landing-animate-scale-in,
   .landing-animate-fade-left,
-  .landing-animate-fade-right {
+  .landing-animate-fade-right,
+  .landing-animate-model-in,
+  .landing-animate-model-out {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

@@ -86,6 +86,50 @@ export const getUserLogStats = (
   params: Omit<GetLogStatsParams, 'username' | 'channel'> = {}
 ) => fetchLogStats('/api/log', params, false)
 
+export type LogsExportResult =
+  | { ok: true; filename: string; csv: string }
+  | { ok: false; code?: string; message?: string }
+
+function filenameFromDisposition(disposition: string | undefined) {
+  const match = /filename="?([^";]+)"?/.exec(disposition ?? '')
+  return match?.[1] ?? `logs-${Date.now()}.csv`
+}
+
+/**
+ * Downloads the filtered logs as a CSV file. The backend answers with JSON when
+ * the filter set matches no record, so the payload is inspected by type.
+ */
+export async function exportLogs(
+  params: GetLogsParams,
+  isAdmin: boolean
+): Promise<LogsExportResult> {
+  const queryParams = buildQueryParams(
+    params as unknown as Record<string, unknown>
+  )
+  const path = buildApiPath('/api/log', isAdmin)
+  const res = await api.get<Blob>(`${path}/export?${queryParams}`, {
+    responseType: 'blob',
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
+  const contentType = String(res.headers?.['content-type'] ?? '')
+  if (contentType.includes('application/json')) {
+    const text = await (res.data as Blob).text()
+    try {
+      return { ok: false, ...(JSON.parse(text) as Record<string, unknown>) }
+    } catch {
+      return { ok: false }
+    }
+  }
+  return {
+    ok: true,
+    filename: filenameFromDisposition(
+      res.headers?.['content-disposition'] as string | undefined
+    ),
+    csv: await (res.data as Blob).text(),
+  }
+}
+
 export async function getUserInfo(
   userId: number
 ): Promise<{ success: boolean; message?: string; data?: UserInfo }> {
@@ -118,9 +162,13 @@ const taskArtifactRequestConfig = {
   skipErrorHandler: true,
 } satisfies ApiRequestConfig
 
-export async function getTaskArtifacts(taskId: string) {
+export async function getTaskArtifacts(
+  taskId: string,
+  options?: { includeData?: boolean }
+) {
+  const query = options?.includeData ? '?include_data=1' : ''
   const response = await api.get<TaskArtifactsResponse>(
-    `/api/task/${encodeURIComponent(taskId)}/artifacts`,
+    `/api/task/${encodeURIComponent(taskId)}/artifacts${query}`,
     taskArtifactRequestConfig
   )
   return parseTaskArtifactsResponse(response.data)

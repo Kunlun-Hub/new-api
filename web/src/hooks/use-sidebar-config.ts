@@ -20,6 +20,10 @@ import { useMemo } from 'react'
 
 import type { NavGroup, NavItem } from '@/components/layout/types'
 import { useStatus } from '@/hooks/use-status'
+import {
+  parseConsoleFeatures,
+  type ConsoleFeatures,
+} from '@/lib/console-features'
 import { useAuthStore } from '@/stores/auth-store'
 
 type SidebarSectionConfig = {
@@ -45,6 +49,7 @@ const DEFAULT_SIDEBAR_MODULES: SidebarModulesAdminConfig = {
   console: {
     enabled: true,
     detail: true,
+    analytics: false,
     token: true,
     log: true,
     audit: true,
@@ -102,11 +107,20 @@ const mergeWithDefaultSidebarModules = (
 /**
  * Mapping from URL to configuration keys
  */
+/**
+ * URL to console feature switch. A disabled feature hides its entry the same
+ * way a disabled sidebar module does.
+ */
+const URL_TO_CONSOLE_FEATURE: Record<string, keyof ConsoleFeatures> = {
+  '/tickets': 'tickets',
+  '/orders': 'orders',
+}
+
 const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
   '/playground': { section: 'chat', module: 'playground' },
   '/dashboard': { section: 'console', module: 'detail' },
   '/dashboard/overview': { section: 'console', module: 'detail' },
-  '/dashboard/models': { section: 'console', module: 'detail' },
+  '/dashboard/models': { section: 'console', module: 'analytics' },
   '/dashboard/users': { section: 'console', module: 'detail' },
   '/keys': { section: 'console', module: 'token' },
   '/usage-logs': { section: 'console', module: 'log' },
@@ -181,8 +195,14 @@ function parseUserSidebarConfig(
 function isModuleEnabled(
   url: string,
   adminConfig: SidebarModulesAdminConfig,
-  userConfig: SidebarModulesUserConfig
+  userConfig: SidebarModulesUserConfig,
+  features?: ConsoleFeatures
 ): boolean {
+  if (features) {
+    const feature = URL_TO_CONSOLE_FEATURE[url]
+    if (feature && !features[feature]) return false
+  }
+
   const mapping = URL_TO_CONFIG_MAP[url]
   if (!mapping) {
     // No mapping config, default to visible (e.g. system settings and new features)
@@ -210,7 +230,8 @@ function isModuleEnabled(
 function isNavItemVisible(
   item: NavItem,
   adminConfig: SidebarModulesAdminConfig,
-  userConfig: SidebarModulesUserConfig
+  userConfig: SidebarModulesUserConfig,
+  features: ConsoleFeatures
 ): boolean {
   // Handle dynamic chat presets type — also runs the admin × user AND gate
   if ('type' in item && item.type === 'chat-presets') {
@@ -228,7 +249,7 @@ function isNavItemVisible(
   if ('url' in item && item.url) {
     const configUrls = item.configUrls ?? [item.url]
     return configUrls.some((url) =>
-      isModuleEnabled(url as string, adminConfig, userConfig)
+      isModuleEnabled(url as string, adminConfig, userConfig, features)
     )
   }
 
@@ -236,7 +257,7 @@ function isNavItemVisible(
   if ('items' in item && item.items) {
     // If has sub-items, show this collapsible item if at least one sub-item is visible
     return item.items.some((subItem) =>
-      isModuleEnabled(subItem.url as string, adminConfig, userConfig)
+      isModuleEnabled(subItem.url as string, adminConfig, userConfig, features)
     )
   }
 
@@ -249,14 +270,20 @@ function isNavItemVisible(
 function filterNavItems(
   items: NavItem[],
   adminConfig: SidebarModulesAdminConfig,
-  userConfig: SidebarModulesUserConfig
+  userConfig: SidebarModulesUserConfig,
+  features: ConsoleFeatures
 ): NavItem[] {
   return items
     .map((item) => {
       // If collapsible item, also filter its sub-items
       if ('items' in item && item.items) {
         const filteredSubItems = item.items.filter((subItem) =>
-          isModuleEnabled(subItem.url as string, adminConfig, userConfig)
+          isModuleEnabled(
+            subItem.url as string,
+            adminConfig,
+            userConfig,
+            features
+          )
         )
 
         return {
@@ -266,7 +293,9 @@ function filterNavItems(
       }
       return item
     })
-    .filter((item) => isNavItemVisible(item, adminConfig, userConfig))
+    .filter((item) =>
+      isNavItemVisible(item, adminConfig, userConfig, features)
+    )
 }
 
 /**
@@ -288,6 +317,7 @@ function filterNavItems(
 export function useSidebarConfig(navGroups: NavGroup[]): NavGroup[] {
   const { status } = useStatus()
   const { auth } = useAuthStore()
+  const features = parseConsoleFeatures(status)
 
   const adminConfig = useMemo(
     () =>
@@ -314,10 +344,10 @@ export function useSidebarConfig(navGroups: NavGroup[]): NavGroup[] {
       navGroups
         .map((group) => ({
           ...group,
-          items: filterNavItems(group.items, adminConfig, userConfig),
+          items: filterNavItems(group.items, adminConfig, userConfig, features),
         }))
         .filter((group) => group.items.length > 0), // Only show navigation groups with visible items
-    [navGroups, adminConfig, userConfig]
+    [navGroups, adminConfig, userConfig, features]
   )
 
   return filteredNavGroups
@@ -340,5 +370,5 @@ export function useIsSidebarModuleVisible(url: string): boolean {
       ? null
       : parseUserSidebarConfig(auth?.user?.sidebar_modules)
 
-  return isModuleEnabled(url, adminConfig, userConfig)
+  return isModuleEnabled(url, adminConfig, userConfig, parseConsoleFeatures(status))
 }

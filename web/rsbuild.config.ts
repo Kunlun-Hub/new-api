@@ -19,9 +19,9 @@ export default defineConfig(({ envMode }) => {
   const devProxy = Object.fromEntries(
     (['/api', '/v1', '/mj', '/pg'] as const).map((key) => [
       key,
-      { target: serverUrl, changeOrigin: true },
+      { target: serverUrl, changeOrigin: true, ws: true },
     ])
-  ) as Record<string, { target: string; changeOrigin: boolean }>
+  ) as Record<string, { target: string; changeOrigin: boolean; ws: boolean }>
 
   return {
     plugins: [pluginReact(), pluginTailwindcss({ optimize: false })],

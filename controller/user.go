@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -231,9 +232,15 @@ func Register(c *gin.Context) {
 	}
 	user.Username = strings.TrimSpace(user.Username)
 	user.Email = model.NormalizeEmail(user.Email)
+	// 仅用邮箱注册时，用户名按邮箱本地部分推导（参考站注册表单没有用户名字段）。
+	generatedUsername := false
 	if user.Username == "" {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
+		if user.Email == "" {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+		user.Username = model.SuggestUsernameFromEmail(user.Email)
+		generatedUsername = true
 	}
 	if err := common.Validate.Struct(&user); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
@@ -257,31 +264,44 @@ func Register(c *gin.Context) {
 			return
 		}
 	}
-	emailForExistCheck := ""
-	if common.EmailVerificationEnabled {
-		emailForExistCheck = user.Email
-	}
-	exist, err := model.CheckUserExistOrDeleted(user.Username, emailForExistCheck)
-	if err != nil {
-		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
-		common.SysLog(fmt.Sprintf("CheckUserExistOrDeleted error: %v", err))
-		return
-	}
-	if exist {
-		common.ApiErrorI18n(c, i18n.MsgUserExists)
-		return
+	if generatedUsername {
+		// 用户名由邮箱推导，重名时追加序号；邮箱本身必须未被占用。
+		if err := model.EnsureEmailAvailable(user.Email, 0); err != nil {
+			if errors.Is(err, model.ErrEmailAlreadyTaken) {
+				common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
+				return
+			}
+			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+			return
+		}
+		username, err := model.EnsureUniqueUsername(user.Username)
+		if err != nil {
+			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+			common.SysLog(fmt.Sprintf("EnsureUniqueUsername error: %v", err))
+			return
+		}
+		user.Username = username
+	} else {
+		exist, err := model.CheckUserExistOrDeleted(user.Username, user.Email)
+		if err != nil {
+			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+			common.SysLog(fmt.Sprintf("CheckUserExistOrDeleted error: %v", err))
+			return
+		}
+		if exist {
+			common.ApiErrorI18n(c, i18n.MsgUserExists)
+			return
+		}
 	}
 	affCode := user.AffCode // this code is the inviter's code, not the user's own code
 	inviterId, _ := model.GetUserIdByAffCode(affCode)
 	cleanUser := model.User{
 		Username:    user.Username,
 		Password:    user.Password,
+		Email:       user.Email,
 		DisplayName: user.Username,
 		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
-	}
-	if common.EmailVerificationEnabled {
-		cleanUser.Email = user.Email
 	}
 	if err := cleanUser.Insert(inviterId); err != nil {
 		if errors.Is(err, model.ErrEmailAlreadyTaken) {
@@ -498,6 +518,9 @@ func GetInvitationInfo(c *gin.Context) {
 			"unlock_enabled":      common.InvitationUnlockEnabled,
 			"unlock_min_invites":  common.InvitationUnlockMinInvites,
 			"unlock_min_consumed": common.InvitationUnlockMinConsumedQuota,
+			// 奖励规则由运营配置决定，直接回传实际值，前端据此展示真实规则
+			"aff_reward_inviter": common.QuotaForInviter,
+			"aff_reward_invitee": common.QuotaForInvitee,
 		},
 	})
 	return
@@ -559,6 +582,9 @@ func buildSelfUserData(user *model.User) map[string]any {
 		"linux_do_id":       user.LinuxDOId,
 		"setting":           user.Setting,
 		"stripe_customer":   user.StripeCustomer,
+		"created_at":        user.CreatedAt,
+		"last_login_at":     user.LastLoginAt,
+		"last_login_ip":     model.GetLastLoginIP(user.Id),
 		"sidebar_modules":   userSetting.SidebarModules, // 正确提取sidebar_modules字段
 		"permissions":       permissions,
 	}
@@ -1165,13 +1191,20 @@ func ManageUser(c *gin.Context) {
 		}
 		user.Role = common.RoleAdminUser
 	case "demote":
-		if user.Role == common.RoleRootUser {
-			common.ApiErrorI18n(c, i18n.MsgUserCannotDemoteRootUser)
-			return
-		}
 		if user.Role == common.RoleCommonUser {
 			common.ApiErrorI18n(c, i18n.MsgUserAlreadyCommon)
 			return
+		}
+		if user.Role == common.RoleRootUser {
+			rootCount, err := model.CountRootUsers()
+			if err != nil {
+				common.ApiError(c, err)
+				return
+			}
+			if rootCount <= 1 {
+				common.ApiErrorI18n(c, i18n.MsgUserCannotDemoteLastRootUser)
+				return
+			}
 		}
 		user.Role = common.RoleCommonUser
 	default:
@@ -1322,6 +1355,35 @@ type UpdateUserSettingRequest struct {
 	UpstreamModelUpdateNotifyEnabled *bool   `json:"upstream_model_update_notify_enabled,omitempty"`
 	AcceptUnsetModelRatioModel       bool    `json:"accept_unset_model_ratio_model"`
 	RecordIpLog                      bool    `json:"record_ip_log"`
+	WecomUrl                         string  `json:"wecom_url,omitempty"`
+	DingtalkUrl                      string  `json:"dingtalk_url,omitempty"`
+	FeishuUrl                        string  `json:"feishu_url,omitempty"`
+	TelegramBotToken                 string  `json:"telegram_bot_token,omitempty"`
+	TelegramChatId                   string  `json:"telegram_chat_id,omitempty"`
+	SubscribeQuotaInsufficient       *bool   `json:"subscribe_quota_insufficient,omitempty"`
+	SubscribeDiscount                *bool   `json:"subscribe_discount,omitempty"`
+	SubscribeKeepalive               *bool   `json:"subscribe_keepalive,omitempty"`
+	SubscribeSystemNotice            *bool   `json:"subscribe_system_notice,omitempty"`
+	SubscribeModelPriceChange        *bool   `json:"subscribe_model_price_change,omitempty"`
+}
+
+// validateNotifyURL ensures a notification endpoint is a valid absolute http(s) URL.
+func validateNotifyURL(rawURL string) bool {
+	parsed, err := url.ParseRequestURI(rawURL)
+	if err != nil {
+		return false
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return false
+	}
+	return parsed.Host != ""
+}
+
+func normalizeGotifyPriority(priority int) int {
+	if priority < 0 || priority > 10 {
+		return 5
+	}
+	return priority
 }
 
 func UpdateUserSetting(c *gin.Context) {
@@ -1332,7 +1394,7 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	// 验证预警类型
-	if req.QuotaWarningType != dto.NotifyTypeEmail && req.QuotaWarningType != dto.NotifyTypeWebhook && req.QuotaWarningType != dto.NotifyTypeBark && req.QuotaWarningType != dto.NotifyTypeGotify {
+	if !dto.IsNotifyType(req.QuotaWarningType) {
 		common.ApiErrorI18n(c, i18n.MsgSettingInvalidType)
 		return
 	}
@@ -1343,48 +1405,31 @@ func UpdateUserSetting(c *gin.Context) {
 		return
 	}
 
-	// 如果是webhook类型,验证webhook地址
-	if req.QuotaWarningType == dto.NotifyTypeWebhook {
+	switch req.QuotaWarningType {
+	case dto.NotifyTypeWebhook:
 		if req.WebhookUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingWebhookEmpty)
 			return
 		}
-		// 验证URL格式
-		if _, err := url.ParseRequestURI(req.WebhookUrl); err != nil {
+		if !validateNotifyURL(req.WebhookUrl) {
 			common.ApiErrorI18n(c, i18n.MsgSettingWebhookInvalid)
 			return
 		}
-	}
-
-	// 如果是邮件类型，验证邮箱地址
-	if req.QuotaWarningType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
-		// 验证邮箱格式
-		if !strings.Contains(req.NotificationEmail, "@") {
+	case dto.NotifyTypeEmail:
+		if req.NotificationEmail != "" && !strings.Contains(req.NotificationEmail, "@") {
 			common.ApiErrorI18n(c, i18n.MsgSettingEmailInvalid)
 			return
 		}
-	}
-
-	// 如果是Bark类型，验证Bark URL
-	if req.QuotaWarningType == dto.NotifyTypeBark {
+	case dto.NotifyTypeBark:
 		if req.BarkUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingBarkUrlEmpty)
 			return
 		}
-		// 验证URL格式
-		if _, err := url.ParseRequestURI(req.BarkUrl); err != nil {
+		if !validateNotifyURL(req.BarkUrl) {
 			common.ApiErrorI18n(c, i18n.MsgSettingBarkUrlInvalid)
 			return
 		}
-		// 检查是否是HTTP或HTTPS
-		if !strings.HasPrefix(req.BarkUrl, "https://") && !strings.HasPrefix(req.BarkUrl, "http://") {
-			common.ApiErrorI18n(c, i18n.MsgSettingUrlMustHttp)
-			return
-		}
-	}
-
-	// 如果是Gotify类型，验证Gotify URL和Token
-	if req.QuotaWarningType == dto.NotifyTypeGotify {
+	case dto.NotifyTypeGotify:
 		if req.GotifyUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyUrlEmpty)
 			return
@@ -1393,14 +1438,44 @@ func UpdateUserSetting(c *gin.Context) {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyTokenEmpty)
 			return
 		}
-		// 验证URL格式
-		if _, err := url.ParseRequestURI(req.GotifyUrl); err != nil {
+		if !validateNotifyURL(req.GotifyUrl) {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyUrlInvalid)
 			return
 		}
-		// 检查是否是HTTP或HTTPS
-		if !strings.HasPrefix(req.GotifyUrl, "https://") && !strings.HasPrefix(req.GotifyUrl, "http://") {
-			common.ApiErrorI18n(c, i18n.MsgSettingUrlMustHttp)
+	case dto.NotifyTypeWecom:
+		if req.WecomUrl == "" {
+			common.ApiErrorI18n(c, i18n.MsgSettingWecomUrlEmpty)
+			return
+		}
+		if !validateNotifyURL(req.WecomUrl) {
+			common.ApiErrorI18n(c, i18n.MsgSettingWecomUrlInvalid)
+			return
+		}
+	case dto.NotifyTypeDingtalk:
+		if req.DingtalkUrl == "" {
+			common.ApiErrorI18n(c, i18n.MsgSettingDingtalkUrlEmpty)
+			return
+		}
+		if !validateNotifyURL(req.DingtalkUrl) {
+			common.ApiErrorI18n(c, i18n.MsgSettingDingtalkUrlInvalid)
+			return
+		}
+	case dto.NotifyTypeFeishu:
+		if req.FeishuUrl == "" {
+			common.ApiErrorI18n(c, i18n.MsgSettingFeishuUrlEmpty)
+			return
+		}
+		if !validateNotifyURL(req.FeishuUrl) {
+			common.ApiErrorI18n(c, i18n.MsgSettingFeishuUrlInvalid)
+			return
+		}
+	case dto.NotifyTypeTelegram:
+		if req.TelegramBotToken == "" {
+			common.ApiErrorI18n(c, i18n.MsgSettingTelegramTokenEmpty)
+			return
+		}
+		if req.TelegramChatId == "" {
+			common.ApiErrorI18n(c, i18n.MsgSettingTelegramChatIdEmpty)
 			return
 		}
 	}
@@ -1417,43 +1492,53 @@ func UpdateUserSetting(c *gin.Context) {
 		upstreamModelUpdateNotifyEnabled = *req.UpstreamModelUpdateNotifyEnabled
 	}
 
-	// 构建设置
-	settings := dto.UserSetting{
-		NotifyType:                       req.QuotaWarningType,
-		QuotaWarningThreshold:            req.QuotaWarningThreshold,
-		UpstreamModelUpdateNotifyEnabled: upstreamModelUpdateNotifyEnabled,
-		AcceptUnsetRatioModel:            req.AcceptUnsetModelRatioModel,
-		RecordIpLog:                      req.RecordIpLog,
+	// 基于已有配置构建，避免覆盖侧边栏、语言等无关设置
+	settings := existingSettings
+	settings.NotifyType = req.QuotaWarningType
+	settings.QuotaWarningThreshold = req.QuotaWarningThreshold
+	settings.UpstreamModelUpdateNotifyEnabled = upstreamModelUpdateNotifyEnabled
+	settings.AcceptUnsetRatioModel = req.AcceptUnsetModelRatioModel
+	settings.RecordIpLog = req.RecordIpLog
+
+	if req.SubscribeQuotaInsufficient != nil {
+		settings.SubscribeQuotaInsufficient = req.SubscribeQuotaInsufficient
+	}
+	if req.SubscribeDiscount != nil {
+		settings.SubscribeDiscount = req.SubscribeDiscount
+	}
+	if req.SubscribeKeepalive != nil {
+		settings.SubscribeKeepalive = req.SubscribeKeepalive
+	}
+	if req.SubscribeSystemNotice != nil {
+		settings.SubscribeSystemNotice = req.SubscribeSystemNotice
+	}
+	if req.SubscribeModelPriceChange != nil {
+		settings.SubscribeModelPriceChange = req.SubscribeModelPriceChange
 	}
 
-	// 如果是webhook类型,添加webhook相关设置
-	if req.QuotaWarningType == dto.NotifyTypeWebhook {
+	switch req.QuotaWarningType {
+	case dto.NotifyTypeEmail:
+		settings.NotificationEmail = req.NotificationEmail
+	case dto.NotifyTypeWebhook:
 		settings.WebhookUrl = req.WebhookUrl
 		if req.WebhookSecret != "" {
 			settings.WebhookSecret = req.WebhookSecret
 		}
-	}
-
-	// 如果提供了通知邮箱，添加到设置中
-	if req.QuotaWarningType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
-		settings.NotificationEmail = req.NotificationEmail
-	}
-
-	// 如果是Bark类型，添加Bark URL到设置中
-	if req.QuotaWarningType == dto.NotifyTypeBark {
+	case dto.NotifyTypeBark:
 		settings.BarkUrl = req.BarkUrl
-	}
-
-	// 如果是Gotify类型，添加Gotify配置到设置中
-	if req.QuotaWarningType == dto.NotifyTypeGotify {
+	case dto.NotifyTypeGotify:
 		settings.GotifyUrl = req.GotifyUrl
 		settings.GotifyToken = req.GotifyToken
-		// Gotify优先级范围0-10，超出范围则使用默认值5
-		if req.GotifyPriority < 0 || req.GotifyPriority > 10 {
-			settings.GotifyPriority = 5
-		} else {
-			settings.GotifyPriority = req.GotifyPriority
-		}
+		settings.GotifyPriority = normalizeGotifyPriority(req.GotifyPriority)
+	case dto.NotifyTypeWecom:
+		settings.WecomUrl = req.WecomUrl
+	case dto.NotifyTypeDingtalk:
+		settings.DingtalkUrl = req.DingtalkUrl
+	case dto.NotifyTypeFeishu:
+		settings.FeishuUrl = req.FeishuUrl
+	case dto.NotifyTypeTelegram:
+		settings.TelegramBotToken = req.TelegramBotToken
+		settings.TelegramChatId = req.TelegramChatId
 	}
 
 	// 更新用户设置
@@ -1463,4 +1548,98 @@ func UpdateUserSetting(c *gin.Context) {
 	}
 
 	common.ApiSuccessI18n(c, i18n.MsgSettingSaved, nil)
+}
+
+type SendTestNotificationRequest struct {
+	NotifyType        string `json:"type,omitempty"`
+	NotificationEmail string `json:"notification_email,omitempty"`
+	WebhookUrl        string `json:"webhook_url,omitempty"`
+	WebhookSecret     string `json:"webhook_secret,omitempty"`
+	WecomUrl          string `json:"wecom_url,omitempty"`
+	DingtalkUrl       string `json:"dingtalk_url,omitempty"`
+	FeishuUrl         string `json:"feishu_url,omitempty"`
+	TelegramBotToken  string `json:"telegram_bot_token,omitempty"`
+	TelegramChatId    string `json:"telegram_chat_id,omitempty"`
+}
+
+// applyTestNotificationOverrides lets the profile form test a channel before it
+// is saved: the request body carries the channel and its credentials, and any
+// field it omits falls back to the stored setting.
+func applyTestNotificationOverrides(settings *dto.UserSetting, req SendTestNotificationRequest) {
+	if req.NotifyType != "" && dto.IsNotifyType(req.NotifyType) {
+		settings.NotifyType = req.NotifyType
+	}
+	switch settings.NotifyType {
+	case dto.NotifyTypeEmail:
+		if req.NotificationEmail != "" {
+			settings.NotificationEmail = req.NotificationEmail
+		}
+	case dto.NotifyTypeWebhook:
+		if req.WebhookUrl != "" {
+			settings.WebhookUrl = req.WebhookUrl
+		}
+		if req.WebhookSecret != "" {
+			settings.WebhookSecret = req.WebhookSecret
+		}
+	case dto.NotifyTypeWecom:
+		if req.WecomUrl != "" {
+			settings.WecomUrl = req.WecomUrl
+		}
+	case dto.NotifyTypeDingtalk:
+		if req.DingtalkUrl != "" {
+			settings.DingtalkUrl = req.DingtalkUrl
+		}
+	case dto.NotifyTypeFeishu:
+		if req.FeishuUrl != "" {
+			settings.FeishuUrl = req.FeishuUrl
+		}
+	case dto.NotifyTypeTelegram:
+		if req.TelegramBotToken != "" {
+			settings.TelegramBotToken = req.TelegramBotToken
+		}
+		if req.TelegramChatId != "" {
+			settings.TelegramChatId = req.TelegramChatId
+		}
+	}
+}
+
+// SendTestNotification delivers a test message through the selected channel.
+// The body is optional; without it the saved channel is used as-is.
+func SendTestNotification(c *gin.Context) {
+	userId := c.GetInt("id")
+	user, err := model.GetUserById(userId, true)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	var req SendTestNotificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+
+	settings := user.GetSetting()
+	settings.NotifyType = normalizeNotifyTypeForTest(settings.NotifyType)
+	applyTestNotificationOverrides(&settings, req)
+	data := dto.NewNotify(
+		"notify_test",
+		i18n.T(c, i18n.MsgNotificationTestTitle),
+		i18n.T(c, i18n.MsgNotificationTestContent),
+		nil,
+	)
+
+	if err := service.SendTestNotification(settings, user.Email, data); err != nil {
+		logger.LogError(c, fmt.Sprintf("failed to send test notification for user %d: %s", userId, err.Error()))
+		common.ApiErrorI18n(c, i18n.MsgNotificationTestFailed)
+		return
+	}
+	common.ApiSuccessI18n(c, i18n.MsgNotificationTestSent, nil)
+}
+
+func normalizeNotifyTypeForTest(notifyType string) string {
+	if notifyType == "" {
+		return dto.NotifyTypeEmail
+	}
+	return notifyType
 }

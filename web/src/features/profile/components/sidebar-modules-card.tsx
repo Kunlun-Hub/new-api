@@ -85,6 +85,11 @@ export function SidebarModulesCard() {
           description: t('System data statistics'),
         },
         {
+          key: 'analytics',
+          title: t('Model Analytics'),
+          description: t('Model-level usage statistics'),
+        },
+        {
           key: 'token',
           title: t('Token Management'),
           description: t('API token management'),

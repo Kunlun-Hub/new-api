@@ -128,6 +128,9 @@ func RelayMidjourneyNotify(c *gin.Context) *dto.MidjourneyResponse {
 	midjourneyTask.VideoUrls = string(videoUrlsStr)
 	midjourneyTask.Status = midjRequest.Status
 	midjourneyTask.FailReason = midjRequest.FailReason
+	if midjRequest.Mode != "" {
+		midjourneyTask.Mode = service.ResolveMidjourneyMode(midjRequest.Mode, midjourneyTask.Prompt)
+	}
 	err = midjourneyTask.Update()
 	if err != nil {
 		return &dto.MidjourneyResponse{
@@ -162,6 +165,7 @@ func coverMidjourneyTaskDto(c *gin.Context, originTask *model.Midjourney) (midjo
 	midjourneyTask.Status = originTask.Status
 	midjourneyTask.FailReason = originTask.FailReason
 	midjourneyTask.Action = originTask.Action
+	midjourneyTask.Mode = originTask.Mode
 	midjourneyTask.Description = originTask.Description
 	midjourneyTask.Prompt = originTask.Prompt
 	if originTask.Buttons != "" {
@@ -564,6 +568,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		Code:        midjResponse.Code,
 		Action:      midjRequest.Action,
 		MjId:        midjResponse.Result,
+		Mode:        service.ResolveMidjourneyMode(midjRequest.Mode, midjRequest.Prompt),
 		Prompt:      midjRequest.Prompt,
 		PromptEn:    "",
 		Description: midjResponse.Description,

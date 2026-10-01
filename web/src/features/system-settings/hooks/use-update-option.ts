@@ -45,6 +45,9 @@ const STATUS_RELATED_KEYS = new Set([
   'passkey.rp_id',
   'passkey.legacy_rp_ids',
   'passkey.origins',
+  'console_setting.orders_enabled',
+  'console_setting.invoices_enabled',
+  'console_setting.tickets_enabled',
 ])
 
 export function useUpdateOption() {

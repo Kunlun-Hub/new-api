@@ -45,11 +45,14 @@ type OAuthProvidersProps = {
   buttonLayout?: 'stack' | 'grid'
   /** Extra classes applied to each provider button */
   buttonClassName?: string
+  /** Render the provider name only, keeping the full label as the accessible name */
+  compactLabels?: boolean
 }
 
 type ProviderButton = {
   key: string
   label: string
+  name: string
   onClick: () => void
   icon?: ReactNode
   disabled?: boolean
@@ -65,6 +68,7 @@ export function OAuthProviders({
   showDivider = true,
   buttonLayout = 'stack',
   buttonClassName,
+  compactLabels = false,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -84,6 +88,7 @@ export function OAuthProviders({
   if (status?.wechat_login && onWeChatLogin) {
     providerButtons.push({
       key: 'wechat',
+      name: t('WeChat'),
       label: t('Continue with WeChat'),
       onClick: onWeChatLogin,
       icon: <IconWeChat className='h-4 w-4' />,
@@ -94,6 +99,7 @@ export function OAuthProviders({
   if (status?.github_oauth) {
     providerButtons.push({
       key: 'github',
+      name: 'GitHub',
       label: githubButtonText || t('Continue with GitHub'),
       onClick: handleGitHubLogin,
       icon: <IconGithub className='h-4 w-4' />,
@@ -104,6 +110,7 @@ export function OAuthProviders({
   if (status?.discord_oauth) {
     providerButtons.push({
       key: 'discord',
+      name: t('Discord'),
       label: t('Continue with Discord'),
       onClick: handleDiscordLogin,
       icon: <IconDiscord className='h-4 w-4' />,
@@ -114,6 +121,7 @@ export function OAuthProviders({
     const oidcDisplayName = status.oidc_display_name?.trim() || 'OIDC'
     providerButtons.push({
       key: 'oidc',
+      name: oidcDisplayName,
       label: t('Continue with {{name}}', {
         name: oidcDisplayName,
       }),
@@ -124,6 +132,7 @@ export function OAuthProviders({
   if (status?.linuxdo_oauth) {
     providerButtons.push({
       key: 'linuxdo',
+      name: t('LinuxDO'),
       label: t('Continue with LinuxDO'),
       onClick: handleLinuxDOLogin,
       icon: <IconLinuxDo className='h-4 w-4' />,
@@ -133,6 +142,7 @@ export function OAuthProviders({
   if (status?.telegram_oauth) {
     providerButtons.push({
       key: 'telegram',
+      name: t('Telegram'),
       label: t('Continue with Telegram'),
       onClick: handleTelegramLogin,
       icon: <IconTelegram data-icon='inline-start' />,
@@ -146,6 +156,7 @@ export function OAuthProviders({
       providerButtons.push({
         key: `custom-${provider.slug}`,
         label: t('Continue with {{name}}', { name: provider.name }),
+        name: provider.name,
         onClick: () => handleCustomOAuthLogin(provider),
       })
     }
@@ -170,24 +181,27 @@ export function OAuthProviders({
 
       <div
         className={
-          buttonLayout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2' : 'flex flex-col gap-2'
+          buttonLayout === 'grid'
+            ? 'grid grid-cols-1 gap-3 sm:grid-cols-2'
+            : 'flex flex-col gap-2'
         }
       >
         {providerButtons.map(
-          ({ key, label, onClick, icon, disabled: extraDisabled }) => (
+          ({ key, label, name, onClick, icon, disabled: extraDisabled }) => (
             <Button
               key={key}
               variant='outline'
               type='button'
               disabled={disabled || isLoading || extraDisabled}
               onClick={onClick}
+              aria-label={label}
               className={cn(
                 'h-11 w-full justify-center gap-2 rounded-lg',
                 buttonClassName
               )}
             >
               {icon}
-              {label}
+              {compactLabels ? name : label}
             </Button>
           )
         )}

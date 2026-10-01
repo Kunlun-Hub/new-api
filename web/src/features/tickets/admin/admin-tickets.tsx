@@ -16,18 +16,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { MessagesSquare } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 import { adminListTickets } from '../api'
 import { TicketCategoryBadge, TicketStatusBadge } from '../ticket-badges'
+import { useTicketSocket } from '../use-ticket-socket'
+import { AdminTicketConversation } from './admin-ticket-conversation'
 
 const PAGE_SIZE = 15
 
@@ -45,33 +48,67 @@ function formatTime(unix: number): string {
   return new Date(unix * 1000).toLocaleString()
 }
 
-export function AdminTickets() {
+export function AdminTickets(props: { initialTicketId?: number }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
+  const [query, setQuery] = useState('')
+  const [selectedId, setSelectedId] = useState<number | null>(
+    props.initialTicketId ?? null
+  )
 
   const ticketsQuery = useQuery({
     queryKey: ['admin-tickets', status, page],
     queryFn: () => adminListTickets(status, page, PAGE_SIZE),
   })
 
-  const tickets = ticketsQuery.data?.items ?? []
+  useEffect(() => {
+    if (props.initialTicketId) {
+      setSelectedId(props.initialTicketId)
+    }
+  }, [props.initialTicketId])
+
+  // Staff conversations stay live: new tickets, replies and status changes
+  // invalidate the affected queries instead of requiring a manual refresh.
+  useTicketSocket(true, (event) => {
+    queryClient.invalidateQueries({ queryKey: ['admin-tickets'] })
+    if (event.ticket_id === selectedId) {
+      queryClient.invalidateQueries({
+        queryKey: ['admin-ticket', event.ticket_id],
+      })
+    }
+    if (event.type === 'ticket.created' && selectedId === null) {
+      setSelectedId(event.ticket_id)
+    }
+  })
+
+  const tickets = useMemo(() => {
+    const items = ticketsQuery.data?.items ?? []
+    const keyword = query.trim().toLowerCase()
+    if (keyword === '') return items
+    return items.filter(
+      (ticket) =>
+        ticket.title.toLowerCase().includes(keyword) ||
+        `#${ticket.id}`.includes(keyword)
+    )
+  }, [ticketsQuery.data?.items, query])
   const total = ticketsQuery.data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  function renderList() {
+  const renderList = () => {
     if (ticketsQuery.isLoading) {
       return (
-        <div className='flex flex-col gap-3'>
+        <div className='flex flex-col gap-2'>
           {SKELETON_KEYS.map((key) => (
-            <Skeleton key={key} className='h-20 rounded-2xl' />
+            <Skeleton key={key} className='h-20 rounded-xl' />
           ))}
         </div>
       )
     }
     if (tickets.length === 0) {
       return (
-        <div className='rounded-2xl border bg-card p-12 text-center shadow-xs'>
+        <div className='bg-card rounded-2xl border p-12 text-center shadow-xs'>
           <p className='text-muted-foreground text-sm'>
             {t('No tickets found.')}
           </p>
@@ -79,13 +116,18 @@ export function AdminTickets() {
       )
     }
     return (
-      <div className='flex flex-col gap-3'>
+      <div className='flex flex-col gap-2'>
         {tickets.map((ticket) => (
-          <Link
+          <button
             key={ticket.id}
-            to='/admin/tickets/$ticketId'
-            params={{ ticketId: String(ticket.id) }}
-            className='rounded-2xl border bg-card p-4 shadow-xs transition-colors hover:border-primary/40 sm:p-5'
+            type='button'
+            onClick={() => setSelectedId(ticket.id)}
+            className={cn(
+              'rounded-2xl border p-4 text-left shadow-xs transition-colors',
+              ticket.id === selectedId
+                ? 'border-primary/50 bg-primary/5'
+                : 'bg-card hover:border-primary/40'
+            )}
           >
             <div className='flex items-start justify-between gap-3'>
               <div className='min-w-0'>
@@ -101,7 +143,7 @@ export function AdminTickets() {
                 <TicketStatusBadge status={ticket.status} />
               </div>
             </div>
-          </Link>
+          </button>
         ))}
       </div>
     )
@@ -109,55 +151,93 @@ export function AdminTickets() {
 
   return (
     <SectionPageLayout>
-      <SectionPageLayout.Title>{t('Ticket management')}</SectionPageLayout.Title>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb
+          items={[
+            { label: t('Dashboard'), href: '/dashboard/overview' },
+            { label: t('Ticket management') },
+          ]}
+        />
+      </SectionPageLayout.Breadcrumb>
+      <SectionPageLayout.Title>
+        {t('Ticket management')}
+      </SectionPageLayout.Title>
       <SectionPageLayout.Content>
-        <div className='flex flex-col gap-4'>
-          <div className='flex flex-wrap gap-1.5'>
-            {STATUS_FILTERS.map((filter) => (
-              <Button
-                key={filter.value}
-                variant={status === filter.value ? 'default' : 'ghost'}
-                size='sm'
-                className={cn(
-                  'rounded-full',
-                  status !== filter.value &&
-                    'text-muted-foreground hover:bg-accent'
-                )}
-                onClick={() => {
-                  setStatus(filter.value)
-                  setPage(1)
-                }}
-              >
-                {t(filter.labelKey)}
-              </Button>
-            ))}
+        <div className='grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]'>
+          <div className='flex flex-col gap-3'>
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('Search tickets')}
+              className='h-9'
+            />
+            <div className='flex flex-wrap gap-1.5'>
+              {STATUS_FILTERS.map((filter) => (
+                <Button
+                  key={filter.value}
+                  variant={status === filter.value ? 'default' : 'ghost'}
+                  size='sm'
+                  className={cn(
+                    'rounded-full',
+                    status !== filter.value &&
+                      'text-muted-foreground hover:bg-accent'
+                  )}
+                  onClick={() => {
+                    setStatus(filter.value)
+                    setPage(1)
+                  }}
+                >
+                  {t(filter.labelKey)}
+                </Button>
+              ))}
+            </div>
+
+            {renderList()}
+
+            {totalPages > 1 && (
+              <div className='flex items-center justify-center gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={page <= 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                >
+                  {t('Previous')}
+                </Button>
+                <span className='text-muted-foreground text-sm tabular-nums'>
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={page >= totalPages}
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
+                >
+                  {t('Next')}
+                </Button>
+              </div>
+            )}
           </div>
 
-          {renderList()}
-
-          {totalPages > 1 && (
-            <div className='flex items-center justify-center gap-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                {t('Previous')}
-              </Button>
-              <span className='text-muted-foreground text-sm tabular-nums'>
-                {page} / {totalPages}
-              </span>
-              <Button
-                variant='outline'
-                size='sm'
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                {t('Next')}
-              </Button>
-            </div>
-          )}
+          <div className='min-w-0'>
+            {selectedId === null ? (
+              <div className='bg-card rounded-2xl border p-16 shadow-xs'>
+                <div className='flex flex-col items-center gap-3 text-center'>
+                  <MessagesSquare
+                    className='text-muted-foreground size-10'
+                    aria-hidden='true'
+                  />
+                  <p className='text-muted-foreground text-sm'>
+                    {t('Select a ticket to read and reply in the conversation.')}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <AdminTicketConversation ticketId={selectedId} />
+            )}
+          </div>
         </div>
       </SectionPageLayout.Content>
     </SectionPageLayout>

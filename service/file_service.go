@@ -11,6 +11,7 @@ import (
 	_ "image/png"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -89,7 +90,11 @@ func LoadFileSource(c *gin.Context, source types.FileSource, reason ...string) (
 				return data, nil
 			}
 		}
-		cachedData, err = loadFromURL(c, s.URL, reason...)
+		if localPath, ok := StudioUploadLocalPath(s.URL); ok {
+			cachedData, err = loadFromLocalPath(c, localPath)
+		} else {
+			cachedData, err = loadFromURL(c, s.URL, reason...)
+		}
 	case *types.Base64Source:
 		if c != nil {
 			contextKey = getBase64ContextCacheKey(s.Base64Data, s.MimeType)
@@ -155,9 +160,6 @@ func CleanupFileSources(c *gin.Context) {
 
 // loadFromURL 从 URL 加载文件
 func loadFromURL(c *gin.Context, url string, reason ...string) (*types.CachedFileData, error) {
-	// 下载文件
-	var maxFileSize = constant.MaxFileDownloadMB * 1024 * 1024
-
 	if common.DebugEnabled {
 		logger.LogDebug(c, "loadFromURL: initiating download")
 	}
@@ -175,19 +177,54 @@ func loadFromURL(c *gin.Context, url string, reason ...string) (*types.CachedFil
 	if common.DebugEnabled {
 		logger.LogDebug(c, "loadFromURL: reading response body")
 	}
-	fileBytes, err := io.ReadAll(io.LimitReader(resp.Body, int64(maxFileSize+1)))
+	fileBytes, err := readFileBytes(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// 智能获取 MIME 类型
+	mimeType := smartDetectMimeType(resp, url, fileBytes)
+
+	return buildCachedFileData(c, fileBytes, mimeType), nil
+}
+
+// loadFromLocalPath 读取网关自身保存的附件。relay 请求不能通过网络回访这些
+// URL：网关通常只监听私有地址或非标准端口，而文件本来就在本地。
+func loadFromLocalPath(c *gin.Context, fullPath string) (*types.CachedFileData, error) {
+	file, err := os.Open(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open local file %s: %w", fullPath, err)
+	}
+	defer file.Close()
+
+	fileBytes, err := readFileBytes(file)
+	if err != nil {
+		return nil, err
+	}
+
+	mimeType := guessMimeTypeFromURL(fullPath)
+	if mimeType == "application/octet-stream" {
+		mimeType = sniffMimeType(fileBytes)
+	}
+	return buildCachedFileData(c, fileBytes, mimeType), nil
+}
+
+// readFileBytes 读取文件内容并限制大小
+func readFileBytes(reader io.Reader) ([]byte, error) {
+	maxFileSize := constant.MaxFileDownloadMB * 1024 * 1024
+	fileBytes, err := io.ReadAll(io.LimitReader(reader, int64(maxFileSize+1)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file content: %w", err)
 	}
 	if len(fileBytes) > maxFileSize {
 		return nil, fmt.Errorf("file size exceeds maximum allowed size: %dMB", constant.MaxFileDownloadMB)
 	}
+	return fileBytes, nil
+}
 
-	// 转换为 base64
+// buildCachedFileData 将文件字节转换为统一的缓存结构
+func buildCachedFileData(c *gin.Context, fileBytes []byte, mimeType string) *types.CachedFileData {
 	base64Data := base64.StdEncoding.EncodeToString(fileBytes)
-
-	// 智能获取 MIME 类型
-	mimeType := smartDetectMimeType(resp, url, fileBytes)
 
 	// 判断是否使用磁盘缓存
 	base64Size := int64(len(base64Data))
@@ -232,7 +269,7 @@ func loadFromURL(c *gin.Context, url string, reason ...string) (*types.CachedFil
 		}
 	}
 
-	return cachedData, nil
+	return cachedData
 }
 
 // shouldUseDiskCache 判断是否应该使用磁盘缓存
@@ -287,31 +324,35 @@ func smartDetectMimeType(resp *http.Response, url string, fileBytes []byte) stri
 		return mt
 	}
 
-	// 4. 使用 http.DetectContentType 内容嗅探
-	if len(fileBytes) > 0 {
-		sniffed := http.DetectContentType(fileBytes)
-		if sniffed != "" && sniffed != "application/octet-stream" {
-			// 去除可能的 charset 参数
-			if idx := strings.Index(sniffed, ";"); idx != -1 {
-				sniffed = strings.TrimSpace(sniffed[:idx])
-			}
-			return sniffed
-		}
+	// 4. 内容嗅探
+	return sniffMimeType(fileBytes)
+}
 
-		// 4.5 尝试 HEIF/HEIC 检测（Go 标准库不识别）
-		if heifMime := detectHEIF(fileBytes); heifMime != "" {
-			return heifMime
-		}
+// sniffMimeType 从文件内容推断 MIME 类型
+func sniffMimeType(fileBytes []byte) string {
+	if len(fileBytes) == 0 {
+		return "application/octet-stream"
 	}
 
-	// 5. 尝试作为图片解码获取格式
-	if len(fileBytes) > 0 {
-		if _, format, err := decodeImageConfig(fileBytes); err == nil && format != "" {
-			return "image/" + strings.ToLower(format)
-		}
+	// 优先使用 http.DetectContentType 内容嗅探
+	sniffed := http.DetectContentType(fileBytes)
+	if idx := strings.Index(sniffed, ";"); idx != -1 {
+		sniffed = strings.TrimSpace(sniffed[:idx])
+	}
+	if sniffed != "" && sniffed != "application/octet-stream" {
+		return sniffed
 	}
 
-	// 最终回退
+	// 尝试 HEIF/HEIC 检测（Go 标准库不识别）
+	if heifMime := detectHEIF(fileBytes); heifMime != "" {
+		return heifMime
+	}
+
+	// 尝试作为图片解码获取格式
+	if _, format, err := decodeImageConfig(fileBytes); err == nil && format != "" {
+		return "image/" + strings.ToLower(format)
+	}
+
 	return "application/octet-stream"
 }
 

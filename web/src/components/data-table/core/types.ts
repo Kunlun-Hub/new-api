@@ -52,6 +52,11 @@ export type DataTableViewProps<TData> = {
     row: Row<TData>,
     helpers: DataTableRenderRowHelpers
   ) => React.ReactNode
+  /**
+   * Optional row click handler. When provided the default row renderer adds a
+   * pointer cursor and forwards clicks (used by detail dialogs).
+   */
+  onRowClick?: (row: Row<TData>) => void
   getRowClassName?: (row: Row<TData>) => string | undefined
   getColumnClassName?: DataTableColumnClassName
   pinnedColumns?: DataTablePinnedColumn[]

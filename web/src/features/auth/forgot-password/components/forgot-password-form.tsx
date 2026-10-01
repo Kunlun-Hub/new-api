@@ -17,7 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -101,42 +102,86 @@ export function ForgotPasswordForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-2', className)}
+        className={cn(
+          'group bg-card/85 border-border/60 from-transparent via-transparent hover:from-foreground/4 relative w-full overflow-hidden rounded-3xl border bg-linear-to-br to-transparent p-6 backdrop-blur-xl transition duration-300 sm:p-10',
+          className
+        )}
         {...props}
       >
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder='name@example.com' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className='mb-8 space-y-2 text-center'>
+          <div className='border-border/60 text-muted-foreground mx-auto mb-2 inline-flex items-center rounded-full border bg-white/5 px-3 py-1 text-xs tracking-[0.28em] uppercase'>
+            {t('Reset password')}
+          </div>
+          <h1 className='text-2xl font-semibold sm:text-3xl'>
+            {t('Recover password')}
+          </h1>
+          <p className='text-muted-foreground text-sm'>
+            {t(
+              'Reset your password using the email address bound to your account.'
+            )}
+          </p>
+        </div>
 
-        <Button
-          type='submit'
-          className='mt-2'
-          disabled={isLoading || isActive || !turnstileReady}
-        >
-          {isActive
-            ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
-            : t('Send reset email')}
-          {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
-        </Button>
+        <div className='grid gap-5'>
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Email address')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('Please enter your bound email address')}
+                    type='email'
+                    autoComplete='email'
+                    className='rounded-full px-4'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {isTurnstileEnabled && (
-          <div className='mt-2'>
+          <Button
+            type='submit'
+            className='bg-foreground text-background hover:bg-foreground/90 w-full rounded-full'
+            disabled={isLoading || isActive || !turnstileReady}
+          >
+            {isActive
+              ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
+              : t('Send reset email')}
+            {isLoading ? <Loader2 className='animate-spin' /> : null}
+          </Button>
+
+          {isTurnstileEnabled && (
             <Turnstile
               siteKey={turnstileSiteKey}
               onVerify={setTurnstileToken}
             />
-          </div>
-        )}
+          )}
+        </div>
+
+        <div className='mt-4 flex items-center justify-between text-sm'>
+          <p className='text-muted-foreground'>
+            {t('No account yet?')}{' '}
+            <Link
+              to='/sign-up'
+              className='text-primary underline decoration-dotted underline-offset-3'
+            >
+              {t('Register account')}
+            </Link>
+          </p>
+          <p className='text-muted-foreground'>
+            {t('Remembered your password?')}{' '}
+            <Link
+              to='/sign-in'
+              className='text-primary underline decoration-dotted underline-offset-3'
+            >
+              {t('Back to sign in')}
+            </Link>
+          </p>
+        </div>
       </form>
     </Form>
   )

@@ -46,6 +46,9 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 	if err := helper.ApplyReasoningModelSuffix(c, info, request); err != nil {
 		return newConvertRequestFailedError(c, info, err)
 	}
+	if err := helper.MaterializeLocalAttachments(c, request); err != nil {
+		return newConvertRequestFailedError(c, info, err)
+	}
 
 	includeUsage := true
 	// 判断用户是否需要返回使用情况
@@ -117,6 +120,9 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 
 		if req, ok := convertedRequest.(*dto.GeneralOpenAIRequest); ok {
 			applySystemPromptIfNeeded(c, info, req)
+			if err := helper.InlineFileURLContent(c, req); err != nil {
+				return newConvertRequestFailedError(c, info, err)
+			}
 		}
 
 		jsonData, err := common.Marshal(convertedRequest)

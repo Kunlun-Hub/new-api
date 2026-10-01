@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { type LinkProps } from '@tanstack/react-router'
 import { type TFunction } from 'i18next'
+import type { LucideIcon } from 'lucide-react'
 
 /**
  * Base navigation item type
@@ -52,6 +53,8 @@ export type NavCollapsible = BaseNavItem & {
   items: (BaseNavItem & { url: LinkProps['to'] | (string & {}) })[]
   url?: never
   type?: never
+  /** Expand the group on first render even when no sub-item is active. */
+  defaultOpen?: boolean
 }
 
 /**
@@ -88,6 +91,21 @@ export type SidebarData = {
 }
 
 /**
+ * Top navigation dropdown entry (e.g. the Studio menu)
+ */
+export type TopNavChildLink = {
+  title: string
+  href: string
+  description?: string
+  icon?: LucideIcon
+  /** Tailwind gradient stops for the icon tile, e.g. `from-emerald-400 to-cyan-300` */
+  gradient?: string
+  requiresAuth?: boolean
+  disabled?: boolean
+  external?: boolean
+}
+
+/**
  * Top navigation link type
  */
 export type TopNavLink = {
@@ -97,6 +115,8 @@ export type TopNavLink = {
   disabled?: boolean
   requiresAuth?: boolean
   external?: boolean
+  /** When present the link renders as a hover dropdown instead of a plain link */
+  items?: TopNavChildLink[]
 }
 
 /**

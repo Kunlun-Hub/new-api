@@ -47,9 +47,9 @@ import { cn } from '@/lib/utils'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = '13rem'
+const SIDEBAR_WIDTH = '16rem'
 const SIDEBAR_WIDTH_MOBILE = '17rem'
-const SIDEBAR_WIDTH_ICON = '2.75rem'
+const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
 
 type SidebarContextProps = {
@@ -71,6 +71,15 @@ function useSidebar() {
   }
 
   return context
+}
+
+/**
+ * Context lookup that does not throw. Page shells are rendered outside the
+ * sidebar layout in unit tests and docs previews, where the trigger is simply
+ * not available.
+ */
+function useOptionalSidebar() {
+  return React.useContext(SidebarContext)
 }
 
 function SidebarProvider({
@@ -241,9 +250,7 @@ function Sidebar({
           'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
           'group-data-[collapsible=offcanvas]:w-0',
           'group-data-[side=right]:rotate-180',
-          variant === 'floating' || variant === 'inset'
-            ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
-            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)'
+          'group-data-[collapsible=icon]:w-(--sidebar-width-icon)'
         )}
       />
       <div
@@ -251,10 +258,11 @@ function Sidebar({
         data-side={side}
         className={cn(
           'fixed top-[var(--app-header-height,0px)] bottom-0 z-10 hidden h-[calc(100svh-var(--app-header-height,0px))] w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex',
+          'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
           // Adjust the padding for floating and inset variants.
           variant === 'floating' || variant === 'inset'
-            ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+            ? 'p-2 group-data-[collapsible=icon]:p-0'
+            : 'group-data-[side=left]:border-r group-data-[side=right]:border-l border-sidebar-border/70 px-2 group-data-[collapsible=icon]:px-0',
           className
         )}
         {...props}
@@ -391,7 +399,7 @@ function SidebarContent({ className, ...props }: React.ComponentProps<'div'>) {
       data-slot='sidebar-content'
       data-sidebar='content'
       className={cn(
-        'no-scrollbar flex min-h-0 flex-1 flex-col gap-0 overflow-auto group-data-[collapsible=icon]:overflow-hidden',
+        'no-scrollbar flex min-h-0 flex-1 flex-col gap-0 overflow-auto group-data-[collapsible=icon]:overflow-x-hidden group-data-[collapsible=icon]:overflow-y-auto',
         className
       )}
       {...props}
@@ -504,7 +512,7 @@ const sidebarMenuButtonVariants = cva(
           'bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-muted hover:text-sidebar-foreground hover:shadow-[0_0_0_1px_var(--muted)]',
       },
       size: {
-        default: 'h-8 text-sm',
+        default: 'h-8.5 text-sm',
         sm: 'h-7 text-xs',
         lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0!',
       },
@@ -737,5 +745,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  useOptionalSidebar,
   useSidebar,
 }

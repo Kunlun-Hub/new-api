@@ -16,17 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Activity, BarChart3, WalletCards } from 'lucide-react'
+import { CalendarPlus, Clock, Globe, Layers, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { StatusBadge } from '@/components/status-badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { CopyButton } from '@/components/copy-button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
-import { formatCompactNumber, formatQuota } from '@/lib/format'
+import dayjs from '@/lib/dayjs'
+import { formatCompactNumber, formatQuotaFixed } from '@/lib/format'
 import { getRoleLabel } from '@/lib/roles'
+import { cn } from '@/lib/utils'
 
 import { getDisplayName } from '../lib/format'
 import type { UserProfile } from '../types'
@@ -40,32 +41,29 @@ interface ProfileBannerProps {
   loading: boolean
 }
 
+const CARD_CLASS =
+  'gap-0 overflow-hidden rounded-xl border border-border/40 bg-transparent py-0 ring-0'
+
 export function ProfileBanner({ profile, loading }: ProfileBannerProps) {
   const { t } = useTranslation()
 
   if (loading) {
     return (
-      <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
-        <div className='bg-muted h-24 animate-pulse sm:h-32' />
-        <CardContent className='p-4 sm:p-5'>
-          <div className='-mt-12 flex flex-col items-center gap-4 text-center sm:-mt-14 sm:flex-row sm:text-left'>
-            <Skeleton className='h-20 w-20 rounded-2xl sm:h-24 sm:w-24' />
-            <div className='space-y-3 pt-0 sm:pt-10'>
-              <Skeleton className='h-8 w-48' />
-              <Skeleton className='h-4 w-40' />
+      <Card data-card-hover='false' className={CARD_CLASS}>
+        <div className='bg-muted h-20 animate-pulse sm:h-24' />
+        <CardContent className='pb-5 lg:px-6'>
+          <div className='flex items-center gap-4 max-lg:flex-col lg:items-end'>
+            <Skeleton className='-mt-16 size-26 shrink-0 rounded-full sm:-mt-20 sm:size-30' />
+            <div className='flex flex-1 flex-col gap-3 max-lg:items-center'>
+              <Skeleton className='h-7 w-48' />
+              <Skeleton className='h-7 w-64 rounded-full' />
             </div>
+            <Skeleton className='h-16 w-72 rounded-xl' />
+          </div>
+          <div className='border-border/40 mt-4 border-t pt-4'>
+            <Skeleton className='h-4 w-80' />
           </div>
         </CardContent>
-        <div className='border-t'>
-          <div className='divide-border/60 grid grid-cols-3 divide-x'>
-            {['balance', 'usage', 'requests'].map((key) => (
-              <div key={key} className='px-4 py-3.5 sm:px-5 sm:py-4'>
-                <Skeleton className='h-3.5 w-20' />
-                <Skeleton className='mt-2 h-7 w-28' />
-              </div>
-            ))}
-          </div>
-        </div>
       </Card>
     )
   }
@@ -77,112 +75,128 @@ export function ProfileBanner({ profile, loading }: ProfileBannerProps) {
   const avatarFallback = getUserAvatarFallback(avatarName)
   const avatarFallbackStyle = getUserAvatarStyle(avatarName)
   const roleLabel = getRoleLabel(profile.role)
-  const stats: {
-    label: string
-    value: string
-    description: string
-    icon: typeof WalletCards
-    tone: IconBadgeTone
-  }[] = [
+
+  const stats = [
+    { label: t('Account Balance'), value: formatQuotaFixed(profile.quota) },
+    { label: t('Total Spent'), value: formatQuotaFixed(profile.used_quota) },
     {
-      label: t('Current Balance'),
-      value: formatQuota(profile.quota),
-      description: t('Remaining quota'),
-      icon: WalletCards,
-      tone: 'success',
-    },
-    {
-      label: t('Total Usage'),
-      value: formatQuota(profile.used_quota),
-      description: t('Total consumed quota'),
-      icon: BarChart3,
-      tone: 'info',
-    },
-    {
-      label: t('API Requests'),
+      label: t('Request Count'),
       value: formatCompactNumber(profile.request_count),
-      description: t('Total requests made'),
-      icon: Activity,
-      tone: 'chart-4',
     },
   ]
 
-  return (
-    <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
-      {/* Gradient banner */}
-      <div
-        aria-hidden='true'
-        className='from-primary/25 via-primary/10 to-background h-24 bg-gradient-to-br sm:h-32'
-      />
-      <CardContent className='p-4 sm:p-5'>
-        <div className='-mt-12 flex flex-col items-center gap-4 text-center sm:-mt-14 sm:flex-row sm:text-left'>
-          <Avatar className='ring-background h-20 w-20 rounded-2xl text-lg ring-4 sm:h-24 sm:w-24 sm:text-2xl'>
-            <AvatarFallback
-              className='rounded-2xl font-semibold text-white'
-              style={avatarFallbackStyle}
-            >
-              {avatarFallback}
-            </AvatarFallback>
-          </Avatar>
+  const meta = [
+    {
+      icon: CalendarPlus,
+      label: t('Joined'),
+      value: profile.created_at
+        ? dayjs.unix(profile.created_at).fromNow()
+        : '-',
+    },
+    {
+      icon: Clock,
+      label: t('Last login'),
+      value: profile.last_login_at
+        ? dayjs.unix(profile.last_login_at).fromNow()
+        : '-',
+    },
+    ...(profile.last_login_ip
+      ? [
+          {
+            icon: Globe,
+            label: t('Login IP'),
+            value: profile.last_login_ip,
+          },
+        ]
+      : []),
+  ]
 
-          <div className='min-w-0 flex-1 space-y-1.5 pt-0 sm:space-y-2 sm:pt-10'>
-            <div className='flex min-w-0 flex-wrap items-center justify-center gap-2 sm:justify-start'>
-              <h1 className='truncate text-xl font-semibold tracking-tight sm:text-2xl'>
+  return (
+    <Card data-card-hover='false' className={CARD_CLASS}>
+      <div aria-hidden='true' className='relative h-20 overflow-hidden sm:h-24'>
+        <div className='absolute inset-0 bg-linear-120 from-cyan-500/35 via-violet-500/25 to-sky-400/20 dark:from-cyan-500/45 dark:via-violet-100/30 dark:to-sky-500/25' />
+        <div className='absolute inset-0 bg-[radial-gradient(100%_140%_at_12%_-10%,rgba(255,255,255,0.4),transparent_55%)] dark:bg-[radial-gradient(100%_140%_at_12%_-10%,rgba(255,255,255,0.08),transparent_55%)]' />
+      </div>
+
+      <CardContent className='pb-5 lg:px-6'>
+        <div className='flex items-center gap-4 max-lg:flex-col lg:items-end'>
+          <div
+            className='border-background bg-background ring-border/40 relative z-10 -mt-16 flex size-26 shrink-0 items-center justify-center rounded-full border-4 text-2xl font-semibold text-white shadow-lg ring-1 sm:-mt-20 sm:size-30'
+            style={avatarFallbackStyle}
+          >
+            {avatarFallback}
+          </div>
+
+          <div className='flex min-w-0 flex-1 flex-col gap-3'>
+            <div className='flex flex-wrap items-center gap-x-3 gap-y-2 max-lg:justify-center'>
+              <h2 className='text-xl font-semibold tracking-tight'>
                 {displayName}
-              </h1>
-              <StatusBadge
-                label={roleLabel}
-                variant='neutral'
-                copyable={false}
-              />
-              <StatusBadge
-                label={`${t('User ID')} ${profile.id}`}
-                variant='info'
-                copyText={String(profile.id)}
-              />
+              </h2>
+              <Badge variant='secondary'>
+                <ShieldCheck className='size-3.5' />
+                {roleLabel}
+              </Badge>
+              <Badge variant='outline' className='border-border/60'>
+                <Layers className='size-3.5' />
+                {profile.group}
+              </Badge>
             </div>
 
-            <div className='text-muted-foreground flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-xs sm:justify-start sm:gap-x-4 sm:text-sm'>
-              <span className='truncate'>@{profile.username}</span>
+            <div className='flex flex-wrap items-center gap-2 max-lg:justify-center'>
               {profile.email && (
-                <>
-                  <span aria-hidden='true'>•</span>
-                  <span className='truncate'>{profile.email}</span>
-                </>
+                <CopyButton
+                  value={profile.email}
+                  variant='outline'
+                  size='xs'
+                  className='group border-border/60 h-7 gap-x-2 rounded-full font-mono text-xs'
+                  aria-label={t('Copy email address')}
+                >
+                  {profile.email}
+                </CopyButton>
               )}
-              {profile.group && (
-                <>
-                  <span aria-hidden='true'>•</span>
-                  <span className='truncate'>{profile.group}</span>
-                </>
-              )}
+              <CopyButton
+                value={String(profile.id)}
+                variant='outline'
+                size='xs'
+                className='group border-border/60 h-7 gap-x-2 rounded-full text-xs'
+                aria-label={t('Copy user ID')}
+              >
+                <span className='bg-foreground text-background rounded px-1 text-[10px] font-bold'>
+                  ID
+                </span>
+                {profile.id}
+              </CopyButton>
             </div>
           </div>
-        </div>
-      </CardContent>
-      <div className='border-t'>
-        <div className='divide-border/60 grid grid-cols-3 divide-x'>
-          {stats.map((item) => (
-            <div key={item.label} className='min-w-0 px-3 py-3 sm:px-5 sm:py-4'>
-              <div className='flex items-center gap-2'>
-                <IconBadge tone={item.tone} size='stat'>
-                  <item.icon />
-                </IconBadge>
-                <div className='text-muted-foreground truncate text-xs font-medium tracking-wider uppercase'>
-                  {item.label}
-                </div>
-              </div>
 
-              <div className='text-foreground mt-1.5 truncate font-mono text-lg font-bold tracking-tight tabular-nums sm:mt-2 sm:text-2xl'>
-                {item.value}
-              </div>
-              <div className='text-muted-foreground/60 mt-1 hidden text-xs md:block'>
-                {item.description}
-              </div>
-            </div>
+          <div className='border-border/40 grid grid-cols-3 gap-px overflow-hidden rounded-xl border max-lg:w-full'>
+            {stats.map((item, index) => (
+              <dl
+                key={item.label}
+                className={cn(
+                  'px-4 py-2.5 text-center',
+                  index > 0 && 'border-border/40 border-l border-dashed'
+                )}
+              >
+                <dt className='text-sm font-semibold'>{item.value}</dt>
+                <dd className='text-muted-foreground mt-0.5 text-xs'>
+                  {item.label}
+                </dd>
+              </dl>
+            ))}
+          </div>
+        </div>
+
+        <div className='text-muted-foreground border-border/40 mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t pt-4 text-xs max-lg:justify-center max-md:rounded-xl max-md:border max-md:p-4'>
+          {meta.map((item) => (
+            <span key={item.label} className='flex items-center gap-1.5'>
+              <item.icon className='size-3.5' aria-hidden='true' />
+              {item.label}:
+              <span className='text-foreground/80'>{item.value}</span>
+            </span>
           ))}
         </div>
-      </div>
+      </CardContent>
     </Card>
   )
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/QuantumNous/new-api/pkg/modelcatalog"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -49,6 +51,15 @@ type Pricing struct {
 	BillingUsageSchema     map[string]jsplugin.UsageFieldSchema `json:"billing_usage_schema,omitempty"`
 	BillingUsageExamples   []jsplugin.UsageExample              `json:"billing_usage_examples,omitempty"`
 	PricingVersion         string                               `json:"pricing_version,omitempty"`
+
+	// 公开模型目录（models.dev 兼容）补充的元数据，缺失时前端自动隐藏对应展示
+	ContextLength    int      `json:"context_length,omitempty"`
+	MaxOutputTokens  int      `json:"max_output_tokens,omitempty"`
+	KnowledgeCutoff  string   `json:"knowledge_cutoff,omitempty"`
+	ReleaseDate      string   `json:"release_date,omitempty"`
+	InputModalities  []string `json:"input_modalities,omitempty"`
+	OutputModalities []string `json:"output_modalities,omitempty"`
+	Capabilities     []string `json:"capabilities,omitempty"`
 }
 
 type PricingVendor struct {
@@ -426,6 +437,7 @@ func updatePricing() {
 				})
 			}
 		}
+		enrichPricingWithCatalog(&pricing, vendorName(metaMap[model], vendorMap))
 		pricingMap = append(pricingMap, pricing)
 	}
 
@@ -450,4 +462,58 @@ func updatePricing() {
 // GetSupportedEndpointMap 返回全局端点到路径的映射
 func GetSupportedEndpointMap() map[string]common.EndpointInfo {
 	return supportedEndpointMap
+}
+
+// enrichPricingWithCatalog attaches public catalog metadata (context window,
+// output limit, release date, modalities, capabilities). When the catalog has no
+// entry for a model, the context window falls back to the catalog tag, e.g. "1M".
+func enrichPricingWithCatalog(pricing *Pricing, vendorName string) {
+	entry, ok := modelcatalog.Lookup(pricing.ModelName, vendorName)
+	if ok {
+		pricing.ContextLength = entry.ContextLength
+		pricing.MaxOutputTokens = entry.MaxOutputTokens
+		pricing.KnowledgeCutoff = entry.KnowledgeCutoff
+		pricing.ReleaseDate = entry.ReleaseDate
+		pricing.InputModalities = entry.InputModalities
+		pricing.OutputModalities = entry.OutputModalities
+		pricing.Capabilities = entry.Capabilities
+	}
+	if pricing.ContextLength <= 0 {
+		pricing.ContextLength = parseContextLengthTag(pricing.Tags)
+	}
+}
+
+// vendorName resolves the display name of the vendor owning a model record.
+func vendorName(meta *Model, vendors map[int]*Vendor) string {
+	if meta == nil {
+		return ""
+	}
+	if vendor, ok := vendors[meta.VendorID]; ok {
+		return vendor.Name
+	}
+	return ""
+}
+
+// parseContextLengthTag reads the context window from metadata tags such as
+// "Reasoning,Tools,Vision,1M" and returns 0 when no tag matches.
+func parseContextLengthTag(tags string) int {
+	for tag := range strings.SplitSeq(tags, ",") {
+		tag = strings.TrimSpace(tag)
+		if len(tag) < 2 {
+			continue
+		}
+		unit := tag[len(tag)-1]
+		if unit != 'K' && unit != 'k' && unit != 'M' && unit != 'm' {
+			continue
+		}
+		value, err := strconv.ParseFloat(tag[:len(tag)-1], 64)
+		if err != nil || value <= 0 {
+			continue
+		}
+		if unit == 'K' || unit == 'k' {
+			return int(value * 1000)
+		}
+		return int(value * 1000000)
+	}
+	return 0
 }

@@ -7,13 +7,19 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 )
 
 type createTicketRequest struct {
 	Title    string `json:"title" binding:"required"`
 	Category string `json:"category"`
+	Priority string `json:"priority"`
 	Content  string `json:"content" binding:"required"`
+}
+
+var validTicketPriorities = map[string]bool{
+	"low": true, "normal": true, "high": true, "urgent": true,
 }
 
 type replyTicketRequest struct {
@@ -54,11 +60,20 @@ func CreateTicket(c *gin.Context) {
 	if !validTicketCategory(req.Category) {
 		req.Category = "other"
 	}
-	ticket, err := model.CreateTicket(userId, req.Title, req.Category, req.Content)
+	if !validTicketPriorities[req.Priority] {
+		req.Priority = "normal"
+	}
+	ticket, err := model.CreateTicket(userId, req.Title, req.Category, req.Priority, req.Content)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
+	service.BroadcastTicketEvent(service.TicketEvent{
+		Type:     service.TicketEventCreated,
+		TicketId: ticket.Id,
+		UserId:   ticket.UserId,
+		Data:     ticket,
+	})
 	common.ApiSuccess(c, ticket)
 }
 
@@ -76,6 +91,16 @@ func GetUserTickets(c *gin.Context) {
 	pageInfo.SetTotal(int(total))
 	pageInfo.SetItems(tickets)
 	common.ApiSuccess(c, pageInfo)
+}
+
+// GetTicketStats returns the per-status counters of the current user's tickets.
+func GetTicketStats(c *gin.Context) {
+	counts, err := model.CountTicketsByStatus(c.GetInt("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, counts)
 }
 
 // GetTicketDetail returns a ticket with its replies. Users can only see their own.
@@ -129,6 +154,12 @@ func ReplyTicket(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	service.BroadcastTicketEvent(service.TicketEvent{
+		Type:     service.TicketEventReply,
+		TicketId: id,
+		UserId:   ticket.UserId,
+		Data:     reply,
+	})
 	common.ApiSuccess(c, reply)
 }
 
@@ -153,6 +184,12 @@ func CloseTicket(c *gin.Context) {
 		return
 	}
 	ticket.Status = model.TicketStatusClosed
+	service.BroadcastTicketEvent(service.TicketEvent{
+		Type:     service.TicketEventUpdated,
+		TicketId: id,
+		UserId:   ticket.UserId,
+		Data:     ticket,
+	})
 	common.ApiSuccess(c, ticket)
 }
 
@@ -221,6 +258,12 @@ func AdminReplyTicket(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	service.BroadcastTicketEvent(service.TicketEvent{
+		Type:     service.TicketEventReply,
+		TicketId: id,
+		UserId:   ticket.UserId,
+		Data:     reply,
+	})
 	common.ApiSuccess(c, reply)
 }
 
@@ -258,9 +301,8 @@ func AdminUpdateTicket(c *gin.Context) {
 			return
 		}
 	}
-	validPriorities := map[string]bool{"low": true, "normal": true, "high": true, "urgent": true}
 	if req.Priority != "" {
-		if !validPriorities[req.Priority] {
+		if !validTicketPriorities[req.Priority] {
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "Invalid priority"})
 			return
 		}
@@ -270,5 +312,11 @@ func AdminUpdateTicket(c *gin.Context) {
 		}
 	}
 	ticket, _ := model.GetTicketById(id, 0)
+	service.BroadcastTicketEvent(service.TicketEvent{
+		Type:     service.TicketEventUpdated,
+		TicketId: id,
+		UserId:   ticket.UserId,
+		Data:     ticket,
+	})
 	common.ApiSuccess(c, ticket)
 }

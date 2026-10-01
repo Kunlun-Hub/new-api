@@ -32,10 +32,28 @@ export function buildChatCompletionPayload(
   config: PlaygroundConfig,
   parameterEnabled: ParameterEnabled
 ): ChatCompletionRequest {
-  // Filter and format valid messages
-  const processedMessages = messages
-    .filter(isValidMessage)
-    .map(formatMessageForAPI)
+  // Messages before the last context boundary stay visible but are not sent
+  let boundaryIndex = -1
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].contextBoundary) {
+      boundaryIndex = index
+      break
+    }
+  }
+  const contextSource =
+    boundaryIndex === -1 ? messages : messages.slice(boundaryIndex + 1)
+
+  // Filter and format valid messages, keeping only the configured context window
+  const validMessages = contextSource.filter(isValidMessage)
+  const contextTurns = config.max_context
+  const contextMessages =
+    contextTurns > 0 ? validMessages.slice(-contextTurns * 2) : validMessages
+  const processedMessages = contextMessages.map(formatMessageForAPI)
+
+  const systemPrompt = config.system?.trim()
+  if (systemPrompt) {
+    processedMessages.unshift({ role: 'system', content: systemPrompt })
+  }
 
   const payload: ChatCompletionRequest = {
     model: config.model,
@@ -66,6 +84,10 @@ export function buildChatCompletionPayload(
 
   if (parameterEnabled.seed && config.seed !== null) {
     payload.seed = config.seed
+  }
+
+  if (config.reasoning_effort) {
+    payload.reasoning_effort = config.reasoning_effort
   }
 
   return payload

@@ -20,6 +20,8 @@ import i18n from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
+import { syncDayjsLocale } from '@/lib/dayjs'
+
 import { convertDetectedLanguage } from './languages'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
@@ -60,5 +62,8 @@ i18n
       convertDetectedLanguage,
     },
   })
+
+i18n.on('languageChanged', syncDayjsLocale)
+syncDayjsLocale(i18n.resolvedLanguage ?? i18n.language)
 
 export default i18n

@@ -1,0 +1,85 @@
+[
+  {
+    "slug": "api-compatibility-openai-claude-gemini",
+    "title": "各厂商API接口兼容性说明",
+    "description": "{{siteName}}与OpenAI、Claude、Gemini等主流接口的兼容说明。",
+    "time": "3个月前",
+    "toc": [
+      {
+        "text": "接口说明",
+        "level": 2
+      },
+      {
+        "text": "身份认证",
+        "level": 2
+      },
+      {
+        "text": "API地址（BaseURL）",
+        "level": 2
+      },
+      {
+        "text": "参考资料",
+        "level": 2
+      }
+    ],
+    "html": "<p>我们的API，完全兼容OpenAI、Gemini、Claude官方接口协议，支持无缝对接各种第三方应用。</p>\n<h2><a href=\"#接口说明\">接口说明</a></h2>\n<table><thead><tr><th>聊天接口类型</th><th>接口地址</th><th>接口说明</th></tr></thead><tbody><tr><td>OpenAi通用格式</td><td>/v1/chat/completions</td><td>可请求本站所有chat类型模型(包括非OpenAI模型)</td></tr><tr><td>OpenAi新的格式</td><td>/v1/responses</td><td>仅部分OpenAI新模型支持，建议使用上方通用格式</td></tr><tr><td>Claude原生格式</td><td>/v1/messages</td><td>只能请求支持claude原生格式的模型，其他模型请求将:无可用</td></tr><tr><td>Gemini原生格式</td><td>/v1beat/models/...</td><td>只能请求Gemini模型，其他模型请求将:无可用</td></tr></tbody></table>\n<h2><a href=\"#身份认证\">身份认证</a></h2>\n<p>所有 API 请求都应在 HTTP <span><code>Header</code></span> 请求头中包含您的API密钥（令牌KEY）如下所示：</p>\n<table><thead><tr><th>数据格式</th><th>Header传参</th></tr></thead><tbody><tr><td>OpenAI通用格式</td><td>Authorization: Bearer sk-xxx</td></tr><tr><td>Claude原生格式</td><td>参数一：x-api-key: sk-xxx 参数二：anthropic-version: 2023-06-01</td></tr><tr><td>Gemini原生格式</td><td>x-goog-api-key: sk-xxx</td></tr></tbody></table>\n<h2><a href=\"#api地址baseurl\">API地址（BaseURL）</a></h2>\n<p>请在我们网站<a href=\"/panel/token\">API令牌</a>页面中查看所支持的所有API地址（BaseURL）。</p>\n<blockquote>\n<p>切勿绑错API地址和KEY 以免造成请求失败而无法排查原因。</p>\n</blockquote>\n<h2><a href=\"#参考资料\">参考资料</a></h2>\n<ul>\n<li><a href=\"https://platform.openai.com/docs/api-reference/introduction\">OpenAI官方开发文档</a></li>\n<li><a href=\"https://docs.anthropic.com/en/docs/about-claude/models\">Cluade官方开发文档-需翻墙</a></li>\n<li><a href=\"https://ai.google.dev/models/gemini?hl=zh-cn\">Gemini官方开发文档</a></li>\n</ul>"
+  },
+  {
+    "slug": "api-token-group-configuration-guide",
+    "title": "令牌分组是什么，如何配置更稳定？",
+    "description": "本文介绍令牌分组优先级配置及最佳实践，帮助你提升API调用稳定性。",
+    "time": "3个月前",
+    "toc": [
+      {
+        "text": "什么是API令牌分组",
+        "level": 2
+      },
+      {
+        "text": "如何查看各令牌分组包含哪些模型",
+        "level": 2
+      },
+      {
+        "text": "怎样配置令牌分组才更稳定",
+        "level": 2
+      },
+      {
+        "text": "令牌自动分组的作用",
+        "level": 2
+      }
+    ],
+    "html": "<h2><a href=\"#什么是api令牌分组\">什么是API令牌分组</a></h2>\n<p>API Key的分组设置对实际使用体验有着直接影响。</p>\n<p>同一个模型往往存在多种供应渠道。以Claude系列为例，其来源涵盖Claude官方、AWS、Max账号、Azure、Kiro、反重力等多个平台，各渠道在成本与质量上存在差异。为了区分和管理这些渠道，\"令牌分组\"的概念应运而生。</p>\n<p>在<a href=\"/panel/token\">API令牌管理</a>页面，用户可以为自己的令牌指定不同分组，完成配置后，该API Key便能调用对应分组下的模型。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/a5394636-0f75-4caf-8be2-ca337ed33dd5.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<h2><a href=\"#如何查看各令牌分组包含哪些模型\">如何查看各令牌分组包含哪些模型</a></h2>\n<p>进入网站的<a href=\"/models\">模型广场</a>，侧边栏提供了<strong>令牌分组</strong>筛选功能，通过它可以了解以下信息：</p>\n<ol>\n<li>不同令牌分组可调用的模型各有不同。</li>\n<li>同一模型在不同令牌分组下的定价存在差异。</li>\n<li>价格较高的分组，通常对应更优质的模型和线路。</li>\n</ol>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/543a4f59-17bf-4968-93a8-2d0318e9fa83.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<h2><a href=\"#怎样配置令牌分组才更稳定\">怎样配置令牌分组才更稳定</a></h2>\n<p>单个API Key令牌支持同时绑定多个令牌分组。发起API请求时，系统会按照您所设定的分组优先级，由上至下依次检索模型。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/5e0c2306-c785-4ae5-8146-eb626226909c.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>以上图为例：若同一模型在 <span><code>claude_max</code></span> 与 <span><code>claude_cc</code></span> 两个分组中均存在，系统会优先调用 <span><code>claude_max</code></span> 下的版本并按该分组计费；若此分组出现故障，则自动重试下一个分组 <span><code>claude_cc</code></span>，以此类推。</p>\n<p>配置多个分组虽然能在某一渠道故障时提供兜底保障，但也会使请求链路趋于复杂。</p>\n<p>以下是一个典型的请求过程示例：<span><code>default</code></span> 分组未找到模型，跳过 → <span><code>claude_max</code></span> 请求10秒后模型故障 → 重试 <span><code>claude_cc</code></span>，请求成功。</p>\n<p>这种多次重试会拉长整体响应时间，因为程序需要逐一尝试各个含有该模型的分组。为此，建议遵循以下最佳实践：</p>\n<ul>\n<li>将常用或稳定性高的模型分组置于更靠前的优先级位置。</li>\n<li>模型不重叠的分组（如 qwen、deepseek、gemini 等）可以自由添加，数量不影响响应速度。</li>\n<li>存在模型重叠的分组，数量尽量控制在2个以内。</li>\n<li>在编程CLI环境中使用时，建议只选择一个分组并关闭\"自动分组\"功能，因为CLI工具通常带有签名验证机制，多来源渠道混用容易导致签名错误。</li>\n</ul>\n<h2><a href=\"#令牌自动分组的作用\">令牌自动分组的作用</a></h2>\n<p>令牌编辑界面还提供了一个便捷的\"自动分组\"开关。启用后，系统将按照内置的分组顺序自动为您检索匹配的模型。</p>\n<p>这也解释了为什么许多用户仅配置了一个 <span><code>default</code></span> 分组，却依然能够调用全部模型。</p>\n<p>如果您对请求稳定性或模型来源有明确要求，建议关闭自动分组，改为手动选择所需的具体分组。</p>"
+  },
+  {
+    "slug": "beginner-api-platform-guide",
+    "title": "新手首次使用必读指南",
+    "description": "详细介绍从注册账户、钱包充值到选择令牌开始聊天的完整流程。",
+    "time": "3个月前",
+    "toc": [
+      {
+        "text": "一、注册账户并充值",
+        "level": 2
+      },
+      {
+        "text": "二、选择令牌开始聊天",
+        "level": 2
+      },
+      {
+        "text": "三、切换令牌功能",
+        "level": 2
+      },
+      {
+        "text": "注意事项",
+        "level": 2
+      },
+      {
+        "text": "1. 聊天记录",
+        "level": 3
+      },
+      {
+        "text": "2. API地址 (BaseURL)",
+        "level": 3
+      }
+    ],
+    "html": "<p>如果您第一次使用中转API平台，请务必查看本教程。</p>\n<h2><a href=\"#一注册账户并充值\">一、注册账户并充值</a></h2>\n<p>首先请在本站 <a href=\"/signup\"><strong>注册账号</strong></a>，然后前往 <a href=\"/panel/topup\"><strong>钱包充值</strong></a> 页面进行充值或兑换余额。充值后即可食用本站上百个模型！</p>\n<p><img src=\"https://apim.work/v3/guide-1.png\" alt=\"在线充值\"></p>\n<h2><a href=\"#二选择令牌开始聊天\">二、选择令牌开始聊天</a></h2>\n<p>充值完成后，前往 控制台 -&gt; <a href=\"/panel/token\"><strong>令牌管理</strong></a> 页面，如下图所示跳转到聊天页面聊天。（或者点击令牌的 <span><code>复制</code></span> 按钮，复制令牌APIkey到其他应用使用。）</p>\n<p><img src=\"https://apim.work/v3/guide-2.png\" alt=\"令牌选择\"></p>\n<p>也可以直接点击网页顶部导航条的 <a href=\"/chat\"><strong>聊天绘画</strong></a> 菜单，直接进入聊天页，从弹出的下拉菜单中选择默认令牌 开始聊天。</p>\n<h2><a href=\"#三切换令牌功能\">三、切换令牌功能</a></h2>\n<p>进入 <a href=\"/chat\"><strong>聊天绘画</strong></a> 页面后，在网页右上角可以看到 <strong>选择令牌</strong> 按钮，随时可以切换您的令牌使用。</p>\n<p><img src=\"https://apim.work/v3/guide-3.png\" alt=\"选择令牌\"></p>\n<h2><a href=\"#注意事项\">注意事项</a></h2>\n<h3><a href=\"#1-聊天记录\">1. 聊天记录</a></h3>\n<blockquote>\n<p><strong>注意</strong> ：在线聊天的历史记录存储于您浏览器中，因此更换设备、切换节点、清理网站缓存等都可能丢失原有的聊天记录。<br>\n<!-- -->重要的对话记录，请务必单独保存哦！</p>\n</blockquote>\n<h3><a href=\"#2-api地址-baseurl\">2. API地址 (BaseURL)</a></h3>\n<p>由于国内部分区域的网络运营商会劫持IP、dns等造成无法正常访问，请更换API地址访问再尝试，前往 控制台 -&gt; <a href=\"/panel/token\"><strong>令牌管理</strong></a> 页面 可以看到我们的API地址。</p>\n<p><img src=\"https://apim.work/v3/guide-3.jpeg\" alt=\"API信息\"></p>"
+  }
+]

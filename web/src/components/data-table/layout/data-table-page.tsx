@@ -108,6 +108,12 @@ export type DataTablePageProps<TData> = {
   emptyIcon?: React.ReactNode
 
   /**
+   * Empty-state cell className override — e.g. to shrink the reserved height
+   * when the surrounding layout is shorter than the default placeholder.
+   */
+  emptyCellClassName?: string
+
+  /**
    * Empty-state extra content — e.g. a "Create" button below the message.
    */
   emptyAction?: React.ReactNode
@@ -177,6 +183,11 @@ export type DataTablePageProps<TData> = {
   ) => React.ReactNode
 
   /**
+   * Optional row click handler forwarded to the default row renderer.
+   */
+  onRowClick?: (row: Row<TData>) => void
+
+  /**
    * Desktop column className resolver. Use for semantic alignment/spacing only;
    * fixed-column behavior should be configured with `pinnedColumns`.
    */
@@ -231,6 +242,21 @@ export type DataTablePageProps<TData> = {
    * the table body while keeping the header fixed. Defaults to `true`.
    */
   fixedHeight?: boolean
+
+  /**
+   * Wrap the toolbar, desktop table and pagination in a single bordered card,
+   * with a divider below the toolbar. Matches the panel-style list surface used
+   * by reference designs. Forces pagination inline instead of the page footer.
+   */
+  cardSurface?: boolean
+
+  /**
+   * Render the toolbar above the card instead of inside it when
+   * {@link cardSurface} is enabled. Reference layouts whose filter row sits on
+   * the page background above a bordered list surface opt out this way.
+   * Defaults to `true`.
+   */
+  cardSurfaceToolbar?: boolean
 
   /**
    * Desktop table container className (the bordered scroll wrapper).
@@ -338,7 +364,12 @@ export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
   const toolbarNode = renderToolbar(props, viewToggle)
   const mobileNode = renderMobile(props, showMobile, cardViewActive, viewMode)
   const desktopNode = renderDesktop(props, showMobile, cardViewActive, viewMode)
-  const paginationNode = renderPagination(props)
+  const cardSurface = props.cardSurface === true
+  const cardSurfaceToolbar = props.cardSurfaceToolbar !== false
+  const paginationNode = renderPagination({
+    ...props,
+    paginationInFooter: cardSurface ? false : props.paginationInFooter,
+  })
 
   return (
     <>
@@ -350,17 +381,38 @@ export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
           props.className
         )}
       >
-        {toolbarNode}
-        {mobileNode}
-        {desktopNode}
-        {props.afterTable}
+        {cardSurface ? (
+          <>
+            {!cardSurfaceToolbar && toolbarNode}
+            <div className='border-border/40 rounded-xl border p-3 lg:p-5'>
+              {cardSurfaceToolbar && toolbarNode && (
+                <div className='border-border/40 border-b pb-4'>
+                  {toolbarNode}
+                </div>
+              )}
+              <div className='space-y-3'>
+                {mobileNode}
+                {desktopNode}
+                {paginationNode}
+                {props.afterTable}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {toolbarNode}
+            {mobileNode}
+            {desktopNode}
+            {props.afterTable}
+          </>
+        )}
       </div>
 
       {/* Bulk actions are typically a fixed-position toolbar; let the consumer
           handle its own visibility, we just gate it to non-mobile. */}
       {(!showMobile || props.showMobileBulkActions) && props.bulkActions}
 
-      {paginationNode}
+      {!cardSurface && paginationNode}
     </>
   )
 }
@@ -440,6 +492,7 @@ function renderMobile<TData>(
           emptyAction={props.emptyAction}
           skeletonKeyPrefix={props.skeletonKeyPrefix}
           renderRow={props.renderRow}
+          onRowClick={props.onRowClick}
           applyHeaderSize={props.applyHeaderSize}
           tableHeaderClassName={cn(
             '[background-color:var(--table-header)]',
@@ -487,7 +540,12 @@ function renderMobile<TData>(
     }
   }
 
-  return <div className='min-h-0 flex-1 overflow-y-auto'>{mobileContent}</div>
+  const mobileFixedHeight = props.fixedHeight !== false
+  return (
+    <div className={cn(mobileFixedHeight && 'min-h-0 flex-1 overflow-y-auto')}>
+      {mobileContent}
+    </div>
+  )
 }
 
 function renderDesktop<TData>(
@@ -537,8 +595,10 @@ function renderDesktop<TData>(
       emptyDescription={props.emptyDescription}
       emptyIcon={props.emptyIcon}
       emptyAction={props.emptyAction}
+      emptyCellClassName={props.emptyCellClassName}
       skeletonKeyPrefix={props.skeletonKeyPrefix}
       renderRow={props.renderRow}
+      onRowClick={props.onRowClick}
       applyHeaderSize={props.applyHeaderSize}
       splitHeader={fixedHeight}
       tableContainerClassName={fixedHeight ? 'h-full min-h-0' : undefined}
@@ -550,6 +610,8 @@ function renderDesktop<TData>(
       pinnedColumns={props.pinnedColumns}
       containerClassName={cn(
         fixedHeight && 'min-h-0 flex-1',
+        // The card surface already draws the border and radius around the list.
+        props.cardSurface && 'rounded-none border-0',
         'transition-opacity duration-150',
         isFetchingOnly && 'pointer-events-none opacity-60',
         props.tableClassName

@@ -53,17 +53,20 @@ describe('CC Switch model selection', () => {
     async (app) => {
       renderDialog()
       const user = userEvent.setup()
-      await user.click(screen.getByRole('radio', { name: app }))
+      await user.click(screen.getByRole('button', { name: app }))
       const input = screen.getByRole('combobox', { name: 'Primary Model' })
 
       await user.click(input)
 
       expect(input).toHaveAttribute('aria-expanded', 'true')
       const list = await screen.findByRole('listbox')
-      const dialog = screen.getByRole('dialog', { name: 'Import to CC Switch' })
-      // The dialog is translated and clips overflow. Its popup must escape
-      // that containing block to remain aligned and fully visible.
-      expect(dialog).not.toContainElement(list)
+      const dialog = screen.getByRole('dialog', {
+        name: 'Configure CC Switch',
+      })
+      // The dialog clips overflow, so the popup is portaled into the dialog
+      // subtree to keep modal outside-press handling intact.
+      expect(list).toBeVisible()
+      expect(dialog).toContainElement(list)
       await user.click(screen.getByRole('option', { name: 'gpt-5.4' }))
       await waitFor(() => expect(input).toHaveValue('gpt-5.4'))
       expect(input).toHaveAttribute('aria-expanded', 'false')
@@ -74,7 +77,7 @@ describe('CC Switch model selection', () => {
   it('filters model names and supports keyboard selection and Escape without closing the dialog', async () => {
     renderDialog()
     const user = userEvent.setup()
-    await user.click(screen.getByRole('radio', { name: 'Codex' }))
+    await user.click(screen.getByRole('button', { name: 'Codex' }))
     const input = screen.getByRole('combobox', { name: 'Primary Model' })
     await user.click(input)
     await user.type(input, 'sonnet')
@@ -98,9 +101,9 @@ describe('CC Switch model selection', () => {
   it('shows an empty result when no models are available and updates an open dropdown when models arrive', async () => {
     renderDialog([])
     const user = userEvent.setup()
-    await user.click(screen.getByRole('radio', { name: 'Codex' }))
+    await user.click(screen.getByRole('button', { name: 'Codex' }))
     const input = screen.getByRole('combobox', { name: 'Primary Model' })
-    await user.click(screen.getByRole('button', { name: 'Primary Model' }))
+    await user.click(input)
 
     expect(await screen.findByText('No models found')).toBeVisible()
     await act(async () => {

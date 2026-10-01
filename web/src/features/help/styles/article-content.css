@@ -1,0 +1,203 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+
+/*
+ * Help center articles are rendered from stored HTML, so the typography is
+ * scoped here instead of relying on per-element utility classes.
+ */
+.help-article {
+  color: var(--foreground);
+  line-height: 1.75;
+}
+
+.help-article :where(h1, h2, h3, h4) {
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+}
+
+.help-article :where(h1) {
+  font-size: 1.75em;
+}
+
+.help-article :where(h2) {
+  font-size: 1.4em;
+}
+
+.help-article :where(h3) {
+  font-size: 1.2em;
+}
+
+.help-article :where(h4) {
+  font-size: 1.05em;
+}
+
+.help-article :where(h1, h2, h3, h4):first-child {
+  margin-top: 0;
+}
+
+.help-article :where(p) {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+
+.help-article :where(a) {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+
+.help-article :where(strong) {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.help-article :where(ul, ol) {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+}
+
+.help-article :where(ul) {
+  list-style: disc;
+}
+
+.help-article :where(ol) {
+  list-style: decimal;
+}
+
+.help-article :where(li) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  padding-left: 0.375em;
+}
+
+.help-article :where(li > ul, li > ol) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.help-article :where(blockquote) {
+  margin: 1.6em 0;
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.help-article :where(blockquote p:first-of-type) {
+  margin-top: 0;
+}
+
+.help-article :where(blockquote p:last-of-type) {
+  margin-bottom: 0;
+}
+
+.help-article :where(code) {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 0.875em;
+  background-color: color-mix(in oklab, var(--muted) 80%, transparent);
+  border-radius: calc(var(--radius) - 4px);
+  padding: 0.2em 0.4em;
+  overflow-wrap: break-word;
+}
+
+.help-article :where(pre) {
+  margin: 1.7142857em 0;
+  padding: 0.8571429em 1.1428571em;
+  background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-size: 0.875em;
+  line-height: 1.7142857;
+}
+
+.help-article :where(pre code) {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  white-space: pre;
+}
+
+.help-article :where(img, video) {
+  margin-top: 2em;
+  margin-bottom: 2em;
+  border: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
+  border-radius: var(--radius);
+}
+
+.help-article :where(figure) {
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+
+.help-article :where(figcaption) {
+  margin-top: 0.8571429em;
+  color: var(--muted-foreground);
+  font-size: 0.875em;
+}
+
+.help-article :where(table) {
+  width: 100%;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  font-size: 0.875em;
+  line-height: 1.7;
+  border-collapse: collapse;
+  border: 1px solid color-mix(in oklab, var(--border) 40%, transparent);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.help-article :where(thead) {
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 40%, transparent);
+}
+
+.help-article :where(th) {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.help-article :where(td) {
+  padding: 0.5rem 0.75rem;
+}
+
+.help-article :where(tr) {
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 40%, transparent);
+}
+
+.help-article :where(tr:last-child) {
+  border-bottom: none;
+}
+
+.help-article :where(hr) {
+  margin: 3em 0;
+  border-top: 1px solid var(--border);
+}
+
+.help-article :where(h2) {
+  scroll-margin-top: 6rem;
+}

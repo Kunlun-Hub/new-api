@@ -32,6 +32,37 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
+ * Personal S3-compatible bucket configuration stored with the user settings.
+ * The secret access key is never returned by the API.
+ */
+export interface UserStorageConfig {
+  endpoint: string
+  bucket: string
+  region?: string
+  access_key_id: string
+  public_base_url?: string
+}
+
+/**
+ * Personal bucket state as reported by the backend.
+ */
+export interface UserStorageState extends Partial<UserStorageConfig> {
+  configured: boolean
+}
+
+/**
+ * Payload of the "verify and save" action. An empty secret keeps the stored one.
+ */
+export interface UserStorageRequest {
+  endpoint: string
+  bucket: string
+  region?: string
+  access_key_id: string
+  secret_key?: string
+  public_base_url?: string
+}
+
+/**
  * User profile data
  */
 export interface UserProfile {
@@ -71,6 +102,12 @@ export interface UserProfile {
   invite_user_id?: number
   /** Account creation timestamp */
   created_time: number
+  /** Account creation timestamp (seconds, from the API) */
+  created_at?: number
+  /** Last successful login timestamp (seconds) */
+  last_login_at?: number
+  /** Client IP of the most recent successful sign-in */
+  last_login_ip?: string
   /** User settings (JSON string) */
   setting?: string
   /** WeChat ID (OAuth) */
@@ -88,9 +125,29 @@ export interface UserProfile {
 }
 
 /**
- * Notification type
+ * Notification type. `bark` and `gotify` are legacy channels kept so stored
+ * settings stay valid; they are no longer offered in the profile UI.
  */
-export type NotifyType = 'email' | 'webhook' | 'bark' | 'gotify'
+export type NotifyType =
+  | 'email'
+  | 'webhook'
+  | 'wecom'
+  | 'dingtalk'
+  | 'feishu'
+  | 'telegram'
+  | 'bark'
+  | 'gotify'
+
+/**
+ * Notification channel selectable in the profile UI.
+ */
+export type NotificationMethod =
+  | 'email'
+  | 'wecom'
+  | 'dingtalk'
+  | 'feishu'
+  | 'telegram'
+  | 'webhook'
 
 /**
  * Parsed user settings
@@ -120,6 +177,26 @@ export interface UserSettings {
   record_ip_log?: boolean
   /** Receive upstream model update notifications (admin only) */
   upstream_model_update_notify_enabled?: boolean
+  /** WeCom robot webhook URL */
+  wecom_url?: string
+  /** DingTalk robot webhook URL */
+  dingtalk_url?: string
+  /** Feishu robot webhook URL */
+  feishu_url?: string
+  /** Telegram bot token */
+  telegram_bot_token?: string
+  /** Telegram chat id */
+  telegram_chat_id?: string
+  /** Account quota insufficient notice */
+  subscribe_quota_insufficient?: boolean
+  /** Discount campaign notice */
+  subscribe_discount?: boolean
+  /** Keepalive periodic notice */
+  subscribe_keepalive?: boolean
+  /** System announcement notice */
+  subscribe_system_notice?: boolean
+  /** Model price change notice */
+  subscribe_model_price_change?: boolean
   /** Preferred interface/API response language */
   language?: string
 }
@@ -150,7 +227,7 @@ export interface EmailBindingFlow extends AccountSecurityResult {
  * User settings update request
  */
 export interface UpdateUserSettingsRequest {
-  notify_type?: string
+  notify_type?: NotifyType
   quota_warning_threshold?: number
   webhook_url?: string
   webhook_secret?: string
@@ -162,6 +239,31 @@ export interface UpdateUserSettingsRequest {
   accept_unset_model_ratio_model?: boolean
   record_ip_log?: boolean
   upstream_model_update_notify_enabled?: boolean
+  wecom_url?: string
+  dingtalk_url?: string
+  feishu_url?: string
+  telegram_bot_token?: string
+  telegram_chat_id?: string
+  subscribe_quota_insufficient?: boolean
+  subscribe_discount?: boolean
+  subscribe_keepalive?: boolean
+  subscribe_system_notice?: boolean
+  subscribe_model_price_change?: boolean
+}
+
+/**
+ * Test payload for a notification channel, mirroring the saved settings.
+ */
+export interface TestNotificationRequest {
+  type: NotificationMethod
+  notification_email?: string
+  webhook_url?: string
+  webhook_secret?: string
+  wecom_url?: string
+  dingtalk_url?: string
+  feishu_url?: string
+  telegram_bot_token?: string
+  telegram_chat_id?: string
 }
 
 /**

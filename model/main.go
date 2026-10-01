@@ -348,6 +348,7 @@ func migrateDB() error {
 		&Ability{},
 		&Log{},
 		&Midjourney{},
+		&StudioShare{},
 		&TopUp{},
 		&QuotaData{},
 		&Task{},
@@ -362,6 +363,12 @@ func migrateDB() error {
 		&SubscriptionOrder{},
 		&Ticket{},
 		&TicketReply{},
+		&Invoice{},
+		&InvoiceOrder{},
+		&ContentItem{},
+		&AffiliateReward{},
+		&AffiliateTransfer{},
+		&Withdrawal{},
 		&UserSubscription{},
 		&SubscriptionPreConsumeRecord{},
 		&CustomOAuthProvider{},
@@ -374,6 +381,9 @@ func migrateDB() error {
 		&AuthzRole{},
 	)
 	if err != nil {
+		return err
+	}
+	if err := BackfillTicketNumbers(); err != nil {
 		return err
 	}
 	if err := InitializeUserAuthVersions(); err != nil {

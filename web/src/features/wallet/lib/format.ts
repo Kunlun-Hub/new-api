@@ -62,6 +62,16 @@ export function formatCurrency(amount: number | string): string {
 }
 
 /**
+ * Convert a top-up discount ratio into the "折" value used by Chinese
+ * discount copy, e.g. 0.85 -> 8.5, 0.8 -> 8, 0.77 -> 7.7.
+ */
+export function formatDiscountInZhe(discount: number): number {
+  if (!Number.isFinite(discount) || discount >= 1) return 10
+  const percentOff = Math.min(99, Math.max(0, Math.round((1 - discount) * 100)))
+  return Math.round(((100 - percentOff) / 10) * 10) / 10
+}
+
+/**
  * Get discount label for display (e.g., "20% OFF")
  */
 export function getDiscountLabel(discount: number): string {

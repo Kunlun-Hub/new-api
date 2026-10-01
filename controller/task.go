@@ -74,7 +74,7 @@ func GetTaskArtifacts(c *gin.Context) {
 		writeTaskArtifactError(c, http.StatusNotFound, "artifact_not_found", "Task or artifact not found")
 		return
 	}
-	writeTaskArtifacts(c, task, false)
+	writeTaskArtifacts(c, task, false, false)
 }
 
 func GetDashboardTaskArtifacts(c *gin.Context) {
@@ -87,10 +87,10 @@ func GetDashboardTaskArtifacts(c *gin.Context) {
 		writeTaskArtifactError(c, http.StatusNotFound, "artifact_not_found", "Task or artifact not found")
 		return
 	}
-	writeTaskArtifacts(c, task, true)
+	writeTaskArtifacts(c, task, true, c.Query("include_data") == "1")
 }
 
-func writeTaskArtifacts(c *gin.Context, task *model.Task, dashboard bool) {
+func writeTaskArtifacts(c *gin.Context, task *model.Task, dashboard bool, includeData bool) {
 	c.Header("Cache-Control", "private, no-store")
 	artifacts, err := projectTaskArtifacts(task)
 	if err != nil {
@@ -112,6 +112,11 @@ func writeTaskArtifacts(c *gin.Context, task *model.Task, dashboard bool) {
 		})
 	}
 	response := gin.H{"task_id": task.TaskID, "artifacts": items}
+	// List queries omit the persisted snapshot, so the log dialog asks for it
+	// explicitly when it opens instead of carrying it on every row.
+	if includeData && len(task.Data) > 0 {
+		response["data"] = task.Data
+	}
 	if dashboard && task.Status == model.TaskStatusSuccess && task.Platform == constant.TaskPlatformSuno {
 		response["legacy_audio_clips"] = legacySunoAudioClips(task.Data)
 	}

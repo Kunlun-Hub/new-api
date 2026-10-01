@@ -51,6 +51,8 @@ func TestMain(m *testing.M) {
 		&QuotaData{},
 		&Ability{},
 		&TopUp{},
+		&AffiliateReward{},
+		&Withdrawal{},
 		&SubscriptionPlan{},
 		&SubscriptionOrder{},
 		&UserSubscription{},
@@ -59,6 +61,8 @@ func TestMain(m *testing.M) {
 		&SystemInstance{},
 		&SystemTask{},
 		&SystemTaskLock{},
+		&Ticket{},
+		&TicketReply{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}
@@ -84,6 +88,8 @@ func truncateTables(t *testing.T) {
 		DB.Exec("DELETE FROM quota_data")
 		DB.Exec("DELETE FROM abilities")
 		DB.Exec("DELETE FROM top_ups")
+		DB.Exec("DELETE FROM affiliate_rewards")
+		DB.Exec("DELETE FROM withdrawals")
 		DB.Exec("DELETE FROM subscription_orders")
 		DB.Exec("DELETE FROM subscription_plans")
 		DB.Exec("DELETE FROM user_subscriptions")

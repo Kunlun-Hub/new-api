@@ -16,16 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { useCallback, useMemo } from 'react'
+import { getRouteApi } from '@tanstack/react-router'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
-import type { NavGroup } from '@/components/layout/types'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CacheStatsDialog } from '@/features/system-settings/general/channel-affinity/cache-stats-dialog'
-import { useSidebarConfig } from '@/hooks/use-sidebar-config'
 
+import { CommonLogsSummaryCards } from './components/common-logs-summary-cards'
 import { UserInfoDialog } from './components/dialogs/user-info-dialog'
 import {
   type LogsViewScope,
@@ -41,11 +40,9 @@ import {
 } from './section-registry'
 
 const route = getRouteApi('/_authenticated/usage-logs/$section')
-const TASK_LOG_SECTIONS = ['drawing', 'task'] as const
-
 const SECTION_META: Record<UsageLogsSectionId, { titleKey: string }> = {
   common: {
-    titleKey: 'Common Logs',
+    titleKey: 'Usage Logs',
   },
   drawing: {
     titleKey: 'Drawing Logs',
@@ -57,7 +54,6 @@ const SECTION_META: Record<UsageLogsSectionId, { titleKey: string }> = {
 
 function UsageLogsContent() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const params = route.useParams()
   const activeCategory: UsageLogsSectionId =
     params.section && isUsageLogsSectionId(params.section)
@@ -72,42 +68,6 @@ function UsageLogsContent() {
     setAffinityDialogOpen,
   } = useUsageLogsContext()
   const { canManageScope, viewScope, setViewScope } = useLogsViewScope()
-  const tabNavGroups = useMemo<NavGroup[]>(
-    () => [
-      {
-        title: 'Task Logs',
-        items: TASK_LOG_SECTIONS.map((section) => ({
-          title: SECTION_META[section].titleKey,
-          url: `/usage-logs/${section}`,
-        })),
-      },
-    ],
-    []
-  )
-  const filteredTabGroups = useSidebarConfig(tabNavGroups)
-  const visibleSections = useMemo(
-    () =>
-      (filteredTabGroups[0]?.items ?? [])
-        .map((item) => {
-          if (!('url' in item) || typeof item.url !== 'string') return null
-          return item.url.split('/').pop() ?? null
-        })
-        .filter((section): section is UsageLogsSectionId =>
-          Boolean(section && isUsageLogsSectionId(section))
-        ),
-    [filteredTabGroups]
-  )
-
-  const handleSectionChange = useCallback(
-    (section: string) => {
-      void navigate({
-        to: '/usage-logs/$section',
-        params: { section: section as UsageLogsSectionId },
-      })
-    },
-    [navigate]
-  )
-
   const handleViewScopeChange = useCallback(
     (scope: string) => {
       if (scope === 'all' || scope === 'self') {
@@ -117,14 +77,19 @@ function UsageLogsContent() {
     [setViewScope]
   )
 
-  const pageMeta =
-    activeCategory === 'common' ? SECTION_META.common : SECTION_META.task
-  const showTaskSwitcher =
-    activeCategory !== 'common' && visibleSections.length > 1
-
+  const pageMeta = SECTION_META[activeCategory]
   return (
     <>
-      <SectionPageLayout fixedContent>
+      <SectionPageLayout>
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Dashboard'), href: '/dashboard/overview' },
+              { label: t('Logs') },
+              { label: t(pageMeta.titleKey) },
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>
           {t(pageMeta.titleKey)}
         </SectionPageLayout.Title>
@@ -139,21 +104,13 @@ function UsageLogsContent() {
           )}
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
-          <div className='flex h-full min-h-0 flex-col gap-4'>
-            {showTaskSwitcher && (
-              <Tabs value={activeCategory} onValueChange={handleSectionChange}>
-                <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
-                  {visibleSections.map((section) => (
-                    <TabsTrigger key={section} value={section}>
-                      {t(SECTION_META[section].titleKey)}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
+          <div className='flex flex-col gap-4'>
+            {activeCategory === 'common' && (
+              <div className='shrink-0'>
+                <CommonLogsSummaryCards />
+              </div>
             )}
-            <div className='min-h-0 flex-1'>
-              <UsageLogsTable logCategory={activeCategory} />
-            </div>
+            <UsageLogsTable logCategory={activeCategory} />
           </div>
         </SectionPageLayout.Content>
       </SectionPageLayout>

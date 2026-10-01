@@ -37,6 +37,8 @@ export type HeaderNavModule = (typeof ACCESS_HEADER_NAV_MODULES)[number]
 export type HeaderNavModules = {
   home: boolean
   console: boolean
+  blog: boolean
+  help: boolean
   pricing: ModuleAccess
   rankings: ModuleAccess
   monitoring: ModuleAccess
@@ -48,11 +50,14 @@ export type HeaderNavModules = {
 const DEFAULT_HEADER_NAV_MODULES: HeaderNavModules = {
   home: true,
   console: true,
+  blog: true,
+  help: true,
   pricing: { enabled: true, requireAuth: false },
   rankings: { enabled: true, requireAuth: false },
   monitoring: { enabled: true, requireAuth: false },
   docs: true,
   about: true,
+  studio: true,
   showSearch: true,
 }
 
@@ -201,6 +206,22 @@ export async function getModuleAccessForGuard(
     return getModuleAccessFromStatus(status, module)
   } catch {
     return { enabled: false, requireAuth: true }
+  }
+}
+
+/**
+ * Resolve a plain boolean header-nav module (for example `studio`) for a
+ * router `beforeLoad` guard. Fails closed when the status request fails.
+ */
+export async function getBooleanModuleEnabledForGuard(
+  queryClient: QueryClient,
+  module: 'studio' | 'blog' | 'help'
+): Promise<boolean> {
+  try {
+    const status = await queryClient.fetchQuery(statusQueryOptions)
+    return parseHeaderNavModulesFromStatus(status)[module] !== false
+  } catch {
+    return false
   }
 }
 

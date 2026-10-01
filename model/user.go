@@ -297,6 +297,53 @@ func generateDefaultSidebarConfigForRole(userRole int) string {
 	return string(configBytes)
 }
 
+// UsernameMaxLength 与 User 模型上 username 字段的校验标签保持一致。
+const UsernameMaxLength = 20
+
+// SuggestUsernameFromEmail 依据邮箱地址生成候选用户名：取 @ 前的本地部分，
+// 仅保留小写字母、数字、点、下划线与连字符，并按用户名字段长度截断。
+// 本地部分为空或过滤后为空时回退为 "user"。
+func SuggestUsernameFromEmail(email string) string {
+	local, _, _ := strings.Cut(NormalizeEmail(email), "@")
+	var builder strings.Builder
+	for _, r := range local {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '.', r == '_', r == '-':
+			builder.WriteRune(r)
+		}
+	}
+	username := strings.Trim(builder.String(), "._-")
+	if username == "" {
+		username = "user"
+	}
+	if len(username) > UsernameMaxLength {
+		username = username[:UsernameMaxLength]
+	}
+	return username
+}
+
+// EnsureUniqueUsername 返回一个未被占用的用户名：base 已存在时依次尝试追加 1、2……，
+// 追加序号后仍不超过 UsernameMaxLength。
+func EnsureUniqueUsername(base string) (string, error) {
+	candidate := base
+	for i := 1; i <= 100; i++ {
+		exist, err := CheckUserExistOrDeleted(candidate, "")
+		if err != nil {
+			return "", err
+		}
+		if !exist {
+			return candidate, nil
+		}
+		suffix := strconv.Itoa(i)
+		trimmed := base
+		if len(trimmed) > UsernameMaxLength-len(suffix) {
+			trimmed = trimmed[:UsernameMaxLength-len(suffix)]
+		}
+		candidate = trimmed + suffix
+	}
+	return "", fmt.Errorf("no available username derived from %q", base)
+}
+
 // CheckUserExistOrDeleted check if user exist or deleted, if not exist, return false, nil, if deleted or exist, return true, nil
 func CheckUserExistOrDeleted(username string, email string) (bool, error) {
 	var user User
@@ -547,7 +594,7 @@ func GetSelfUserById(id int) (*User, error) {
 		"github_id", "discord_id", "oidc_id", "wechat_id", "telegram_id",
 		"group", "quota", "used_quota", "request_count", "aff_code", "aff_count",
 		"aff_quota", "aff_history", "inviter_id", "linux_do_id", "setting",
-		"stripe_customer", "auth_version",
+		"stripe_customer", "auth_version", "created_at", "last_login_at",
 		"CASE WHEN password <> '' THEN 1 ELSE 0 END AS has_password",
 	}).First(&profile, "id = ?", id).Error
 	profile.User.HasPassword = profile.HasPassword
@@ -592,6 +639,21 @@ func inviteUser(inviterId int) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+// inviteUserWithReward 记录邀请奖励明细，reward 发放本身仍由 inviteUser 完成。
+func inviteUserWithReward(inviterId int, inviteeId int, inviteeUsername string) error {
+	if err := inviteUser(inviterId); err != nil {
+		return err
+	}
+	reward := &AffiliateReward{
+		InviterId:       inviterId,
+		InviteeId:       inviteeId,
+		InviteeUsername: inviteeUsername,
+		Source:          AffiliateSourceRegister,
+		RewardQuota:     common.QuotaForInviter,
+	}
+	return CreateAffiliateReward(DB, reward)
 }
 
 // IsInvitationUnlocked reports whether the user has met the admin-configured
@@ -640,6 +702,14 @@ func (user *User) TransferAffQuotaToQuota(quota int) error {
 
 	// 保存用户状态
 	if err := tx.Save(user).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Create(&AffiliateTransfer{
+		UserId:    user.Id,
+		Quota:     quota,
+		CreatedAt: nowUnix(),
+	}).Error; err != nil {
 		return err
 	}
 
@@ -751,7 +821,7 @@ func (user *User) finishInsert(inviterId int) {
 		if common.QuotaForInviter > 0 {
 			//_ = IncreaseUserQuota(inviterId, common.QuotaForInviter)
 			RecordLog(inviterId, LogTypeSystem, fmt.Sprintf("邀请用户赠送 %s", logger.LogQuota(common.QuotaForInviter)))
-			_ = inviteUser(inviterId)
+			_ = inviteUserWithReward(inviterId, user.Id, user.Username)
 		}
 	}
 }
@@ -807,7 +877,7 @@ func (user *User) FinalizeOAuthUserCreation(inviterId int) {
 		}
 		if common.QuotaForInviter > 0 {
 			RecordLog(inviterId, LogTypeSystem, fmt.Sprintf("邀请用户赠送 %s", logger.LogQuota(common.QuotaForInviter)))
-			_ = inviteUser(inviterId)
+			_ = inviteUserWithReward(inviterId, user.Id, user.Username)
 		}
 	}
 }
@@ -1437,6 +1507,13 @@ func DeltaUpdateUserQuota(id int, delta int) (err error) {
 func GetRootUser() (user *User) {
 	DB.Where("role = ?", common.RoleRootUser).First(&user)
 	return user
+}
+
+// CountRootUsers returns how many super administrator accounts exist.
+func CountRootUsers() (int64, error) {
+	var count int64
+	err := DB.Model(&User{}).Where("role = ?", common.RoleRootUser).Count(&count).Error
+	return count, err
 }
 
 func UpdateUserLastLoginAt(id int) {

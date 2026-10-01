@@ -24,11 +24,14 @@ export type HeaderNavAccessConfig = {
 export type HeaderNavModulesConfig = {
   home: boolean
   console: boolean
+  blog: boolean
+  help: boolean
   pricing: HeaderNavAccessConfig
   rankings: HeaderNavAccessConfig
   monitoring: HeaderNavAccessConfig
   docs: boolean
   about: boolean
+  studio: boolean
   [key: string]: boolean | HeaderNavAccessConfig
 }
 
@@ -42,6 +45,8 @@ export type SidebarModulesAdminConfig = Record<string, SidebarSectionConfig>
 export const HEADER_NAV_DEFAULT: HeaderNavModulesConfig = {
   home: true,
   console: true,
+  blog: true,
+  help: true,
   pricing: {
     enabled: true,
     requireAuth: false,
@@ -56,6 +61,7 @@ export const HEADER_NAV_DEFAULT: HeaderNavModulesConfig = {
   },
   docs: true,
   about: true,
+  studio: true,
   showSearch: true,
 }
 
@@ -68,6 +74,7 @@ export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
   console: {
     enabled: true,
     detail: true,
+    analytics: false,
     token: true,
     log: true,
     audit: true,

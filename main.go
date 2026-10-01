@@ -24,6 +24,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/QuantumNous/new-api/pkg/modelcatalog"
 	perfmetrics "github.com/QuantumNous/new-api/pkg/perf_metrics"
 	"github.com/QuantumNous/new-api/pkg/wsmanager"
 	"github.com/QuantumNous/new-api/relay"
@@ -110,6 +111,9 @@ func main() {
 	// Warm pricing after channel cache initialization so Advanced Custom
 	// endpoint inference can read cached route settings on first request.
 	model.GetPricing()
+	// Warm the public model catalog (context window, release date, modalities)
+	// so pricing responses can carry model metadata.
+	modelcatalog.Start()
 
 	// 热更新配置
 	go model.SyncOptions(common.SyncFrequency)

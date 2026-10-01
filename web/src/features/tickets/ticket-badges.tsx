@@ -18,44 +18,48 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
+import { TICKET_CATEGORY_LABELS } from './ticket-constants'
 import type { TicketStatus } from './types'
 
-const TICKET_STATUS_STYLES: Record<TicketStatus, string> = {
-  open: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  in_progress: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  resolved: 'bg-success/10 text-success',
-  closed: 'bg-muted text-muted-foreground',
+const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
+  open: 'Awaiting reply',
+  in_progress: 'Replied',
+  resolved: 'Replied',
+  closed: 'Closed',
 }
 
-export function TicketStatusBadge({ status }: { status: TicketStatus }) {
+const TICKET_STATUS_STYLES: Record<TicketStatus, string> = {
+  open: 'border-amber-500/30 bg-amber-500/10 text-amber-600',
+  in_progress: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600',
+  resolved: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600',
+  closed: 'border-border/50 bg-muted text-muted-foreground',
+}
+
+export function TicketStatusBadge(props: {
+  status: TicketStatus
+  className?: string
+}) {
   const { t } = useTranslation()
-  const labels: Record<TicketStatus, string> = {
-    open: t('Open'),
-    in_progress: t('In progress'),
-    resolved: t('Resolved'),
-    closed: t('Closed'),
-  }
   return (
-    <Badge className={cn('shrink-0', TICKET_STATUS_STYLES[status])}>
-      {labels[status]}
-    </Badge>
+    <span
+      className={cn(
+        'inline-flex h-5 w-fit shrink-0 items-center justify-center rounded-full border px-1.5 py-0 text-[0.65rem] font-medium whitespace-nowrap',
+        TICKET_STATUS_STYLES[props.status],
+        props.className
+      )}
+    >
+      {t(TICKET_STATUS_LABELS[props.status] ?? 'Awaiting reply')}
+    </span>
   )
 }
 
 export function TicketCategoryBadge({ category }: { category: string }) {
   const { t } = useTranslation()
-  const labels: Record<string, string> = {
-    billing: t('Billing'),
-    technical: t('Technical'),
-    account: t('Account'),
-    other: t('Other'),
-  }
   return (
-    <Badge variant='outline' className='shrink-0'>
-      {labels[category] ?? labels.other}
-    </Badge>
+    <span className='bg-secondary text-secondary-foreground inline-flex h-5 w-fit shrink-0 items-center justify-center rounded-full px-1.5 py-0 text-[0.65rem] font-medium whitespace-nowrap'>
+      {t(TICKET_CATEGORY_LABELS[category] ?? 'Other')}
+    </span>
   )
 }

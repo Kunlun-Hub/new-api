@@ -54,7 +54,7 @@ export function CacheTooltip({
       <Tooltip>
         <TooltipTrigger
           render={<Zap className={`size-3 flex-shrink-0 ${color}`} />}
-        ></TooltipTrigger>
+        />
         <TooltipContent side='top'>
           <p className='text-xs'>
             {label}: {formatTokens(tokens)}
@@ -108,6 +108,7 @@ export function createDurationColumn<T>(config: {
   unit?: 'seconds' | 'milliseconds'
   headerLabel: string
   warningThresholdSec?: number
+  size?: number
 }): ColumnDef<T> {
   const {
     submitTimeKey,
@@ -115,10 +116,12 @@ export function createDurationColumn<T>(config: {
     unit = 'milliseconds',
     headerLabel,
     warningThresholdSec = 60,
+    size,
   } = config
 
   return {
     id: 'duration',
+    size,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={headerLabel} />
     ),
@@ -201,11 +204,13 @@ export function createFailReasonColumn<T>(config: {
   accessorKey?: string
   headerLabel: string
   cellTitle: string
+  size?: number
 }): ColumnDef<T> {
-  const { accessorKey = 'fail_reason', headerLabel, cellTitle } = config
+  const { accessorKey = 'fail_reason', headerLabel, cellTitle, size } = config
 
   return {
     accessorKey,
+    size,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={headerLabel} />
     ),
@@ -247,11 +252,13 @@ export function createFailReasonColumn<T>(config: {
 export function createProgressColumn<T>(config: {
   accessorKey?: string
   headerLabel: string
+  size?: number
 }): ColumnDef<T> {
-  const { accessorKey = 'progress', headerLabel } = config
+  const { accessorKey = 'progress', headerLabel, size } = config
 
   return {
     accessorKey,
+    size,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={headerLabel} />
     ),

@@ -18,7 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useStatus } from '@/hooks/use-status'
 
-import type { AnnouncementItem, ApiInfoItem, FAQItem } from '../types'
+import type {
+  AnnouncementItem,
+  ApiInfoItem,
+  FAQItem,
+  PriceNoticeItem,
+} from '../types'
 
 /**
  * Get specific list from status data
@@ -49,6 +54,13 @@ export function useAnnouncements() {
     'announcements_enabled',
     'announcements'
   )
+}
+
+/**
+ * Get price notice list
+ */
+export function usePriceNotices() {
+  return useStatusData<PriceNoticeItem>('price_notice_enabled', 'price_notice')
 }
 
 /**

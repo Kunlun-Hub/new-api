@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 
 import { RedemptionsDialogs } from './components/redemptions-dialogs'
 import { RedemptionsPrimaryButtons } from './components/redemptions-primary-buttons'
@@ -29,7 +29,15 @@ export function Redemptions() {
   const { t } = useTranslation()
   return (
     <RedemptionsProvider>
-      <SectionPageLayout fixedContent>
+      <SectionPageLayout>
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Dashboard'), href: '/dashboard/overview' },
+              { label: t('Redemption Codes') },
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>
           {t('Redemption Codes')}
         </SectionPageLayout.Title>

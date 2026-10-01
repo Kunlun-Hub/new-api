@@ -1,0 +1,437 @@
+[
+  {
+    "slug": "claude-opus-5-release-flagship-intelligence-lower-cost",
+    "href": "/blog/claude-opus-5-release-flagship-intelligence-lower-cost",
+    "category": "AI资讯",
+    "title": "Claude Opus 5 发布：以更低成本接近旗舰级智能",
+    "description": "Anthropic 发布 Claude Opus 5，在编程、智能体任务和知识工作上接近旗舰模型 Fable 5，API 价格仅为其一半，支持可调节思考强度，是规模化部署的高性价比之选。",
+    "time": "2个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/446aee0f-148e-47b6-b34b-10daaa1279d8.png?x-oss-process=image/resize,w_1280/format,webp",
+    "toc": [
+      {
+        "text": "主要能力提升",
+        "level": 2
+      },
+      {
+        "text": "更可靠的智能体协作",
+        "level": 2
+      },
+      {
+        "text": "可调节的思考强度",
+        "level": 2
+      },
+      {
+        "text": "定价",
+        "level": 2
+      },
+      {
+        "text": "与 Claude Fable 5 的关系",
+        "level": 2
+      },
+      {
+        "text": "安全性",
+        "level": 2
+      },
+      {
+        "text": "总结",
+        "level": 2
+      }
+    ],
+    "html": "<p>Anthropic 正式推出 Claude Opus 5。该模型被定位为一款兼顾高智能、可靠性与使用成本的高级模型：在多项任务上，其能力接近 Anthropic 更高阶的 Claude Fable 5，但 API 价格约为后者的一半。</p>\n<h2><a href=\"#主要能力提升\">主要能力提升</a></h2>\n<p>Claude Opus 5 在以下领域表现尤其突出：</p>\n<ul>\n<li>软件开发与复杂编程</li>\n<li>长时间运行的智能体任务</li>\n<li>专业知识工作</li>\n<li>多步骤推理与问题解决</li>\n<li>工具调用和计算机操作</li>\n<li>对结果的检查、修正与持续迭代</li>\n</ul>\n<p>Anthropic 表示，Opus 5 在若干编程和知识工作评测中达到了新的领先水平。与旧版 Opus 相比，它不只是更容易得到正确答案，也更善于主动验证自己的工作，并在发现问题后继续修改，直至任务真正完成。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/e1cb6e69-c491-4d0e-9353-a8ccfa467945.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<h2><a href=\"#更可靠的智能体协作\">更可靠的智能体协作</a></h2>\n<p>Opus 5 的重点之一，是提高模型在开放式任务中的自主性。</p>\n<p>当用户只提供不完整的需求时，它能够：</p>\n<ol>\n<li>判断任务真正需要解决的问题；</li>\n<li>制订执行计划；</li>\n<li>选择并调用适当工具；</li>\n<li>棯查中间结果；</li>\n<li>发现错误后调整方案；</li>\n<li>最终交付可以实际使用的结果。</li>\n</ol>\n<p>这类能力尤其适合大型代码修改、研究分析、复杂文档处理，以及需要模型连续工作较长时间的自动化流程。</p>\n<h2><a href=\"#可调节的思考强度\">可调节的思考强度</a></h2>\n<p>用户可以通过“努力程度”设置，控制模型为任务投入多少计算资源。</p>\n<p>较低的设置适合简单、重视响应速度的任务；较高的设置则适合困难的编程、研究或多步骤推理工作。提高努力程度通常能够改善结果，但也可能增加响应时间和 Token 消耗。</p>\n<p>这让开发者可以根据任务，在速度、成本和能力之间自行取舍。</p>\n<h2><a href=\"#定价\">定价</a></h2>\n<p>Claude Opus 5 的标准 API 价格为：</p>\n<ul>\n<li>输入：每百万 Token 5 美元</li>\n<li>输出：每百万 Token 25 美元</li>\n</ul>\n<p>这一价格与上一代 Opus 模型相同，同时约为 Claude Fable 5 标准价格的一半。因此，Opus 5 的主要价值主张并不是单纯追求最高能力，而是在接近旗舰模型表现的同时，提供更适合规模化使用的成本。</p>\n<h2><a href=\"#与-claude-fable-5-的关系\">与 Claude Fable 5 的关系</a></h2>\n<p>Claude Fable 5 仍然代表 Anthropic 更高的模型层级，并可能在最复杂、最前沿的任务上保持优势。不过，Opus 5 在部分评测中的表现已经非常接近 Fable 5，个别项目甚至可能超过它。</p>\n<p>对于多数编程、智能体和专业知识工作，Opus 5 因此可能成为更具性价比的选择；只有那些对极限推理能力要求最高的任务，才更需要使用 Fable 5。</p>\n<h2><a href=\"#安全性\">安全性</a></h2>\n<p>Anthropic 也为 Opus 5 配置了针对高风险领域的安全措施，特别关注网络安全和生物学相关能力。其目标是在允许合法研究与防御性用途的同时，限制可能造成严重危害的使用方式。</p>\n<h2><a href=\"#总结\">总结</a></h2>\n<p>Claude Opus 5 的核心特点可以概括为：</p>\n<ul>\n<li>在编程和知识工作方面达到领先水平；</li>\n<li>更善于检查错误并持续迭代；</li>\n<li>适合复杂、长时间运行的智能体任务；</li>\n<li>能够调节思考强度；</li>\n<li>能力接近更高阶的 Fable 5；</li>\n<li>API 使用成本约为 Fable 5 的一半。</li>\n</ul>\n<p>它所体现的趋势是：前沿模型的竞争重点正在从单纯提高基准分数，转向更可靠的自主执行能力、更灵活的计算投入，以及能够实际规模化部署的成本。</p>"
+  },
+  {
+    "slug": "claude-sonnet-5-release-guide",
+    "href": "/blog/claude-sonnet-5-release-guide",
+    "category": "AI资讯",
+    "title": "Claude Sonnet 5 发布:同价更强的编码与Agent升级",
+    "description": "Anthropic 在 Sonnet 系列上又迈了一大步。Claude Sonnet 5 以\"Sonnet 4.6 的无痛升级版\"姿态登场,却在编码与 Agent 任务上带来了实打实的能力跃迁...",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/5cfc27ad-814e-4a20-a745-a73ae4e0adac.png?x-oss-process=image/resize,w_1280/format,webp",
+    "toc": [
+      {
+        "text": "一、它是谁:最佳的\"速度 × 智能\"组合",
+        "level": 2
+      },
+      {
+        "text": "二、三个关键行为变化",
+        "level": 2
+      },
+      {
+        "text": "1. Adaptive thinking 默认开启",
+        "level": 3
+      },
+      {
+        "text": "2. 手动扩展思考被移除",
+        "level": 3
+      },
+      {
+        "text": "3. 采样参数不再接受",
+        "level": 3
+      },
+      {
+        "text": "三、新分词器:同样的文本,约 +30% token",
+        "level": 2
+      },
+      {
+        "text": "四、安全与刷新点",
+        "level": 2
+      },
+      {
+        "text": "五、在哪用 & 怎么迁移",
+        "level": 2
+      },
+      {
+        "text": "结语",
+        "level": 2
+      }
+    ],
+    "html": "<blockquote>\n<p>2026 年,Anthropic 在 Sonnet 系列上又迈了一大步。Claude Sonnet 5 以\"Sonnet 4.6 的无痛升级版\"姿态登场,却在编码与 Agent 任务上带来了实打实的能力跃迁。这篇文章带你快速读懂它的变化、定价,以及迁移要点。</p>\n</blockquote>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/5cfc27ad-814e-4a20-a745-a73ae4e0adac.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<hr>\n<h2><a href=\"#一它是谁最佳的速度--智能组合\">一、它是谁:最佳的\"速度 × 智能\"组合</a></h2>\n<p>Claude Sonnet 5 是 Anthropic Sonnet 模型家族的新一代旗舰,定位依旧是<strong>速度与智能的最佳平衡</strong>——适合既要快、又要聪明、还要控成本的生产级场景。</p>\n<p>核心规格一览:</p>\n<table><thead><tr><th>项目</th><th>参数</th></tr></thead><tbody><tr><td>模型 ID</td><td><span><code>claude-sonnet-5</code></span></td></tr><tr><td>上下文窗口</td><td>1M tokens(默认即最大,无小窗变体)</td></tr><tr><td>最大输出</td><td>128k tokens</td></tr><tr><td>思考模式</td><td>Adaptive thinking(默认开启)</td></tr><tr><td>定价</td><td>$3 / $15 每百万 input/output token</td></tr></tbody></table>\n<p>官方明确:<strong>Sonnet 5 在编码和 Agent 类任务上相对 4.6 提升最大</strong>,同时价格不变。换句话说,这是一次\"同价更强\"的升级。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/357f2748-13aa-4f2a-bc98-420b86b35501.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<hr>\n<h2><a href=\"#二三个关键行为变化\">二、三个关键行为变化</a></h2>\n<p>Sonnet 5 被官方称为 Sonnet 4.6 的\"drop-in 替换\",但有 <strong>三处行为变化</strong> 必须知道,否则可能直接踩坑。</p>\n<h3><a href=\"#1-adaptive-thinking-默认开启\">1. Adaptive thinking 默认开启</a></h3>\n<p>在 Sonnet 4.6 上,不带 <span><code>thinking</code></span> 字段的请求是<strong>不思考</strong>的;到了 Sonnet 5,<strong>同样的请求会默认启用自适应思考</strong>。</p>\n<p>由于 <span><code>max_tokens</code></span> 是\"思考 + 回答\"的总硬上限,过去那些不思考、把 <span><code>max_tokens</code></span> 卡得很死的工作流,需要重新评估预算——否则回答可能被思考过程挤掉。</p>\n<p>想关掉思考?显式传:</p>\n<div><pre><code>{ \"thinking\": { \"type\": \"disabled\" } }</code></pre></div>\n<h3><a href=\"#2-手动扩展思考被移除\">2. 手动扩展思考被移除</a></h3>\n<p><span><code>thinking: {type: \"enabled\", budget_tokens: N}</code></span> 这种\"手动给思考定额\"的写法,在 4.6 上已被弃用,<strong>到 Sonnet 5 直接返回 400 错误</strong>(与 Opus 4.8 / 4.7 一致)。</p>\n<p>迁移方式:改用自适应思考 + <span><code>effort</code></span> 参数控制深度。</p>\n<div><pre><code># ❌ Sonnet 5 上会 400\nthinking = {\"type\": \"enabled\", \"budget_tokens\": 32000}\n \n# ✅ 改成这样\nthinking = {\"type\": \"adaptive\"}\n# 用 effort 控制思考深度:low / medium / high(默认 high)</code></pre></div>\n<h3><a href=\"#3-采样参数不再接受\">3. 采样参数不再接受</a></h3>\n<p><span><code>temperature</code></span>、<span><code>top_p</code></span>、<span><code>top_k</code></span> 只要设为<strong>非默认值</strong>,就会返回 400。这是 <strong>Sonnet 系首次</strong> 引入该约束(此前 Opus 4.7 已先行)。迁移时直接删掉这些参数,改用系统提示词来引导风格。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/e7aa8f14-4800-4b36-b4c0-c4569dadb6ce.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<hr>\n<h2><a href=\"#三新分词器同样的文本约-30-token\">三、新分词器:同样的文本,约 +30% token</a></h2>\n<p>Sonnet 5 换用了<strong>新分词器</strong>(与 Opus 4.7 起同源)。同一段文本,token 数约比 Sonnet 4.6 多 <strong>30%</strong>。</p>\n<p>注意:<strong>这不是 API 变化</strong>——请求、响应、流式事件的结构完全不变,无需改代码。但凡是\"按 token 计量/预算\"的地方都受影响:</p>\n<ul>\n<li><strong>用量与计费</strong>:同样文本的 <span><code>usage</code></span> 更高;单价不变,但等价请求的总成本可能与 4.6 不同。</li>\n<li><strong>上下文容量(以文字计)</strong>:窗口仍是 1M,但每个 token 承载的文字更少,装得下的\"文本量\"略减。</li>\n<li><span><code>max_tokens</code></span> <strong>预算</strong>:为 4.6 调好的输出上限,可能在 5 上截断等价输出——贴着预期长度设的限制要重新评估。</li>\n</ul>\n<p>建议:迁移前用 token counting 在 Sonnet 5 上<strong>重新测量</strong>真实 prompt,别直接套旧数字、也别用固定倍率拍脑袋。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/efc72a43-a6de-4074-92ba-536920c51ea5.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<hr>\n<h2><a href=\"#四安全与刷新点\">四、安全与刷新点</a></h2>\n<ul>\n<li><strong>首个带实时网络安全防护的 Sonnet</strong>:涉及高风险/违禁网络安全话题的请求可能被拒。<strong>拒绝以 HTTP 200 返回</strong>,带 <span><code>stop_reason: \"refusal\"</code></span>,而不是错误码——客户端要先判 <span><code>stop_reason</code></span> 再读 <span><code>content</code></span>,否则取 <span><code>content[0]</code></span> 会越界。</li>\n<li><strong>Assistant 预填充仍不支持</strong>:沿用 4.6 行为,预填充助手消息会 400。需要约束输出格式请用 structured outputs / <span><code>output_config.format</code></span> / 系统提示词。</li>\n<li><strong>effort 默认 high</strong>:Claude API 与 Claude Code 上,Sonnet 5 的 <span><code>effort</code></span> 默认 <span><code>high</code></span>,要别的档位需显式设置。</li>\n</ul>\n<hr>\n<h2><a href=\"#五在哪用--怎么迁移\">五、在哪用 &amp; 怎么迁移</a></h2>\n<p><strong>可用平台</strong>:Claude API、Amazon Bedrock(<span><code>anthropic.claude-sonnet-5</code></span>)、Claude Platform on AWS、Google Cloud(<span><code>claude-sonnet-5</code></span>)、Microsoft Foundry(预览)。注意:<strong>Sonnet 5 不支持 Priority Tier</strong>。</p>\n<p><strong>三步迁移</strong>:</p>\n<div><pre><code>model = \"claude-sonnet-4-6\"  # Before\nmodel = \"claude-sonnet-5\"    # After</code></pre></div>\n<ol>\n<li><strong>Token 预算与计数</strong>:新分词器约 +30%,重新计数,复查贴边的 <span><code>max_tokens</code></span>。</li>\n<li><strong>扩展思考</strong>:还在用 <span><code>budget_tokens</code></span> 的迁到 adaptive;手动 <span><code>enabled</code></span> 会 400。</li>\n<li><strong>采样参数</strong>:删掉非默认的 <span><code>temperature / top_p / top_k</code></span>。工具定义和响应结构不变,预填充本就不支持。</li>\n</ol>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/07/dd4634e7-dd8b-444d-9e52-3d5062745b6d.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<hr>\n<h2><a href=\"#结语\">结语</a></h2>\n<p>Claude Sonnet 5 的故事很简单:<strong>同样的价格档位,更强的编码与 Agent 能力,几乎无痛的升级路径</strong>。只要处理好\"思考默认开启、采样参数下线、分词器 +30%\"这三点,把模型 ID 一换,大多数应用就能直接吃到提升。</p>\n<p>如果你的网关或中转服务要支持它,记得把它归到\"adaptive-only\"家族统一处理。</p>"
+  },
+  {
+    "slug": "loop-engineering-replaces-prompt-engineering",
+    "href": "/blog/loop-engineering-replaces-prompt-engineering",
+    "category": "AI指南",
+    "title": "提示词工程已死？Loop Engineering正在接管AI协作",
+    "description": "提示词工程的上限正在见顶。2026年Loop Engineering登场：只定结果不定过程，让AI自我执行、自我核验、自我修正，附三步实战打法。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/70118c3e-d6e2-4072-b30a-48ce63f26826.png?x-oss-process=image/resize,w_160/format,webp",
+    "toc": [
+      {
+        "text": "一、那张截图，把我看沉默了",
+        "level": 3
+      },
+      {
+        "text": "二、我凭什么断言\"提示词工程已死\"",
+        "level": 3
+      },
+      {
+        "text": "三、Loop Engineering 究竟是个什么东西",
+        "level": 3
+      },
+      {
+        "text": "四、实战：Loop Engineering 的三步打法",
+        "level": 3
+      },
+      {
+        "text": "五、进阶：从一个循环走向循环网络",
+        "level": 3
+      },
+      {
+        "text": "六、2026 年，你的 AI 功力卡在哪一档？",
+        "level": 3
+      },
+      {
+        "text": "七、明天就能照搬的行动清单",
+        "level": 3
+      },
+      {
+        "text": "八、写在最后",
+        "level": 3
+      }
+    ],
+    "html": "<blockquote>\n<p>不必再为打磨一句 prompt 耗上半小时了。到了 2026 年，真正会玩的人，已经懂得用循环的方式让 AI 自我推进、自我迭代。</p>\n</blockquote>\n<hr>\n<h3><a href=\"#一那张截图把我看沉默了\">一、那张截图，把我看沉默了</a></h3>\n<p>前阵子在掘金上闲逛，一个标题撞进了我的视线——《提示词工程已死，Loop Engineering 称王》。</p>\n<p>说实话，我当时的念头估计跟你现在差不多：又是这套路，三五个月就要冒出一个\"某某已死\"的论调。点开纯粹是想瞧瞧这回又能整出什么新词，可读完，我反倒说不出话来。</p>\n<p>接下来的整整一周，我把文中那套方法搬进了自己正在做的三个项目。一圈试下来，我得承认：<strong>这人没说错。</strong></p>\n<p>所以才有了今天这篇。我打算把 Loop Engineering 从头到尾掰扯明白——它究竟指什么、传统提示词为什么真的走到了尽头、以及你明天上手该怎么操作。</p>\n<p>没有任何推广，全是实打实的内容。</p>\n<hr>\n<h3><a href=\"#二我凭什么断言提示词工程已死\">二、我凭什么断言\"提示词工程已死\"</a></h3>\n<p>先别急着开喷。所谓\"死了\"，并非指写 prompt 这件事失去意义，而是说——<strong>把写 prompt 当作核心竞争力的时代，结束了。</strong></p>\n<p>不妨把 Prompt Engineering 的来龙去脉捋一遍：</p>\n<p><strong>2023 年</strong>：只要懂得开口一句\"你是一位资深的 XXX\"，ChatGPT 的产出质量立马上一个台阶。那会儿，能写好 prompt 的人简直就是 AI 江湖里的魔法师。</p>\n<p><strong>2024 年</strong>：玩法升级到了结构化提示词的层面。XML 标签层层嵌套、few-shot 范例、思维链（Chain of Thought）、ReAct 模式悉数登场——可以说，这是 Prompt Engineering 最辉煌的一段时光。</p>\n<p><strong>2025 年中往后</strong>：你有没有察觉？那条你反复推敲的 prompt，和你随口蹦出的一句话，产出效果之间的鸿沟正在迅速收窄。</p>\n<p>把这个局面推到今天的，是下面这三股力量：</p>\n<h4><a href=\"#21-模型的理解力已经把你的设计力甩在身后\">2.1 模型的理解力，已经把你的设计力甩在身后</a></h4>\n<p>像 GPT-5、Claude 4.8 这批新生代模型，对自然语言的吃透程度，早已把普通人那点 prompt 设计功力远远抛开。你掏出半小时精雕细琢的那个结构严密的 prompt，模型也许在你敲到第三行时就把意图摸得一清二楚。后面那二十七行，说穿了就是在烧 token。</p>\n<p>换个说法：你对一位博士讲\"帮我算下这个积分\"，跟讲\"请你扮演一名数学家，运用分部积分法，依照以下步骤……\"——在博士眼里两者没差别，后一种反倒透着一股累赘。</p>\n<h4><a href=\"#22-一锤子买卖天花板太低\">2.2 一锤子买卖，天花板太低</a></h4>\n<p>这才是要命的地方。Prompt Engineering 骨子里就是<strong>一次性的交互</strong>：</p>\n<p>你输入 → AI 产出 → 你审查 → 不合意 → 你改 prompt → 再输入 → AI 产出 → 你审查……</p>\n<p>看出门道了吗？<strong>所有迭代的重担，全压在你一个人身上。</strong> AI 只管照办，它既不会自己掂量好坏，也不会主动改正纰漏。</p>\n<p>碰上简单的问答（比如\"讲讲 Python 的 GIL\"），一遍就搞定。可一旦落到真实工作里那些复杂活计——撸一个完整的功能模块、整一份竞品分析、搭一条数据处理 pipeline——单次产出压根撑不住。这类任务要的是多步推演、调用工具、自我纠错，而恰恰这些，Prompt Engineering 这套范式天生就给不了。</p>\n<h4><a href=\"#23-提示词的边际回报正在归零\">2.3 提示词的边际回报，正在归零</a></h4>\n<p>回到 2023 年，从\"随便问问\"跨到\"结构化 prompt\"，效率拔高三到五倍不在话下。可到了 2026 年，从一条\"好 prompt\"再磨到一条\"更好的 prompt\"，提升大概也就 5% 到 10%，但你得搭进去起步 30 分钟。这笔账，怎么算都不划算。</p>\n<p><strong>一句话收尾：Prompt Engineering 不是没用了，而是它的上限太矮。它拿来聊天还行，拿来干活就力不从心。</strong></p>\n<hr>\n<h3><a href=\"#三loop-engineering-究竟是个什么东西\">三、Loop Engineering 究竟是个什么东西</a></h3>\n<p>它的内核，一句话就能道破：</p>\n<blockquote>\n<p><strong>别去教 AI \"该怎么做\"，只把\"想要的结果\"摆给它，让它自己琢磨办法、自己核验、自己修补。</strong></p>\n</blockquote>\n<p>直接对照着看：</p>\n<p><strong>传统的 Prompt Engineering 玩法：</strong></p>\n<div><pre><code>你: \"请你扮演一个 Python 专家，使用 os.walk 遍历项目目录，\n    找到所有 .py 文件，用 len(open(f).readlines()) 统计行数，\n    按目录分组，生成一个 Markdown 表格...\"\nAI: [输出代码]\n你: [复制代码，手动运行，发现报错]\n你: \"上面的代码报错了，因为...\"\nAI: [输出修正版]\n你: [再跑，再看看行不行...]</code></pre></div>\n<p><strong>Loop Engineering 玩法：</strong></p>\n<div><pre><code>你: \"统计项目中所有 .py 文件的代码行数，按目录分组，输出 Markdown 表格。\"\nAI: [自动找到所有 .py 文件]\nAI: [自动统计每个文件行数]\nAI: [自动按目录聚合]\nAI: [自动生成表格文件]\nAI: [自动读取文件检查格式]\nAI: ✅ 完成了，这是统计结果。</code></pre></div>\n<p>差别瞧出来了吧？</p>\n<p>老办法里，你是开车的，AI 只是那台引擎——方向盘得你一刻不松地攥着。换到 Loop 模式，你摇身变成导航员，把目的地报给 AI，剩下的开车、看路、纠偏，全归它自己张罗。</p>\n<h4><a href=\"#loop-engineering-立得住的三块技术基石\">Loop Engineering 立得住的三块技术基石</a></h4>\n<p>为什么 2023 年办不成的事，搁到 2026 年就行得通了？答案在于下面这三项能力都已经长成熟了：</p>\n<ol>\n<li>\n<p><strong>工具使用（Tool Use）</strong>：AI 能亲自敲终端命令、读写文件、调用 API——它是真能\"动手干\"，而不只是\"动嘴说\"。</p>\n</li>\n<li>\n<p><strong>自我反思（Self-Reflection）</strong>：模型能给自己的产出打分。代码敲完，它能自己跑一遍验明对错；文章收尾，它能照着检查清单一条条核对。</p>\n</li>\n<li>\n<p><strong>上下文管理（Context Management）</strong>：在一轮轮循环里守住状态，清楚上一步干了啥、这一步该干啥，绝不会跑偏。</p>\n</li>\n</ol>\n<p>正是这三样的成熟，把\"AI 自我迭代\"从一个说法变成了眼前的实情。</p>\n<hr>\n<h3><a href=\"#四实战loop-engineering-的三步打法\">四、实战：Loop Engineering 的三步打法</a></h3>\n<p>道理说够了，咱们直接动手。下面拿 Claude Code 来演示（Codex CLI、Cursor 的 Agent 模式都是一个道理）。</p>\n<h4><a href=\"#场景\">场景</a></h4>\n<p>我想摸清一个开源项目的代码体量——把所有 Python 文件的行数统计出来，按目录归类，再生成一张 Markdown 表格存进 <span><code>stats.md</code></span>。</p>\n<h4><a href=\"#传统做法估摸-15-分钟\">传统做法（估摸 15 分钟）</a></h4>\n<ol>\n<li>\n<p>先想好 prompt，把用哪个 Python 库、走什么逻辑都交代清楚</p>\n</li>\n<li>\n<p>AI 吐出脚本</p>\n</li>\n<li>\n<p>拷到本地，跑起来</p>\n</li>\n<li>\n<p>撞上路径不对或者编码报错</p>\n</li>\n<li>\n<p>要么改 prompt，要么手动去改代码</p>\n</li>\n<li>\n<p>再跑一遍，再看结果</p>\n</li>\n<li>\n<p>在第 2 到第 5 步之间来回折腾两到五次，直到满意</p>\n</li>\n</ol>\n<h4><a href=\"#loop-做法实测-45-秒\">Loop 做法（实测 45 秒）</a></h4>\n<p>在 Claude Code 的终端里，我拢共就敲了这么一段：</p>\n<div><pre><code>统计项目中所有 .py 文件的代码行数，按文件夹分组，\n生成 Markdown 表格保存到 stats.md。\n生成后检查：表格是否按目录分组、行数是否正确，\n如果有问题自动修正。最多迭代 3 次。</code></pre></div>\n<p>Claude Code 一气呵成地走完了下面这些动作：</p>\n<ol>\n<li>\n<p>跑 <span><code>find . -name \"*.py\"</code></span>，把所有 Python 文件捞出来</p>\n</li>\n<li>\n<p>逐个文件执行 <span><code>wc -l</code></span> 来数行数</p>\n</li>\n<li>\n<p>顺着目录路径把数据归拢到一起</p>\n</li>\n<li>\n<p>生成 Markdown 表格</p>\n</li>\n<li>\n<p>用 <span><code>cat stats.md</code></span> 把文件读出来核对格式</p>\n</li>\n<li>\n<p>自行判定结果无误，回报完成</p>\n</li>\n</ol>\n<p><strong>前后 45 秒。我就开了一次口，总共敲了 3 行字。</strong></p>\n<hr>\n<h4><a href=\"#-loop-engineering-三步打法拆解\">🔥 Loop Engineering 三步打法拆解</a></h4>\n<p>下面才是重头戏——怎么把随便一个任务改造成 Loop 指令。记牢这三步就行：</p>\n<h5><a href=\"#第一步只定结果不定过程\">第一步：只定结果，不定过程</a></h5>\n<p>这是观念上最要紧的一次扭转。</p>\n<p>❌ <strong>老套路</strong>：\"请用 Python 写一个脚本，使用 requests 库发送 GET 请求，用 BeautifulSoup 解析 HTML，找到 class 为 'title' 的元素……\"</p>\n<p>你这是在替 AI 拍板技术方案。可你压根还不晓得它手里有没有更高明的路子。</p>\n<p>✅ <strong>Loop 思路</strong>：\"抓取 Hacker News 首页前 10 条新闻的标题和链接，保存为 CSV。\"</p>\n<p>你把\"想要啥\"交给 AI，\"怎么弄\"则甩手让 AI 拿主意。它兴许用 requests 配 BeautifulSoup，兴许换成 httpx 加 lxml，甚至干脆直接奔 API 去。这些都无关紧要，你盯着的只有结果。</p>\n<p><strong>动手练一把</strong>：拎出你明天头一个要交给 AI 的活儿，把 prompt 里凡是讲\"怎么做\"的句子统统抹掉，只留\"要什么结果\"。差别当场就能让你感受到。</p>\n<h5><a href=\"#第二步把自我核验的本事交给-ai\">第二步：把自我核验的本事交给 AI</a></h5>\n<p>缺了核验的循环，就是个死循环。你必须把话挑明给 AI：<strong>到底怎样才算\"搞定了\"。</strong></p>\n<p>❌ <strong>没有核验</strong>：\"帮我写一篇关于微服务的文章。\"</p>\n<p>AI 交稿了。可它查没查资料、有没有瞎编、挖得够不够深，你一概不知。说不定还得自己从头读一遍，再回头去改 prompt。</p>\n<p>✅ <strong>配上核验清单</strong>：\"帮我写一篇关于微服务的科普文章。写完后检查：① 是否包含 3 个以上真实的公司案例 ② 是否超过 2000 字 ③ 是否引用了至少 2 个技术来源。不满足就自动修改直到满足。\"</p>\n<p>AI 写完 → 自查 → 发现案例只有 1 个 → 自动补齐 → 再查 → 案例达标 → 接着查字数 → 1500 字不够 → 自动加码 → 再查 → 条条过关 → 交到你手上。</p>\n<p>你的角色，就这样从\"校对的\"升格成了\"验收的\"。耗时也从 30 分钟一路砍到 3 分钟。</p>\n<h5><a href=\"#第三步设好刹车点\">第三步：设好刹车点</a></h5>\n<p>AI 偶尔会犯完美主义的毛病——改个没完，停不下来。这时候你得给它一道硬性的刹车线。</p>\n<p><strong>有一句话，请你雷打不动地加上</strong>：</p>\n<blockquote>\n<p>\"最多迭代 3 次。如果还不满意，把当前最好的版本给我，标注未满足的条件。\"</p>\n</blockquote>\n<p>这句话乍看平平无奇，却恰好堵住了 Loop Engineering 最常翻车的那个坑——AI 跌进无限循环里出不来。</p>\n<hr>\n<h3><a href=\"#五进阶从一个循环走向循环网络\">五、进阶：从一个循环走向循环网络</a></h3>\n<p>把基础三步攥熟之后你就会发现，Loop Engineering 还能拼装出更猛的工作流。</p>\n<h4><a href=\"#进阶一链式循环pipeline-loops\">进阶一：链式循环（Pipeline Loops）</a></h4>\n<p>让前一个循环的产出，喂给下一个循环当输入：</p>\n<ul>\n<li>\n<p><strong>Loop 1</strong>：先抛出 10 个文章选题 → AI 自行打分，筛出 3 个</p>\n</li>\n<li>\n<p><strong>Loop 2</strong>：给每个选题起草大纲 → AI 核查大纲的逻辑能不能自圆其说</p>\n</li>\n<li>\n<p><strong>Loop 3</strong>：照着大纲一段段铺正文 → 每段都查字数、案例、数据出处</p>\n</li>\n<li>\n<p><strong>Loop 4</strong>：全文写罢 → AI 通篇过一遍，揪出前后打架和重复啰嗦的地方</p>\n</li>\n</ul>\n<p>整条流水线下来，你要做的不过是在循环与循环的接缝处确认一下方向。执行、核查、修补这些活儿，余下全交给 AI。</p>\n<h4><a href=\"#进阶二人机协作循环human-in-the-loop\">进阶二：人机协作循环（Human-in-the-Loop）</a></h4>\n<p>并非每一道核验都该全权丢给 AI。在那些命门处，得塞进人的判断：</p>\n<div><pre><code>AI 生成代码 → AI 自动运行测试 → AI 生成 Code Review 意见\n→ 【人工 Review，决定是否合并】\n→ 如果需要修改 → AI 根据 Review 意见修改 → 再测试 → 再提交 Review</code></pre></div>\n<p>这种人—AI—人的\"三明治\"打法，是眼下代码质量最过硬的协作方式。既榨出了 AI 的执行力，又把人的判断力稳稳留住。</p>\n<h4><a href=\"#进阶三多-agent-并行循环\">进阶三：多 Agent 并行循环</a></h4>\n<p>还有更高阶的——一口气拉起好几个 AI Agent，各跑各的循环，末了再汇到一处：</p>\n<ul>\n<li>\n<p>Agent A：拆解竞品的功能清单</p>\n</li>\n<li>\n<p>Agent B：拆解竞品的定价打法</p>\n</li>\n<li>\n<p>Agent C：拆解竞品的用户口碑</p>\n</li>\n<li>\n<p>汇总 Agent：把三个 Agent 的产出捏到一块，产出一份竞品分析报告</p>\n</li>\n</ul>\n<p>这里头每个 Agent 的肚子里都在转 Loop Engineering。就连汇总 Agent 也在跑自己的 Loop——核对报告全不全、格式齐不齐、逻辑顺不顺。</p>\n<hr>\n<h3><a href=\"#六2026-年你的-ai-功力卡在哪一档\">六、2026 年，你的 AI 功力卡在哪一档？</a></h3>\n<p>我把驾驭 AI 的本领切成三档，你不妨自己往里套：</p>\n<table><thead><tr><th>阶段</th><th>模式</th><th>特征</th><th>效率天花板</th></tr></thead><tbody><tr><td><strong>L1：问答者</strong></td><td>一问一答</td><td>把 AI 当搜索引擎/聊天工具</td><td>低</td></tr><tr><td><strong>L2：提示词工程师</strong></td><td>精心设计 prompt</td><td>花时间雕琢提示词，追求单次输出质量</td><td>中</td></tr><tr><td><strong>L3：循环工程师</strong></td><td>设计 AI 工作流</td><td>设定目标+验证+停止条件，让 AI 自己迭代</td><td>高</td></tr></tbody></table>\n<p>绝大多数人，都卡在 L1 与 L2 的中间地带。有那么一小撮人，在 L2 上越钻越深。至于站到 L3 的那群人，眼下干起活来基本就是降维碾压。</p>\n<p>让人宽心的是：<strong>从 L2 迈到 L3，用不着学什么新技术，换个脑筋就成。</strong></p>\n<hr>\n<h3><a href=\"#七明天就能照搬的行动清单\">七、明天就能照搬的行动清单</a></h3>\n<p>要是你一路读到了这儿，我盼的不是你\"懂了个道理\"，而是你明天就抄起家伙干。下面给你一份最精简的行动清单：</p>\n<ol>\n<li>\n<p><strong>挑一个任务</strong>：从你明天本就要靠 AI 完成的事里，拎一个出来。</p>\n</li>\n<li>\n<p><strong>重写指令</strong>：套用 Loop 三步法改造它——</p>\n<ul>\n<li>\n<p>把所有\"怎么做\"的描述删干净</p>\n</li>\n<li>\n<p>把\"要什么结果\"说透</p>\n</li>\n<li>\n<p>补上验证标准</p>\n</li>\n<li>\n<p>补上停止条件</p>\n</li>\n</ul>\n</li>\n<li>\n<p><strong>比一比效果</strong>：记下传统做法吃掉多少时间，Loop 做法又用了多少。</p>\n</li>\n<li>\n<p><strong>打磨你的 Loop</strong>：头一回多半不够漂亮，照着结果回头去调验证标准和停止条件。</p>\n</li>\n</ol>\n<p><strong>头一天</strong>，你或许会嘀咕\"好像也没快出多少\"。 <strong>到第三天</strong>，你会惊觉\"我居然不用一遍遍盯着 AI 的产出查了\"。 <strong>等第七天</strong>，你就再也回不去了。</p>\n<hr>\n<h3><a href=\"#八写在最后\">八、写在最后</a></h3>\n<p>Prompt Engineering 并没有真正\"咽气\"。明天你照样能写 prompt，AI 照样会接你的话茬。</p>\n<p>可它，再也撑不起你的核心竞争力了。</p>\n<p>2023 年，会写 prompt 是一张王牌。2026 年，写 prompt 满大街都是。<strong>真正的新优势，落到了那些会设计循环的人头上——把迭代这些苦差事扔给 AI 去扛，你只管定方向、做验收。</strong></p>\n<p>Loop Engineering 妙就妙在，它既不挑工具，也不挑模型。Claude Code 行，Codex CLI 行，Cursor 也行，往后凡是带 agent 模式的工具，统统行得通。</p>\n<p>你缺的从来不是一件新工具，而是一套新思维。</p>\n<p>打从明天起，别再死磕 prompt 了，动手去搭你的循环吧。</p>\n<p>作者：web_Leon 链接：<a href=\"https://juejin.cn/post/7654052123509915689\">https://juejin.cn/post/7654052123509915689</a> 来源：稀土掘金</p>"
+  },
+  {
+    "slug": "agency-agents-ai-team-github-trending",
+    "href": "/blog/agency-agents-ai-team-github-trending",
+    "category": "AI项目",
+    "title": "11.9万星！这个AI军团项目-Agency Agents，凭什么和React齐名",
+    "description": "GitHub爆火项目Agency Agents斩获11.9万星，内含16个部门上百个AI专家角色，一行命令为你的AI编入精锐战队，兼容主流编程工具。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/3f526d16-9175-4cd9-b5b9-487d7904d62a.png?x-oss-process=image/resize,w_160/format,webp",
+    "toc": [
+      {
+        "text": "基本信息",
+        "level": 2
+      },
+      {
+        "text": "一、它解决了一个什么问题？",
+        "level": 2
+      },
+      {
+        "text": "二、16个部门，上百名专家",
+        "level": 2
+      },
+      {
+        "text": "🛠️ 工程部（Engineering）— 最大部门，30+专家",
+        "level": 3
+      },
+      {
+        "text": "🎨 设计部（Design）— 7位专家",
+        "level": 3
+      },
+      {
+        "text": "💰 付费媒体部（Paid Media）— 15+专家",
+        "level": 3
+      },
+      {
+        "text": "🛡️ 安全部（Security）",
+        "level": 3
+      },
+      {
+        "text": "还有...",
+        "level": 3
+      },
+      {
+        "text": "三、怎么用？一行命令的事",
+        "level": 2
+      },
+      {
+        "text": "四、为什么它值119k星？",
+        "level": 2
+      },
+      {
+        "text": "1. 它不是\"又一个AI工具\"",
+        "level": 3
+      },
+      {
+        "text": "2. 每个Agent是精雕细琢的",
+        "level": 3
+      },
+      {
+        "text": "3. 开源生态+Reddit驱动",
+        "level": 3
+      },
+      {
+        "text": "4. 原生支持几乎所有主流AI工具",
+        "level": 3
+      },
+      {
+        "text": "五、一个真实的使用场景",
+        "level": 2
+      },
+      {
+        "text": "六、一点思考",
+        "level": 2
+      }
+    ],
+    "html": "<blockquote>\n<p>别再让你的AI单打独斗了。给它配一支\"AI军团\"吧——16个部门、聚集上百位专家，全天候待命，从不喊累。</p>\n</blockquote>\n<p>GitHub Trending 近期力推了一个项目：它叫 <strong>Agency Agents</strong>，目前已斩获 <strong>11.9 万颗星</strong>。</p>\n<p>这个数字意味着什么？要知道 React 的星数也不过 12 万左右。一个\"Agent 角色合集\"竟能与 React 并驾齐驱，这本身就证明了：整个开发者圈子都认可了这个方向。</p>\n<p>那么它究竟是什么、凭什么这么受欢迎、又该如何借助它为自己的 AI 编入一支精锐战队——下面就逐一拆解。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/3f526d16-9175-4cd9-b5b9-487d7904d62a.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<h2><a href=\"#基本信息\">基本信息</a></h2>\n<ul>\n<li><strong>GitHub</strong>: <a href=\"https://link.juejin.cn/?target=https%3A%2F%2Fgithub.com%2Fmsitarzewski%2Fagency-agents\">msitarzewski/agency-agents</a></li>\n<li><strong>Stars</strong>: 119,000+ ⭐</li>\n<li><strong>License</strong>: MIT</li>\n<li><strong>Language</strong>: Markdown (Agent Prompts)</li>\n</ul>\n<hr>\n<h2><a href=\"#一它解决了一个什么问题\"><strong>一、它解决了一个什么问题？</strong></a></h2>\n<p>不妨从一个常见的场景说起。</p>\n<p>平时你借助 Claude Code 或 Cursor 写代码：先丢一句\"帮我写个用户登录模块\"，它照做；接着补一句\"把界面调精致点\"，它也照改；你再追加\"再加套 CI/CD 流水线吧\"——这时你会突然意识到，同一个 AI 正在三种身份之间来回切换。</p>\n<p>症结到底在哪儿？</p>\n<p><strong>你的 AI 样样都懂，却样样都不够精。</strong></p>\n<p>打个比方，这好比让一名全科医生既去做开颅手术、又去做心脏搭桥——虽说理论上都能上手，但终究比不上神经外科和心脏外科的专家各管一摊。</p>\n<p>而 Agency Agents 给出的解法相当干脆：</p>\n<blockquote>\n<p>为 AI 套上一层层\"人格面具\"，每一张面具背后都站着某个领域的行家。需要时，你只消一句话便能完成角色切换，AI 随即化身为该领域的顶尖高手。</p>\n</blockquote>\n<hr>\n<h2><a href=\"#二16个部门上百名专家\"><strong>二、16个部门，上百名专家</strong></a></h2>\n<p>整个项目把众多 AI Agent 编排进了 <strong>16 个部门</strong>（Division），各部门旗下又分布着多位术业有专攻的 Agent。</p>\n<p>来直观感受一下它的\"组织架构\"：</p>\n<h3><a href=\"#️-工程部engineering-最大部门30专家\"><strong>🛠️ 工程部（Engineering）— 最大部门，30+专家</strong></a></h3>\n<table><thead><tr><th><strong>Agent</strong></th><th><strong>专长</strong></th><th><strong>适用场景</strong></th></tr></thead><tbody><tr><td>🎨 前端开发</td><td>React/Vue/Angular</td><td>像素级UI实现</td></tr><tr><td>🏗️ 后端架构师</td><td>API设计、数据库架构</td><td>微服务、高并发系统</td></tr><tr><td>🤖 AI工程师</td><td>ML模型部署、AI集成</td><td>数据管道、AI应用</td></tr><tr><td>🚀 DevOps自动化</td><td>CI/CD、基础设施</td><td>部署流水线</td></tr><tr><td>🛡️ SRE</td><td>可观测性、混沌工程</td><td>生产可靠性</td></tr><tr><td>🗄️ 数据库优化师</td><td>SQL调优、索引策略</td><td>慢查询优化</td></tr><tr><td>👁️ 代码审查官</td><td>安全审查、质量门禁</td><td>PR评审</td></tr><tr><td>🏛️ 软件架构师</td><td>系统设计、DDD</td><td>架构决策</td></tr><tr><td>💬 微信小程序开发</td><td>微信生态</td><td>小程序开发</td></tr><tr><td>🔗 飞书集成开发</td><td>飞书开放平台</td><td>机器人/工作流</td></tr></tbody></table>\n<h3><a href=\"#-设计部design-7位专家\"><strong>🎨 设计部（Design）— 7位专家</strong></a></h3>\n<p>阵容涵盖 UI 设计师、UX 研究员、品牌守护者与视觉叙事师，此外还藏着一位别具一格的\"<strong>俏皮注入师</strong>\"（Whimsy Injector），专司为产品埋彩蛋、添微交互。</p>\n<h3><a href=\"#-付费媒体部paid-media-15专家\"><strong>💰 付费媒体部（Paid Media）— 15+专家</strong></a></h3>\n<p>这里聚集了 PPC 策略师、搜索词分析师、广告审计师、转化追踪专家等角色，专门服务于做投放运营的同学。</p>\n<h3><a href=\"#️-安全部security\"><strong>🛡️ 安全部（Security）</strong></a></h3>\n<p>涵盖零信任架构师、安全代码审计、漏洞赏金猎人以及渗透测试等方向。</p>\n<h3><a href=\"#还有\"><strong>还有...</strong></a></h3>\n<p><strong>内容部、数据科学部、产品部、法务部、医疗部、金融部、教育/人力资源部、市场营销部、销售部、创意部、游戏设计部、客户成功部</strong></p>\n<p>林林总总加起来，便是 <strong>16 个部门、上百个 Agent 角色</strong>。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/de59dc06-de19-4eb1-a2ff-8bfefa79f76e.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>每一个 Agent 都对应着一份完备的 Markdown 配置文档，其中囊括了：</p>\n<ul>\n<li><strong>身份与人格特质</strong>（它的说话方式、思维模式）</li>\n<li><strong>核心使命与工作流</strong>（它擅长做什么、怎么做）</li>\n<li><strong>技术交付物</strong>（含代码示例）</li>\n<li><strong>成功指标与沟通风格</strong></li>\n</ul>\n<p>换言之，这绝非一句\"你是前端开发\"那样草率的 prompt，而是一份经过用心打磨的角色档案。</p>\n<hr>\n<h2><a href=\"#三怎么用一行命令的事\"><strong>三、怎么用？一行命令的事</strong></a></h2>\n<p>上手过程极为轻松。以 Claude Code 为例：</p>\n<div><pre><code># 一键安装所有Agent到Claude Code\ngit clone https://github.com/msitarzewski/agency-agents.git\ncd agency-agents\n./scripts/install.sh --tool claude-code\n \n# 或者只安装你需要的部门\n./scripts/install.sh --tool claude-code --division engineering,security</code></pre></div>\n<p>装好之后，在 Claude Code 中输入：</p>\n<div><pre><code>Hey Claude, activate Frontend Developer mode and help me build a React component</code></pre></div>\n<p>AI 便会即刻变身为前端开发专家。</p>\n<p>而更让人省心的，是它还配备了一款 <strong>桌面客户端</strong>（Agency Agents App），兼容 macOS / Linux / Windows，可一站式浏览全部 Agent，点击即装，且能自动跟进更新。</p>\n<div><pre><code># Mac用户一行命令安装客户端\nbrew install --cask msitarzewski/agency-agents/agency-agents</code></pre></div>\n<p>它能搭配使用的 AI 工具如下：</p>\n<table><thead><tr><th><strong>工具</strong></th><th><strong>支持状态</strong></th></tr></thead><tbody><tr><td>Claude Code</td><td>✅ 完整支持</td></tr><tr><td>Cursor</td><td>✅ 完整支持</td></tr><tr><td>Codex</td><td>✅ 完整支持</td></tr><tr><td>Gemini CLI</td><td>✅ 完整支持</td></tr><tr><td>OpenCode</td><td>✅（有限制）</td></tr><tr><td>Qwen</td><td>✅ 完整支持</td></tr><tr><td>Osaurus</td><td>✅ 完整支持</td></tr><tr><td>Copilot</td><td>✅ 支持</td></tr><tr><td>Aider</td><td>✅ 支持</td></tr><tr><td>Windsurf</td><td>✅ 支持</td></tr><tr><td>Kimi</td><td>✅ 支持</td></tr><tr><td><strong>OpenClaw</strong></td><td>✅ <strong>支持</strong></td></tr></tbody></table>\n<p>是的，你没有看花眼——<strong>我们日常在用的 OpenClaw 同样名列其中</strong>。</p>\n<hr>\n<h2><a href=\"#四为什么它值119k星\"><strong>四、为什么它值119k星？</strong></a></h2>\n<p>稍作研究后，我认为这个项目能够爆红，离不开下面几点：</p>\n<h3><a href=\"#1-它不是又一个ai工具\"><strong>1. 它不是\"又一个AI工具\"</strong></a></h3>\n<p>绝大多数 AI 工具的定位，是帮你<strong>用 AI 把事做了</strong>；而 Agency Agents 的定位，则是让你<strong>调遣 AI 去把事做了</strong>。这中间隔着本质上的差异——你的身份由\"使用者\"升级为了\"指挥官\"。</p>\n<h3><a href=\"#2-每个agent是精雕细琢的\"><strong>2. 每个Agent是精雕细琢的</strong></a></h3>\n<p>作者 M Sitarzewski 在每个 Agent 的人格塑造上倾注了大量心血。它远不止\"你是一个前端开发\"这般敷衍，而是清晰地交代了：</p>\n<ul>\n<li>这个 Agent <strong>如何思考</strong>（分析问题的角度）</li>\n<li>这个 Agent <strong>如何沟通</strong>（报告风格、详略程度）</li>\n<li>这个 Agent <strong>交付什么</strong>（具体的代码模板、流程文档）</li>\n<li>这个 Agent <strong>怎么才算成功</strong>（验收标准）</li>\n</ul>\n<h3><a href=\"#3-开源生态reddit驱动\"><strong>3. 开源生态+Reddit驱动</strong></a></h3>\n<p>项目的起点不过是 Reddit 上的一个帖子，历经数月的社区打磨，才发展到如今的体量。正是社区源源不断的贡献，让 Agent 角色日益丰富，触角从程序员延伸到市场、从医疗覆盖到金融，几乎无所不包。</p>\n<h3><a href=\"#4-原生支持几乎所有主流ai工具\"><strong>4. 原生支持几乎所有主流AI工具</strong></a></h3>\n<p>哪怕你用的是 Claude Code、Cursor、Codex 抑或 OpenClaw，它都能照单全收。这一点，正是它得以广泛扩散的命门所在。</p>\n<hr>\n<h2><a href=\"#五一个真实的使用场景\"><strong>五、一个真实的使用场景</strong></a></h2>\n<p>设想你打算从零开发一款全新的 Web 应用。</p>\n<p><strong>Phase 1：产品设计</strong></p>\n<ul>\n<li>激活「产品经理」Agent → 输出PRD</li>\n<li>激活「UX研究员」Agent → 用户调研方案</li>\n</ul>\n<p><strong>Phase 2：架构设计</strong></p>\n<ul>\n<li>激活「软件架构师」Agent → 系统设计、技术选型</li>\n<li>激活「数据库优化师」Agent → Schema设计</li>\n</ul>\n<p><strong>Phase 3：开发</strong></p>\n<ul>\n<li>激活「前端开发」Agent → UI实现</li>\n<li>激活「后端架构师」Agent → API开发</li>\n<li>激活「DevOps自动化」Agent → CI/CD流水线</li>\n</ul>\n<p><strong>Phase 4：质量保障</strong></p>\n<ul>\n<li>激活「代码审查官」Agent → PR评审</li>\n<li>激活「安全审计师」Agent → 安全扫描</li>\n</ul>\n<p><strong>Phase 5：上线运营</strong></p>\n<ul>\n<li>激活「SRE」Agent → 监控告警</li>\n<li>激活「技术写作」Agent → API文档</li>\n</ul>\n<p>走完这一整套流程，你俨然在统帅一支特种部队——把每项任务交到最对口的专家手上，而非指望一个万能 AI 包揽一切。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/e0469a40-a658-468e-b4a6-adf60e643da2.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<hr>\n<h2><a href=\"#六一点思考\"><strong>六、一点思考</strong></a></h2>\n<p>11.9 万星绝非偶然得来，它折射出的是这样一种趋势：</p>\n<blockquote>\n<p>AI 的下一程，比拼的不再是\"谁更强大\"，而是\"谁更善于分工\"。</p>\n</blockquote>\n<p>正如软件架构当年从单体一路演进到微服务那样，AI 应用如今也正从\"靠单个模型包打天下\"，转向\"多个专家 Agent 并肩协作\"。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/48473753-1a11-4a1d-8c81-b4df032c8215.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>倘若你至今仍在靠一个 AI 闯荡四方——不妨给这支 AI 军团一个机会。</p>"
+  },
+  {
+    "slug": "deepseek-first-funding-round-50-billion-yuan",
+    "href": "/blog/deepseek-first-funding-round-50-billion-yuan",
+    "category": "AI资讯",
+    "title": "DeepSeek首轮融资超500亿:梁文锋出资40%坐庄,设三道资本门槛",
+    "description": "DeepSeek完成首轮融资超500亿元,估值500亿美元。梁文锋个人出资40%坐庄,腾讯、宁德时代等跟投,并设控制权、五年锁定、倒查LP三道资本门槛。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/e4a3534a-00b7-4ede-8054-dfb84d05907f.png?x-oss-process=image/resize,w_160/format,webp",
+    "toc": [],
+    "html": "<p>据The Information披露，DeepSeek的首轮对外融资已经尘埃落定，合计吸纳资金逾500亿元人民币（折合约74亿美元），公司估值随之攀升至500亿美元。倘若这一消息确凿无误，它将刷新国产大模型乃至中国AI产业的纪录，成为该领域至今规模最大的单轮注资。</p>\n<p>参与方阵容覆盖了互联网巨头、制造业龙头、传统资本机构与\"国家队\"，几乎囊括各路力量。其中，创始人梁文锋亲自压阵，个人掏出200亿元，持股比例接近四成。外部出资名单里，腾讯认缴100亿元，宁德时代投入50亿元，网易与京东各出30亿元，IDG Capital同样为30亿元，国家人工智能产业投资基金则注资10亿元。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/e4a3534a-00b7-4ede-8054-dfb84d05907f.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"资本投资Deepseek，设计一个封面图\"></p>\n<p><strong>然而，本轮融资真正的看点并非那串数字，而是它背后精心设计的交易架构。</strong></p>\n<p>为了守住研发的自主性、延续一贯的开源理念，梁文锋给外部资金设下了三重关卡：</p>\n<p>其一，牢牢握紧控制权。腾讯、宁德时代等外部方的钱并不会流入DeepSeek这一主体，而是先汇入梁文锋掌舵的有限合伙企业。换言之，这些外部股东拿不到投票权。</p>\n<p>其二，长达五年的锁定安排。外部投资人的股份须封存五年，其间禁止转手。这道门槛实际上把那些急于短线获利的资金挡在门外，只欢迎愿意长期陪跑的钱。</p>\n<p>其三，向上穿透核查LP。梁文锋团队坚持对每一支出资基金背后的有限合伙人逐一查验真实身份，防止股权最终落到来路不明的主体手中。</p>\n<p>唯独有一处破例：国家大基金不受这套架构约束，它直接入股DeepSeek本体，既保留投票权，也不必遵守五年锁定的规定。资金可以进场，但方向盘绝不交出。</p>\n<p>放眼全球AI企业，连OpenAI和Anthropic这样的头部公司，如今也在不同程度上被资本意志与商业化节奏所裹挟。梁文锋显然无意重蹈这条路径。</p>\n<p>长期以来，DeepSeek靠母公司幻方量化的自有资金维持运转，对外打出的是一个纯粹科研实验室的形象。在2025年凭借全球声名鹊起之际，它还屡次将外部投资者拒之门外。如今选择在此刻松口接纳外部资本，背后主要有两层考量。</p>\n<p>第一，算力告急，加速研发离不开巨额且持续的资金灌注。</p>\n<p>DeepSeek最新的招聘动态透露，公司正大举招募IDC设计规划工程师，投身兆瓦级园区与机房的建设。可以预见，这500亿元中的可观部分，将直接化作算力基础设施。继今年4月推出DeepSeek-V4预览版后，坊间传出公司将于近期发布V4.1，全面兼容MCP并迈向多模态输入。</p>\n<p>第二，遏制人才外流。</p>\n<p>过去一年间，市面上充斥着大量有关DeepSeek人才流失的说法——高薪挖角不断，核心研究人员相继出走。例如，R1的核心作者郭达雅转投字节，罗福莉则加盟小米、出任小米Mimo实验室负责人。尽管从公开信息看，DeepSeek的实际流失率并不算高，但核心成员转身在竞品挑起大梁，对DeepSeek终究不是好消息。由此不难推断，这轮融资同时也为员工手中的期权确立了定价，有助于更牢地把人才留下。</p>\n<p>就一级市场估值而言，500亿美元已是中国大模型创业公司中的最高水位。尚未上市的月之暗面估值为300亿美元，阶跃星辰投后估值约在50亿至60亿美元区间。截至6月16日，已挂牌的智谱港股市值约6500亿港元，MiniMax则约1300亿港元。</p>\n<p>以往市场审视DeepSeek，焦点集中在低成本、开源、极致的工程效率，以及它作为中国AI突围关键力量的角色。而眼下，市场正为它附加另一重身份：国家级AI基础设施，以及产业智能化的入口。</p>\n<p>与此同时，外部格局也在悄然变化。智谱、月之暗面甚至小米都在开源大模型赛道上积累了更大话语权，DeepSeek已不再是中国AI故事里独一无二的那面旗帜。</p>\n<p>归根结底，DeepSeek这则传闻所讲述的，并不是一家公司究竟融到了多少钱，而是当竞争愈发激烈时，它该如何编织一套全新的估值逻辑——能否凭技术撑开估值的天花板，用战略资产为估值兜底，而最终能否真正立住脚跟，则取决于商业层面的兑现。</p>"
+  },
+  {
+    "slug": "us-export-controls-anthropic-fable-mythos-5",
+    "href": "/blog/us-export-controls-anthropic-fable-mythos-5",
+    "category": "AI资讯",
+    "title": "突发！美国政府对Anthropic最新模型Fable 5和Mythos 5实施全球管制",
+    "description": "美国政府援引国家安全权力，全面禁止外国访问Anthropic最先进的AI模型Fable 5和Mythos 5，将顶尖AI系统纳入战略级资产管控体系。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/864289ae-4ed3-41ba-8937-12fd0629baf0.png?x-oss-process=image/resize,w_160/format,webp",
+    "toc": [],
+    "html": "<p>Anthropic 最新模型 Fable 5 和 Mythos 5 再起风波。</p>\n<p>据媒体 Axios 报道，美国特朗普（Trump）政府正式援引国家安全权力，对 AI 独角兽企业 Anthropic 最先进的 AI 模型——Fable 5 和 Mythos 5 实施了极为严厉的出口管制，<strong>全面禁止外国政府、企业和个人的访问权限。</strong></p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/5a19f9a5-69d1-4acb-a407-360eacd37406.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>这一动向清晰地说明，<strong>美国正在将顶尖 AI 系统纳入国家安全管控体系，并将其视为战略级资产。</strong></p>\n<p>据 Axios 报道，美国商务部长霍华德·卢特尼克于周五向 Anthropic CEO Dario Amodei发出一封信函，明确指出 Mythos 5 与 Fable 5 两款模型将被纳入出口管制范围，覆盖<strong>美国境外的所有地区，以及在美境内的全部外籍人员。</strong></p>\n<p>这意味着，此举并非单纯的\"限制海外用户订阅 Claude\"那么简单，而是将最前沿的 AI 模型正式纳入了类似高端芯片、敏感软件的出口管控框架之中。</p>\n<p>一名政府官员透露，商务部之所以采取上述行动，是因为获悉另一家公司声称已成功对 Mythos 实施越狱，此事件令政府对潜在国家安全隐患高度警觉。</p>\n<p>值得注意的是，在 Anthropic 发布最新模型之前，美国政府曾尝试要求其推迟发布，但未能如愿，随后才发出了这封出口管制信。</p>\n<p>Reuters 另据报道，特朗普本月初签署了一项行政令，要求主要 AI 开发商在向公众公开最强大模型之前，自愿将其提交政府进行网络安全评估与测试。</p>\n<p>该官员进一步表示，在美国政府完成国家安全相关体系的加固工作之前，上述模型须持续处于封锁状态，预计这一过程将在未来数周内结束。</p>\n<p>这也就意味着，Anthropic 若要对上述模型实施出口、再出口，或在美境内向外国实体进行技术转让，均须事先取得相应许可。与此同时，Anthropic 还被要求额外提交申请，以逐项获取经验证的许可证。一旦违反相关规定，Anthropic 将面临经济罚款及民事处罚。</p>\n<p>目前，Anthropic已针对管控发表声明：</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/137e1fa0-d731-49bf-acee-923ed3ac7012.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>如果联系到早先 Anthropic 进入五角大楼禁用清单这件事，不难发现 Anthropic 眼下**「身份尴尬」**：</p>\n<p>一边厢，因被判定风险过高而遭五角大楼拒绝，不允许美国政府部门自行采用；另一边厢，Anthropic 又被商务部纳入出口管控范畴，理由同样是风险过高，不宜向境外开放……</p>\n<p>你对此有何看法？</p>"
+  },
+  {
+    "slug": "anthropic-ai-models-export-restrictions-lifted",
+    "href": "/blog/anthropic-ai-models-export-restrictions-lifted",
+    "category": "AI资讯",
+    "title": "美政府松绑出口管制：Anthropic两大模型Fable 5与Mythos 5将陆续解禁",
+    "description": "美国政府或本周内取消对Anthropic的Fable 5出口限制，Mythos 5已向逾百家机构放行，两大模型分阶段恢复访问。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/74bef005-de1e-4953-9fc9-7e4f2f25a87e.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>美国政府正酝酿松动对人工智能企业Anthropic所属大模型Fable 5的出口限制，据悉该项管制最快可能在本周内取消，到那时公众对这一模型的访问通道也有望随之重启。回溯此前，美方在当地时间6月12日援引国家安全方面的隐患，颁布了出口管制命令，强令Anthropic立即停用Mythos 5和Fable 5这两套顶级大模型，一时间令世界各地的用户陷入无法正常调用的困境。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/74bef005-de1e-4953-9fc9-7e4f2f25a87e.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p><strong>逐步解除限制：Mythos 5率先获部分放行</strong></p>\n<p>在为Fable 5筹划解禁的同期，美方对Mythos 5的束缚已抢先有所松弛。6月26日当地时间，美国商务部向Anthropic发出函件，准许其面向若干“可信合作伙伴”推出Claude Mythos 5模型。美国商务部长霍华德·卢特尼克在该函中称，自6月12日管制令落地后，Anthropic携手政府化解受控模型风险的工作已收获显著成效。截至目前，已有逾百家机构与企业取得了Mythos 5的使用资格，其中不乏多家跻身《财富》世界500强之列的公司。</p>\n<p><strong>两款模型定位与放行节奏各异</strong></p>\n<p>业内消息显示，Fable 5同Mythos 5建立在相同的底层基础框架之上，不过二者的市场定位界限分明。前者瞄准广大普通用户群体，向全社会敞开使用通道；后者则在若干安全管控条款上有所放宽，更契合网络安全这类相对特殊的应用环境。眼下，美方对这两套模型的松绑采取分阶段操作：Mythos 5已经向特定机构重新开放权限，而Fable 5恢复公众访问的工作也已步入最后阶段。</p>\n<p><strong>来龙去脉与产业层面的冲击</strong></p>\n<p>本轮出口管制风波,折射出顶级AI模型如今正作为战略资源被纳入管控范畴。6月12日的那道禁令波及面相当广,既封堵美国境外外国主体的访问途径,又对身处美国国内的外籍人员乃至Anthropic的外籍雇员的使用加以约束。出于合规考量,Anthropic不得不实施“一刀切”的做法,把全部客户对这两款模型的访问悉数暂停。这一变故在全球AI产业激起波澜,把过度倚赖单一境外云端大模型的商业风险暴露无遗。无独有偶,竞争方OpenAI近期推出新一代模型GPT-5.6之际,同样迫于美国政府的监管要求,只向极少数“可信合作伙伴”开放了有限的预览权限。</p>"
+  },
+  {
+    "slug": "google-limits-gemini-compute-meta",
+    "href": "/blog/google-limits-gemini-compute-meta",
+    "category": "AI资讯",
+    "title": "算力告急！谷歌限供Gemini，Meta被迫节约AI令牌",
+    "description": "谷歌因需求激增收紧Gemini算力，限供Meta并推配额制，折射出AI行业算力瓶颈，Meta计划自建数据中心。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/cbe08c86-3284-467c-bd19-4c1d8587b1fc.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>【TechWeb消息】围绕Gemini人工智能平台，谷歌正在压缩对外的资源投放，并把使用门槛抬高，特别是针对几家体量庞大的客户。据熟悉内情者称，今年3月前后，谷歌向Meta传达了一个消息：受限于不断膨胀的需求对既有容量构成的压力，公司难以按Meta所申请的数量供给Gemini模型的算力配额。这一变化让Meta内部多个AI项目的进度被打乱，公司不得不向员工下达指令，要求更精打细算地消耗AI令牌（token），把使用效率提上来。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/cbe08c86-3284-467c-bd19-4c1d8587b1fc.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"A modern data center hall with rows of glowing server racks, cooling vents emitt\"></p>\n<p><strong>需求暴涨叠加资源吃紧</strong></p>\n<p>支撑此次资源吃紧局面的，是Gemini API请求规模的迅猛膨胀。从内部统计来看，在2025年3月到8月这段时间里，Gemini API的调用次数由约350亿翻了一番，攀升到大约850亿。面对如此迅速的扩张，谷歌只能对AI算力这块核心资源重新做出调配。在所有客户中，Meta对谷歌模型的需求量遥遥领先，因而所承受的冲击也尤为突出。</p>\n<p><strong>谷歌如何回应：告别无限，转向配额</strong></p>\n<p>时间进入2026年5月17日，谷歌开始针对Gemini应用启用一套以算力额度为基础的使用管理机制。它的运作逻辑接近“手机流量套餐”：请求不再可以无限发起，而是被纳入一个每5小时滚动重置的额度窗口之内，同时叠加了按周计算的总量天花板。至于额度怎么扣减，则与提示词的复杂程度、所调用的模型功能以及对话的长短等多重因素挂钩。谷歌设立这套规则，目的是在需求高速攀升的阶段，让每一位客户都能公平地用上API。</p>\n<p>6月份使用{{siteName}}的用户也能明显感觉到频繁收到Gemini官方返回的算力不足错误信息提示。</p>\n<p><strong>这一插曲映照出整个行业的算力天花板</strong></p>\n<p>此事把眼下AI演进过程中的关键症结暴露了出来：哪怕谷歌不断砸下天量资本支出去建数据中心、买AI芯片，其整体基础设施的扩张速度，仍旧追不上生成式AI需求的迅猛膨胀。从谷歌云2026财年第一季度的财报可以看到，正是因为算力被卡住，公司无力接下更多的客户订单，其云业务的积压订单环比几乎翻了一倍。而Meta为了不再受制于外部算力，已定下计划：到2028年，将在美国累计投入6000亿美元，自行搭建数据中心。</p>"
+  },
+  {
+    "slug": "openai-codex-quota-consumption-bug-fix",
+    "href": "/blog/openai-codex-quota-consumption-bug-fix",
+    "category": "AI资讯",
+    "title": "Codex额度异常狂掉？OpenAI紧急组队连夜排查",
+    "description": "OpenAI Codex额度消耗异常加快，风控机制误判账户为风险对象限流，官方已重置额度并连夜排查故障根源。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/16d998c7-845c-4f3a-9314-30603c9af464.avif?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>针对编码智能体额度消耗异常加快这一被众多用户集中反映的状况，OpenAI 迅速召集了一支应急专项团队投入处理。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/16d998c7-845c-4f3a-9314-30603c9af464.avif?x-oss-process=image/resize,w_1536/format,webp\" alt=\"codex\"></p>\n<p>OpenAI 在其状态监控页面更新的说明里提到，有一批用户遇到了 Codex 编程工具额度\"消耗速度超出预期\"的情况，而追根溯源，问题出在平台用于防欺诈与反滥用的风控机制上——它误把一些账户当作风险对象进行了限流。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/e95b9a46-668f-4747-99f0-5617a5883052.avif?x-oss-process=image/resize,w_1536/format,webp\" alt=\"codex\"></p>\n<p>当地时间上周日，负责 OpenAI Codex 工程的蒂博 · 索蒂奥克斯透露，所有用户的额度上限都已被公司统一重置，与此同时，针对问题来源的排查也已铺开。</p>\n<p>他还在 X 平台留下这样一段话：\"周日这天，整个 Codex 团队都集中到了应急攻坚室，把运行日志一条一条翻看，想找出究竟是哪个环节出了岔子，才让部分用户的额度消耗得这么快。这件事我们看得很重，根源不弄明白，谁也不下班。\"</p>\n<p>所谓使用额度，衡量的是 AI 编程任务一共吃掉了多少算力；在用户控制台里，Codex 把这一数值用百分比呈现出来。任务的运算量越大，积分掉得越快，而订阅档位的不同，也意味着额度天花板高低有别。</p>\n<p>问题在于，上个周末，形形色色的 Codex 用户纷纷涌到 X 平台诉苦：明明做的还是七天前那套编程活儿，额度却掉得肉眼可见地快了不少。</p>\n<p>有位叫亚当的软件工程师这样写道：\"系统准是哪儿坏了。我买的是 200 美元那档，搁以前，得卯足劲连干一周才能把七天的量用完；可这两天倒好，一天就见了底，我也头一回被迫去手动重置额度。\"</p>\n<p>OpenAI 在状态页面里还补了一句：这回故障波及的范围算不上大，平台这边仍在盯着情况的后续变化。</p>\n<p>眼下 AI 工具人气一路飙升，算力供给吃紧成了常态，于是各家 AI 公司都在一点点收紧发给用户的额度。回看今年 3 月，Anthropic 便在流量最密集的那段时间下调过 Claude 的额度天花板。面对这种局面，相当一部分软件工程师也只好放慢手头进度，干等额度自己恢复。</p>\n<p>把视线拉到整个行业来看，不限量随便用的模式正被各家 AI 服务商陆续砍掉；为了把成本压下去，不少公司也着手给员工使用 AI 工具加上限制。</p>\n<p>说回 OpenAI Codex 这次额度反常的事，它的发生时点紧跟在本月稍早平台那场宕机之后。类似的麻烦 Anthropic 同样碰到过——今年 3 月 Claude 那次大面积宕机，恰恰把程序员对 AI 工具依赖之深暴露无遗，当时就有为数不少的开发者抱怨，自己被逼得只能回头一行行手敲代码。</p>"
+  },
+  {
+    "slug": "openai-gpt-5-6-series-launch-coding-performance",
+    "href": "/blog/openai-gpt-5-6-series-launch-coding-performance",
+    "category": "AI资讯",
+    "title": "OpenAI GPT-5.6最快下周亮相：上下文飙至150万tokens，编码反超对手",
+    "description": "OpenAI最快下周推出GPT-5.6系列，含mini、标准与Pro版，上下文窗口升至150万tokens，编码性能反超对手并下调价格。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/48aca98d-790a-4c3c-87d7-fa457c856743.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>据科技媒体 testingcatalog 在 6 月 19 日刊发的一篇博文透露，OpenAI 最快可能于下周亮相 GPT-5.6 系列，该系列将包含 mini、标准版与 Pro 版三种规格。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/48aca98d-790a-4c3c-87d7-fa457c856743.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>在 X 平台上，已有一些订阅了 Pro 服务的用户发文称，自己这边已经能够调用 GPT-5.6 Pro 模型，并表示初次生成结果的质量较以往有了明显跃升。</p>\n<p>有用户分享使用体验时提到，沿用同样的提示词去推进某个项目，整体仍需花费 20~40 分钟左右，不过模型的理解能力提升相当显著；尽管前端与 Web 开发方面的难题尚未被彻底攻克，其在认知深度上的进展已经能够感受到。</p>\n<p>就性能而言，GPT-5.6 把上下文窗口由原先的 100 万 tokens 一举拉高到 150 万 tokens，与此同时，长周期编码表现和 Codex 的响应速度也得到了打磨。有消息指出，在智能体编码这类任务上，GPT-5.6 的表现已经反超 Anthropic 的 Mythos 系列，被开发者们视作新的参照标准。</p>\n<p>价格层面同样有消息流出：眼下 OpenAI 的 token 收费大约只相当于 Anthropic 的一半，而接下来 OpenAI 打算直接挑起价格战——在性能向上的同时，把价格压得更低。</p>"
+  },
+  {
+    "slug": "open-lovable-ai-react-app-generator",
+    "href": "/blog/open-lovable-ai-react-app-generator",
+    "category": "AI项目",
+    "title": "Open Lovable：开源 AI 建站神器，一句话克隆任意网站",
+    "description": "Open Lovable 是 Firecrawl 团队开源的 AI React 生成器，对话或丢网址即可秒级克隆网站，支持多模型与沙箱自由切换。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/0eca1bbd-b2cb-451d-9124-85732a557c74.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [
+      {
+        "text": "它是什么",
+        "level": 2
+      },
+      {
+        "text": "它能做什么",
+        "level": 2
+      },
+      {
+        "text": "核心特性",
+        "level": 2
+      },
+      {
+        "text": "技术栈",
+        "level": 2
+      },
+      {
+        "text": "它是怎么工作的",
+        "level": 2
+      },
+      {
+        "text": "快速上手",
+        "level": 2
+      },
+      {
+        "text": "1. 克隆并安装依赖",
+        "level": 3
+      },
+      {
+        "text": "2. 配置环境变量",
+        "level": 3
+      },
+      {
+        "text": "3. 启动开发服务器",
+        "level": 3
+      },
+      {
+        "text": "适合谁用",
+        "level": 2
+      },
+      {
+        "text": "小结",
+        "level": 2
+      }
+    ],
+    "html": "<blockquote>\n<p>一个开源的 <a href=\"http://Lovable.dev\">Lovable.dev</a> 替代品，由 Firecrawl 团队打造。和 AI 聊聊天，就能把一个网站「克隆」成现代化的 React 应用。</p>\n</blockquote>\n<h2><a href=\"#它是什么\">它是什么</a></h2>\n<p><a href=\"https://github.com/firecrawl/open-lovable\">Open Lovable</a> 是 Firecrawl 团队开源的一款 <strong>AI 驱动的 React 应用生成器</strong>。它的核心理念非常直接：你不需要从零写代码，只要用自然语言描述你想要的东西，或者直接丢给它一个网址，AI 就会帮你把对应的 React 应用生成出来——而且是秒级的。</p>\n<p>它本质上是商业产品 <a href=\"http://Lovable.dev\">Lovable.dev</a> 的一个<strong>自托管开源替代方案</strong>，采用 MIT 协议。截至目前，项目在 GitHub 上已经收获了 <strong>26.8k+ Stars</strong> 和 5.1k+ Forks，是一个相当受关注的开源项目。</p>\n<p><img src=\"https://camo.githubusercontent.com/cd686d14436da22608c22d0f9b54c30e31e41946329f9212d538617d3cca0ac5/68747470733a2f2f6d65646961312e67697068792e636f6d2f6d656469612f76312e59326c6b505463354d4749334e6a4578626d5a746148466c654752734d544e6c61574e7964476469616e49344e475134644868795a6a42306432566b636a52796558427563435a6c634431324d563970626e526c636d35686246396e61575a66596e6c666157516d593351395a772f5a46564c574d61366456736b5158307175312f67697068792e676966\" alt=\"open lovable\"></p>\n<h2><a href=\"#它能做什么\">它能做什么</a></h2>\n<p>简单概括，Open Lovable 把「克隆并重建一个网站」这件事自动化了：</p>\n<ul>\n<li><strong>对话式构建</strong>：在聊天界面里描述你的应用需求，AI 帮你生成对应的 React 代码。</li>\n<li><strong>网站克隆</strong>：借助 Firecrawl 的网页抓取能力，它能提取一个现有网站的结构与内容，然后用 AI 在几秒内把它重建成一个现代化的 React 应用。</li>\n<li><strong>实时预览与运行</strong>：生成的代码会在沙箱环境中执行，你可以立刻看到效果。</li>\n<li><strong>持续迭代</strong>：通过继续对话来修改、完善生成的应用。</li>\n</ul>\n<h2><a href=\"#核心特性\">核心特性</a></h2>\n<table><thead><tr><th>特性</th><th>说明</th></tr></thead><tbody><tr><td>🤖 多模型支持</td><td>兼容 Google Gemini、Anthropic Claude、OpenAI、Groq</td></tr><tr><td>📦 灵活的沙箱</td><td>支持 Vercel Sandbox（默认）和 E2B 两种代码执行环境</td></tr><tr><td>⚡ Fast Apply</td><td>可选接入 Morph LLM，加速代码编辑应用</td></tr><tr><td>🕷️ 网页抓取</td><td>集成 Firecrawl API，提取目标网站的结构与内容</td></tr></tbody></table>\n<h2><a href=\"#技术栈\">技术栈</a></h2>\n<p>Open Lovable 本身是一个标准的现代前端项目：</p>\n<ul>\n<li><strong>框架</strong>：Next.js</li>\n<li><strong>语言</strong>：TypeScript（占比约 95%）</li>\n<li><strong>UI</strong>：React + Tailwind CSS（搭配 PostCSS）</li>\n<li><strong>包管理</strong>：支持 pnpm / npm / yarn</li>\n<li><strong>运行时</strong>：Bun</li>\n</ul>\n<h2><a href=\"#它是怎么工作的\">它是怎么工作的</a></h2>\n<p>可以把整个流程理解为三步：</p>\n<ol>\n<li><strong>抓取（Firecrawl）</strong>：当你给出一个网址时，Firecrawl 负责把目标页面的内容和结构抓取下来，转换成 AI 易于理解的格式。</li>\n<li><strong>生成（LLM）</strong>：你选择的大模型（Claude / Gemini / OpenAI / Groq）根据抓取结果或你的文字描述，生成 React 组件代码。</li>\n<li><strong>执行（Sandbox）</strong>：生成的代码被放进 Vercel 或 E2B 的沙箱中实时运行，你立即看到可交互的预览，并能继续对话迭代。</li>\n</ol>\n<p>如果配置了可选的 <strong>Morph LLM</strong>，编辑应用的速度还能进一步提升（Fast Apply）。</p>\n<h2><a href=\"#快速上手\">快速上手</a></h2>\n<h3><a href=\"#1-克隆并安装依赖\">1. 克隆并安装依赖</a></h3>\n<div><pre><code>git clone https://github.com/firecrawl/open-lovable.git\ncd open-lovable\npnpm install   # 或 npm install / yarn install</code></pre></div>\n<h3><a href=\"#2-配置环境变量\">2. 配置环境变量</a></h3>\n<p>在项目根目录创建 <span><code>.env.local</code></span> 文件：</p>\n<div><pre><code># 必填：Firecrawl API Key —— https://firecrawl.dev\nFIRECRAWL_API_KEY=your_key\n \n# AI 模型（四选一即可）\nGEMINI_API_KEY=...      # https://aistudio.google.com/app/apikey\nANTHROPIC_API_KEY=...   # https://console.anthropic.com\nOPENAI_API_KEY=...      # https://platform.openai.com\nGROQ_API_KEY=...        # https://console.groq.com\n \n# 可选：更快的编辑应用\nMORPH_API_KEY=...        # https://morphllm.com/dashboard\n \n# 沙箱环境（vercel 为默认，或 e2b）\nSANDBOX_PROVIDER=vercel</code></pre></div>\n<p><strong>关于沙箱配置：</strong></p>\n<ul>\n<li><strong>Vercel 沙箱</strong>：推荐用 <span><code>vercel env pull</code></span> 拉取 <span><code>VERCEL_OIDC_TOKEN</code></span>；或者手动配置 <span><code>VERCEL_TEAM_ID</code></span>、<span><code>VERCEL_PROJECT_ID</code></span>、<span><code>VERCEL_TOKEN</code></span>。</li>\n<li><strong>E2B 沙箱</strong>：配置 <span><code>E2B_API_KEY</code></span>（从 <a href=\"https://e2b.dev\">https://e2b.dev</a> 获取）。</li>\n</ul>\n<h3><a href=\"#3-启动开发服务器\">3. 启动开发服务器</a></h3>\n<div><pre><code>pnpm dev   # 或 npm run dev / yarn dev</code></pre></div>\n<p>然后访问 <a href=\"http://localhost:3000\">http://localhost:3000</a> 就可以开始和 AI 对话构建应用了。</p>\n<h2><a href=\"#适合谁用\">适合谁用</a></h2>\n<ul>\n<li><strong>想快速验证想法的开发者</strong>：把一个参考网站丢进去，几秒拿到可运行的 React 脚手架。</li>\n<li><strong>学习者</strong>：观察 AI 如何把需求拆解成组件，是不错的学习材料。</li>\n<li><strong>希望掌控数据与成本的团队</strong>：相比商业 SaaS，自托管 + 自带 API Key 的模式让你对模型选择和费用有更多控制权。</li>\n</ul>\n<h2><a href=\"#小结\">小结</a></h2>\n<p>Open Lovable 把「AI 抓取网页 → 大模型生成代码 → 沙箱实时运行」这条链路打通，并且全部开源。它的亮点在于<strong>模型与沙箱都可自由选择</strong>，既能用 Claude、Gemini 这样的顶级模型，也能在 Vercel 或 E2B 之间切换运行环境。如果你对 AI 辅助开发、网站克隆或者「Vibe Coding」感兴趣，这是一个非常值得动手试一试的项目。</p>\n<blockquote>\n<p>项目地址：<a href=\"https://github.com/firecrawl/open-lovable\">https://github.com/firecrawl/open-lovable</a> （MIT 协议）</p>\n</blockquote>"
+  },
+  {
+    "slug": "noam-shazeer-leaves-google-joins-openai",
+    "href": "/blog/noam-shazeer-leaves-google-joins-openai",
+    "category": "AI资讯",
+    "title": "AI 大牛 Noam Shazeer 告别谷歌，加盟 OpenAI",
+    "description": "Transformer论文核心作者Noam Shazeer宣布离开谷歌加盟OpenAI，谷歌曾斥资27亿美元招回，此次出走对Gemini项目是沉重打击。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/a8f7853e-0979-404f-b660-02a1cd2228a7.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>两年前，谷歌曾掏出 27 亿美元的巨额代价，把 AI 领域的传奇人物 Noam Shazeer 重新招回麾下。如今风向突变——这位关键人物宣布与谷歌分道扬镳，转而投奔 OpenAI。</p>\n<p>Shazeer 写道，自己即将入职 OpenAI，很期待和那边的杰出团队携手共事。他坦言，做出离开谷歌的决定并不轻松：对于谷歌团队，以及大家齐心协力创造出的种种成果，他始终怀有极大的自豪感；能与这群同事并肩奋斗，是一段既荣幸又快乐的旅程。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/2d032341-b733-4aa2-a41f-b05fe08cd3af.jpg?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>紧接着，Sam Altman 出面回应：「自 OpenAI 诞生那天起，Noam 就一直是我最渴望招揽的人选之一。只是这一等就是十年。我坚信，这十年的守候终将物有所值！」</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/76f31532-3fd1-4ed6-a9ed-65c7fef9b986.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>OpenAI 研究主管 Mark Chen 等人同样在 X 上转发表态:「热烈欢迎 Noam Shazeer 出任 OpenAI 架构研究负责人！他在 Transformer、MoE(混合专家模型)以及高效解码等方向上的成果，对当今 AI 的演进路径产生了深远影响。</p>\n<p>他既笃信 AGI 终将实现，又在『如何让这条路走得稳妥』的问题上有着缜密而成熟的思考。欢迎你，Noam！」</p>\n<p><strong>关于 Noam Shazeer</strong></p>\n<p>在谷歌的发展史上，Noam Shazeer 属于举足轻重的元老级人物。早在 2000 年末，他便加入谷歌，担任过首席软件工程师一职，并主导过公司早期的广告系统。</p>\n<p>他绝非泛泛之辈。2017 年那篇划时代的论文《Attention Is All You Need》，正是出自他与其他几位作者之手。文中提出的 Transformer 架构，日后演变为支撑整个大语言模型时代的核心地基。无论是 GPT、Gemini、Claude，还是当下几乎所有主流大模型，其底层技术路线都绕不开 Transformer。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/3443b691-6416-473c-8eb4-92634f9c0f68.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>而 Shazeer 的价值，远不止于 Transformer 这一项。</p>\n<p>早在大模型尚未进入规模化角逐之前，他就持续深耕模型扩展、稀疏计算与超大规模训练等课题。由他参与提出的 Sparsely-Gated Mixture-of-Experts，为后来的 MoE 技术路线奠定了关键的早期基石；而 Switch Transformer 更是将稀疏专家模型一举推进到万亿参数的量级。时至今日，MoE 已成为前沿模型在扩张参数规模的同时压低推理开销的主流手段之一。</p>\n<p>2021 年，由于无法忍受这家搜索巨头内部的官僚作风，Shazeer 心生去意，最终离职，并与 Daniel De Freitas 联手创立了 <a href=\"http://Character.AI\">Character.AI</a>。这家公司一度跻身业界最受瞩目的 AI 创业团队之列。</p>\n<p>时间来到 2024 年，谷歌与 <a href=\"http://Character.AI\">Character.AI</a> 敲定了一项技术授权协议，借此机会把 Shazeer 等人重新纳入 Google DeepMind 体系。回归之后，他被委以 Gemini 技术共同负责人的重任，深度参与谷歌最核心的大模型攻坚。</p>\n<p>然而仅仅时隔不到两年，他便再度转身，奔向了 OpenAI。对 Gemini 项目而言，这无疑是一记沉重打击。</p>\n<p>不少网友指出，眼下 Gemini 仍处在亟需强化模型实力与工程体系的吃紧阶段，此时痛失 Shazeer 这般量级的人物，对谷歌来说是一次不容小觑的人才流失。</p>\n<p>也有人的吐槽更不留情面:Gemini 本就表现平平，如今连核心人物都跑了，这下算是彻底没戏了。</p>\n<p>还有网友打趣道:谷歌花了 27 亿美元买下 Shazeer 的知识产权，结果 OpenAI 一分钱没花就坐收了这些专利——堪称科技史上性价比最高的一笔「收购」。</p>\n<p>在这场愈演愈烈的 AI 人才争夺战中，拿下 Shazeer，对 OpenAI 来说毫无疑问是一次分量十足的胜利。</p>"
+  },
+  {
+    "slug": "wan-yao-tu-lu-zhuan-ai-anime-drama",
+    "href": "/blog/wan-yao-tu-lu-zhuan-ai-anime-drama",
+    "category": "AI短剧",
+    "title": "万妖图录传爆火揭秘：AI漫剧天花板凭什么霸榜",
+    "description": "《万妖图录传》凭大女主斩妖剧情与电影级AI画质霸榜红果短剧，本文揭秘它爆火背后优质内容、AI技术赋能与流量风口的三重逻辑。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/05ad33ee-42ac-4b71-8e79-3f18a23d1635.jpg?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>家人们！还有谁没通宵刷《万妖图录传》？这部剧堪称眼下 AI 漫剧领域的\"顶流黑马\"，每次更新都直接霸榜红果短剧热门榜，热度在全网一路狂飙。评论区里挤满了催更的死忠粉，\"AI 漫剧天花板\"的呼声此起彼伏！它从第一季的小众破圈，一路走到第七季的现象级火爆——究竟靠什么能把同类作品甩在身后？这背后其实藏着 AI 漫剧崛起的核心门道，今天就给大家彻底讲明白！</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/05ad33ee-42ac-4b71-8e79-3f18a23d1635.jpg?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>一、看点全程拉满！人设与剧情同样过硬，越刷越停不下来</p>\n<ol>\n<li>大女主斩妖翻身，不谈恋爱才是真痛快</li>\n</ol>\n<p>那些工业糖精堆出来、女主整天绕着男主转的古偶看多了，《万妖图录传》干脆把老套路全推翻！女主姜月初穿越到妖魔肆虐的盛唐，凭一本\"万妖图录\"傍身，以妖血当墨绘出妖形便能夺取神通，从一个落魄罪臣之女，硬是逆袭坐上镇魔司指挥使之位。她一门心思扑在事业上，下手干脆从不犯圣母病，单挑平天真君、在黑河斩杀白蛟，连宝刹寺的高阶都敢正面硬碰，每一场打斗都燃得让人头皮发麻。这里没有无脑甜宠桥段，也不见狗血虐恋，全靠真本事翻盘的大女主，正中观众的爽点！</p>\n<ol start=\"2\">\n<li>志怪打底加高能反转，剧情干货满满绝不注水</li>\n</ol>\n<p>跟那些低质套路的普通短剧不同，这部剧的根基扎在《山海经》的志怪土壤里，搭建出\"人、妖、仙佛\"互相制约的庞大世界观。这里的妖并非脸谱化的坏蛋，它们有执念也有柔情，论起情义来甚至比人还透彻；人也不是天生正派，背地里藏着野心与算计。整部剧高能不断、反转连连——你认定的善或许暗藏恶意，看似走投无路的绝境里又埋着生机，留白拿捏得恰到好处，丝毫不把观众当傻子。每一集都节奏紧凑、没有半点废戏，一集抛一个小高潮，越追越上头，根本舍不得停！</p>\n<ol start=\"3\">\n<li>角色集体在线，配角绝非工具人</li>\n</ol>\n<p>更难能可贵的是，剧里既没有专门负责无脑助攻的配角，也没有被生硬洗白的反派。忠心耿耿的妖宠、来路不明的大佬、心思阴狠的反派，每个人都立场分明、动机站得住脚，彼此关系盘根错节又相互牵制，故事的层次感一下子就出来了。没有谁突然智商掉线，也没有强行降维碾压的桥段，所有人都在认真博弈，看剧时全程提心吊胆，代入感直接拉满！</p>\n<p>二、AI 技术加持！花小钱做出大片质感，扭转行业成见</p>\n<ol>\n<li>画质与建模双双进阶，打斗特效不输院线</li>\n</ol>\n<p>一提 AI 漫剧，很多人脑子里浮现的就是\"五毛特效、糙建模\"，可《万妖图录传》偏偏把这种成见击得粉碎！暗黑玄幻的武侠基调下，盛唐古风的场景细腻又逼真，角色建模立体而精致，从女主的服饰到各类妖物的种族特征，细节都做足了。打斗时动作流畅连贯，水墨风的特效极具张力，虎妖咆哮、白蛟操控水流这些名场面视觉冲击力惊人，那味儿完全对标国漫巅峰，称它一句\"电影级 AI 漫剧\"一点都不过分！</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/5e9f6ab9-e6dd-4efb-9a9b-58a84b214939.jpg?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/6e0f792b-f176-4659-b896-0ab59d49bb4a.jpg?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<ol start=\"2\">\n<li>AI 降本又增效，又快又好把传统动画比下去</li>\n</ol>\n<p>传统动画往往制作周期漫长、投入巨大，一部精品常常要花上好几年、砸进上千万。而 AI 技术直接重写了行业的游戏规则，《万妖图录传》借助 AI 来优化建模、分镜、特效等各个环节，把制作周期大幅压缩，成本也随之降低。这样一来，即便是小团队也能高效产出，既扛得住周更乃至日更的高频节奏，又能稳定输出画质过关的内容，完美贴合短视频时代观众\"碎片化追剧\"的习惯——这正是它能迅速破圈的关键所在！</p>\n<p>三、精准踩上风口！AI 漫剧成流量新蓝海，平台资本一齐加码</p>\n<ol>\n<li>短视频流量助推，传播实现裂变式引爆</li>\n</ol>\n<p>如今短视频就是流量的主战场，而 AI 漫剧天生契合短视频平台的传播规律：单集只有 1 到 3 分钟，节奏飞快、爽点密集，开篇即高能，能瞬间抓牢刷视频用户的眼球。《万妖图录传》靠着\"大女主斩妖\"\"高能反转\"这些爆点，在抖音、红果等平台上疯传，用户主动转发、留言、做二创，传播一层层裂变开来，迅速破圈拢住了海量观众。</p>\n<ol start=\"2\">\n<li>资本平台重金押注，AI 漫剧站上新风口</li>\n</ol>\n<p>近两年，资本疯狂涌入 AI 短剧这条赛道，多家企业砸下重金布局，整个行业规模呈爆发式扩张。各大平台也对 AI 漫剧大力扶持，又是倾斜流量又是给分账激励，推动优质内容不断产出。《万妖图录传》正是字节系红果短剧重点扶持的作品，既有平台的流量优势作后盾，自身内容又足够硬核，在一众作品里脱颖而出便是水到渠成，成了 AI 漫剧赛道里的标杆之作。</p>\n<p>四、灵魂一问！《万妖图录传》的爆火，意味着 AI 漫剧的春天来了吗？</p>\n<p>《万妖图录传》能火，绝不是撞大运，而是优质内容、AI 技术赋能、流量风口这三股力量叠加催生的结果。它用实力证明：AI 漫剧不是什么\"低端替代品\"，而是一种既能产出精品、又能满足观众多样化口味的全新内容形态；它同样验证了观众真正想要的，从来都是剧情过硬、人设讨喜、制作精良的好作品，而非无脑套路堆砌的\"电子榨菜\"。</p>\n<p>不过随之而来的争议也不少：一边有人看好 AI 漫剧高效高产、前景一片光明；另一边也有人担心 AI 终将取代真人创作，让内容陷入严重的同质化。</p>"
+  },
+  {
+    "slug": "github-copilot-2026-billing-changes-agent-features",
+    "href": "/blog/github-copilot-2026-billing-changes-agent-features",
+    "category": "AI资讯",
+    "title": "2026年中GitHub Copilot重大变更：按量计费、模型下架与Agent新能力全解析",
+    "description": "2026年6月起GitHub Copilot全面转向AI积分按量计费，个人版暂停注册、高端模型下架，同时新增Agent自动化与BYOK扩展能力，开发者需尽快了解新规以控制成本。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/e33e9731-8658-4c2d-b98d-cd8542ae6632.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [
+      {
+        "text": "1. 计费模式全面转向按量付费",
+        "level": 2
+      },
+      {
+        "text": "2. 个人计划收紧：注册暂停与模型下架",
+        "level": 2
+      },
+      {
+        "text": "3. IDE 功能进化：Agent 模式与 BYOK 扩展",
+        "level": 2
+      },
+      {
+        "text": "4. 应对思路",
+        "level": 2
+      }
+    ],
+    "html": "<p>持续关注开发工具链的朋友近期应该有所察觉——2026 年上半年，GitHub Copilot 密集推出了一系列改动，涵盖 IDE 交互层面的迭代与核心计费逻辑的根本性重构。</p>\n<p>对于长期依赖\"无限制补全\"的开发者而言，这些调整直接影响日常工作流和实际支出。本文结合 GitHub 官方文档与 Changelog，梳理 2026 年中最值得关注的几项核心变化。</p>\n<hr>\n<h2><a href=\"#1-计费模式全面转向按量付费\">1. 计费模式全面转向按量付费</a></h2>\n<p>这是本轮变动中波及范围最广的一项。依据官方 Changelog，<strong>2026 年 6 月 1 日</strong>起，GitHub Copilot 旧有的计费体系正式终止，改为以使用量为计算基准的新模式。</p>\n<ul>\n<li><strong>AI 积分（AI Credits）消耗机制</strong>：代码补全、对话提问、代码审查等操作，均会占用每月的 AI 积分配额。</li>\n<li><strong>PR Code Review 双重计费</strong>：通过 Copilot 对 Pull Request 执行 Code Review 时，除消耗 AI 积分外，还将额外扣减 GitHub Actions 的运行分钟数。这一\"双重扣费\"规则已在开发者社区引发广泛争议。</li>\n<li><strong>额度上限与硬性锁定</strong>：此前的订阅机制更接近\"软限制\"，而新规则引入了更为严格的速率约束——一旦触及 7 天或月度配额阈值，请求将被系统直接锁定，须等待下一计费周期重置或付费升级后方可恢复。</li>\n</ul>\n<hr>\n<h2><a href=\"#2-个人计划收紧注册暂停与模型下架\">2. 个人计划收紧：注册暂停与模型下架</a></h2>\n<p>算力成本压力之下，GitHub 对 Individual 个人版计划实施了多项严格管控：</p>\n<ul>\n<li><strong>新用户注册暂停</strong>：以\"优先保障现有用户体验\"为由，Copilot Pro、Pro+ 及 Student 学生版均已停止接受新用户注册，仅免费版（Free）通道保持开放。</li>\n<li><strong>高端模型下线</strong>：Pro 套餐中，Claude Opus 系列已全面移除；Pro+ 套餐中，Opus 4.5 与 4.6 同步下架，仅 Opus 4.7 得以保留。此外，Web 版 Copilot Chat 也下架了 Gemini 等多款模型。</li>\n</ul>\n<p>对有特定大语言模型依赖的用户而言，官方所能提供的选择空间正在缩小。</p>\n<hr>\n<h2><a href=\"#3-ide-功能进化agent-模式与-byok-扩展\">3. IDE 功能进化：Agent 模式与 BYOK 扩展</a></h2>\n<p>收费门槛抬升的同时，Copilot 在 Visual Studio Code（1.120–1.123 版本）等 IDE 中的能力也有实质性提升，核心方向是<strong>从\"辅助补全\"向\"任务自动化\"延伸</strong>：</p>\n<ul>\n<li><strong>Agents 窗口（预览版）</strong>：新增的 Agent 窗口支持跨项目协同工作。向其分配具体 Issue 或任务后，它可在后台自主读取上下文、批量修改文件并生成变更预览，不再局限于光标位置的单点补全。</li>\n<li><strong>BYOK（Bring Your Own Key）能力扩展</strong>：官方进一步开放了自定义接口，允许用户在 VS Code 内配置自有大模型 API Key。2026 年 5 月的更新还新增了对<strong>物理隔离（Air-gapped）环境</strong>的支持，并允许为不同的细分任务指定不同模型（例如单独调用小参数模型生成 Commit Message）。</li>\n<li><strong>终端 Token 压缩优化</strong>：终端报错触发 AI 分析时，Copilot 现在会自动对冗长的测试、构建、Docker 日志进行压缩后再传递给模型。在按量计费的背景下，这一改进具有明显的节流价值。</li>\n</ul>\n<hr>\n<h2><a href=\"#4-应对思路\">4. 应对思路</a></h2>\n<p>商业化闭环是工具演进的必然趋势。面对 Copilot 日趋精细的计费体系，以下几个方向值得参考：</p>\n<ol>\n<li><strong>合理利用 BYOK 与本地部署</strong>：既然官方已开放自定义接口，可借助 API 中转接入性价比更高的第三方服务。有服务器资源的团队还可结合本地部署的 Ollama 运行开源代码模型，将基础补全与逻辑解释迁移至自有节点，从而显著降低对官方 API 的调用依赖。</li>\n<li><strong>精简 Prompt 与上下文输入</strong>：避免让 AI 加载无关的全局文件或超长报错信息。精准截取核心报错片段、善用\"仅检索已修改文件\"等新功能，是控制 Token 消耗的关键习惯。</li>\n<li><strong>关注替代方案</strong>：若按量计费与 Token 限制对开发心流造成严重干扰，可考虑 Cursor 等在上下文管理上更激进的独立产品，或转向完全基于自有 API Key 的开源 AI 辅助插件。</li>\n</ol>\n<hr>\n<p>GitHub Copilot 的定位正在从单一的代码补全工具，向深度集成的自动化开发平台转变。功能层面确有进步，但使用成本也在同步、切实地上升。摸清底层计费逻辑、灵活配置接口，才是 2026 年用好这把双刃剑的前提。</p>"
+  },
+  {
+    "slug": "openai-codex-referral-program-rate-limit-reset",
+    "href": "/blog/openai-codex-referral-program-rate-limit-reset",
+    "category": "AI资讯",
+    "title": "OpenAI推出Codex推广计划：邀请好友获免费额度重置",
+    "description": "OpenAI启动为期两周的Codex推广计划，用户邀请好友注册使用即可获得1次速率限制重置机会，灵活突破使用频率约束，助力开发者高效工作。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/a1a8aa79-ddd5-4b1a-bb4a-7d70ca2bfbc7.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [],
+    "html": "<p>随着 AI 工具的使用频率持续攀升，使用额度的限制常常成为阻碍用户提升效率的关键障碍。最近，OpenAI 官方通过社交媒体正式对外宣布，推出一项崭新的 Codex 推广计划，为用户群体提供了切实的优惠措施。</p>\n<p>根据了解，此次推广计划的时间跨度为两周。活动期间，用户只要通过邀请机制引导好友注册并实际使用 Codex，便能够获取相应的额外权益。其激励规则设计得相当清晰：一旦受邀好友完成注册并发出首条消息，邀请方便可获得 1 次速率限制的重置机会。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/a1a8aa79-ddd5-4b1a-bb4a-7d70ca2bfbc7.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"A minimalist digital illustration showing two friendly figures exchanging a glow\"></p>\n<p>该重置机会的主要优势体现在其使用的灵活度上。用户能够选择保留这一权限，并在自己判断需要的任意时刻主动激活，进而突破原先设定的使用频率约束，保证在处理繁杂的编程项目或进行深度内容创作时，能够获得连续且稳定的 AI 辅助。</p>\n<p>对那些高度依赖编程助手开展日常工作的开发人员来说，这显然是一条快速扩充使用配额的有效途径。目前，这一活动已经正式启动，感兴趣的用户可以通过官方渠道查询详细的参与规则，在接下来的两周时间里把握这次获取免费额度重置的时机。</p>"
+  },
+  {
+    "slug": "openai-ipo-gpt-5-6-launch-trillion-valuation",
+    "href": "/blog/openai-ipo-gpt-5-6-launch-trillion-valuation",
+    "category": "AI资讯",
+    "title": "OpenAI被曝一年内IPO，GPT-5.6本月发布，估值冲击万亿美元",
+    "description": "OpenAI CEO奥尔特曼透露公司有望一年内完成IPO，已向SEC秘密提交申请文件，目标估值1万亿美元。同时新模型GPT-5.6预计本月推出，性能较GPT-5.5显著提升。公司正规划俄亥俄州10吉瓦数据中心园区，巨额算力投入推动上市进程加速。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/7ff37756-3cf3-472e-a0a9-d10bcdeb0b6b.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [
+      {
+        "text": "结语：大模型巨无霸纷纷开启IPO",
+        "level": 2
+      }
+    ],
+    "html": "<p>昨夜，外媒The Information披露了一条来自内部Slack频道的消息——OpenAI联合创始人兼CEO萨姆·奥尔特曼（Sam Altman）在其中透露，公司有望在一年以内完成首次公开募股（IPO）。与此同时，首席科学家Jakub Pachocki在内部通知员工，一款新模型正在研发推进中；另有知情人士爆料，该新模型GPT-5.6预计将于本月正式推出。</p>\n<p>尤为值得关注的是，奥尔特曼发出上述内部消息的时间点，与OpenAI官方宣布已向美国证券交易委员会（SEC）秘密提交IPO申请文件几乎完全重合。</p>\n<p>在那条内部消息里，Altman明确表示，IPO目标时间线设定在一年之内。他进一步解释道：\"上市节奏存在诸多变量，可能提前也可能推后。此时递交文件的意义在于保留灵活性——若条件成熟，提前上市亦非不可能。\"</p>\n<p>他同时提及了另一种情境：若AI技术演进速度足够快，进入能够自主生成新一代AI的\"递归自我改进\"（RSI）阶段，推迟上市对公司而言反而可能更加有利。原因在于，技术高速迭代期间，维持私营公司身份能赋予OpenAI更大的决策自由度。</p>\n<p>除IPO计划外，Altman还向员工透露，公司即将启动一轮股份回购。据内部知情人士透露，回购价格定为每股687.69美元（约合人民币4660元）。</p>\n<p>资本需求方面，OpenAI的压力不容小觑。该公司正着手在俄亥俄州规划建设一座大规模数据中心园区，据The Information于6月10日的报道，园区总规划容量高达10吉瓦。OpenAI拟与软银集团旗下SB Energy签订一份为期20年的租约，累计租金预计高达数百亿美元。此外，采购英伟达芯片所需的资金同样需要数千亿美元量级。</p>\n<p>The Information报道指出，该算力园区建成投用后，将主要承载下一代大模型的训练与推理任务，而海量硬件采购、场地运维及电力消耗将带来持续的高额成本支出。Altman坦言，正是这种对算力与基础设施的巨大资本投入，或将推动OpenAI加速推进上市进程。</p>\n<p>在Altman发布内部消息的同一时间段，OpenAI官方同步宣布已秘密向SEC递交S-1注册文件。公告中，OpenAI表示目前尚未确定具体的上市时间节点，理由是仍有若干事项以私营公司身份推进更为便利。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/08520e00-6ed5-4f11-bb65-325f2d40a9e7.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"OpenAI被曝本月将发GPT-5.6，奥尔特曼预估一年内完成IPO\"></p>\n<p>▲OpenAI向SEC提交S-1的公告（图源：OpenAI）</p>\n<p>OpenAI的主要竞争对手Anthropic同样在加速IPO布局。该公司于6月1日宣布已秘密向SEC提交S-1注册声明草案，正式启动普通股首次公开发行的筹备程序。据悉，一旦通过SEC审查，Anthropic即可择机上市，而最终时间节点将主要视市场行情及其他相关因素而定。The Information援引投资者和市场分析人士的预测称，OpenAI与Anthropic的IPO目标估值均有望触及1万亿美元。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/d6864b72-03b5-434e-b170-9b0297997c1f.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"OpenAI被曝本月将发GPT-5.6，奥尔特曼预估一年内完成IPO\"></p>\n<p>▲Anthropic向SEC提交S-1的公告（图源：Anthropic）</p>\n<p>在新模型方面，OpenAI首席科学家Jakub Pachocki通过内部渠道告知员工，公司正在积极筹备代号为GPT-5.6的新模型，并认为其性能相较现有旗舰产品GPT-5.5将实现\"显著提升\"。The Information援引知情人士消息称，该模型的发布时间定在本月之内。然而截至目前，OpenAI既未公开任何功能细节或改进说明，公司发言人对外界的相关追问也一概未予回应。</p>\n<h2><a href=\"#结语大模型巨无霸纷纷开启ipo\"><strong>结语：大模型巨无霸纷纷开启IPO</strong></a></h2>\n<p>资本化推进与技术迭代升级，是OpenAI当下同步运作的两条核心主线——从IPO筹备到新模型发布，每一步棋均牵动全局。在高昂融资需求与前沿技术探索的双重压力下，这家公司的每一项战略抉择都显得分量十足。</p>\n<p>放眼当前行业格局，AI算力成本居高不下，赛道竞争持续白热化。Anthropic与OpenAI先后启动上市流程，SpaceX亦处于IPO冲刺的收尾阶段，其估值已突破1.77万亿美元（约合人民币12万亿元）。这一波头部科技企业的集中上市浪潮，或许正是它们借助公开资本市场融资输血、以应对算力等重资产高额投入压力的集体选择。</p>"
+  },
+  {
+    "slug": "claude-fable-5-pricing-accessibility-crisis",
+    "href": "/blog/claude-fable-5-pricing-accessibility-crisis",
+    "category": "AI资讯",
+    "title": "Claude Fable 5发布：最强AI模型为何让普通人越来越用不起？",
+    "description": "Anthropic发布最强模型Claude Fable 5，性能大幅提升但定价翻倍，普通用户45分钟烧光额度。同时推出仅对特定机构开放的Mythos 5，标志着AI从民主化走向分层化，$20时代或已终结。",
+    "time": "3个月前",
+    "cover": "https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/08c748f0-0cfb-4383-8344-f6c2d6c43a55.png?x-oss-process=image/resize,w_768/format,webp",
+    "toc": [
+      {
+        "text": "实力确有底气",
+        "level": 2
+      },
+      {
+        "text": "强归强，账单也很\"强\"",
+        "level": 2
+      },
+      {
+        "text": "同一底座，两张面孔",
+        "level": 2
+      },
+      {
+        "text": "普通人的位置，正在下移",
+        "level": 2
+      }
+    ],
+    "html": "<p>6月9日，Anthropic 史上最强公开模型 Claude Fable 5 正式亮相。</p>\n<p>喜忧各半。喜的是，Fable 5 的实力货真价实。忧的是，它离普通人的钱包越来越远。</p>\n<p>硅谷 AI 教父 Karpathy 给出的评价是\"代际跃升\"，Stripe 则用它在一天内跑完了人工需要整整两个月才能完成的代码迁移。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/08c748f0-0cfb-4383-8344-f6c2d6c43a55.png?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<h2><a href=\"#实力确有底气\">实力确有底气</a></h2>\n<p>Fable 5 是 Mythos 系列面向公众开放的第一款产品——这个事实本身就值得停下来想一想。</p>\n<p>Mythos 是什么来头？两个月前，当 Anthropic 首次公布这个系列时，明确表示不会向公众开放，理由是能力过于强大，网络安全方面的潜在风险难以接受，只对少数经过审核的机构定向投放。</p>\n<p>而现在，那个当初被锁起来的 Mythos 级能力，已经以 Fable 5 的形式落到了你手边。</p>\n<p>论硬指标：SWE-Bench Pro 上，Fable 5 拿下 80.3% 的得分，比 Opus 4.8 高出约 11.1 个百分点。放到模型评测的语境里，这个差距不小，大概是百米冠军比亚军整整甩出一个身位。</p>\n<p>Karpathy 的措辞没有任何保留——不是一点一点往前爬，是和去年 11 月 Claude 4.5 那次升级同一量级的\"代际跃升\"。开发者社区最早一批反馈，给出的也是同样的定性。</p>\n<p>Wix 旗下代码生成平台 Base44 表示，Fable 5\"一次性完整生成整个 app 的能力大幅提升\"。Claude Code 产品负责人 Boris Cherny 说得更直白：这是他用过的最好的编程模型，\"领先幅度相当大\"。</p>\n<p>真正让 Fable 5 破圈的，是 Stripe 晒出的那个案例：5000 万行 Ruby 代码库，全库迁移，一天完工。换一支工程师团队来干，时间是两个月。</p>\n<h2><a href=\"#强归强账单也很强\">强归强，账单也很\"强\"</a></h2>\n<p>问题来了：Fable 5 这么能打，代价是什么？Stripe 那次迁移，到底烧掉了多少 token？</p>\n<p>先看定价。API 端，输入 $10/百万 token，输出 $50/百万 token，是 Opus 4.8 的两倍。Claude 订阅用户目前有一个免费试用窗口，但 6 月 22 日之后若想继续使用，则需要额外购买用量额度。</p>\n<p>发布当天，X 上的第一波讨论就炸了锅。</p>\n<p>用户 @MaxForAI 直接开炮：\"这个 Mythos/Fable 的成本太夸张……我想不出写什么代码能回本，除非是赌场那种诈骗项目。\"他附上了一张图——同事刚跑了一个任务，差点把 20 倍额度一次性烧干净。</p>\n<p><img src=\"https://api-article.oss-cn-hongkong.aliyuncs.com/articles/2026/06/0d8a127c-aba1-4562-8eab-c93ff2cb308f.jpg?x-oss-process=image/resize,w_1536/format,webp\" alt=\"\"></p>\n<p>Reddit 用户 u/Jomuz86 的遭遇同样惨烈：\"Max x20 的 5 小时窗口，45 分钟就跑光了。Time to go touch some grass.\" 白话翻译：钱包先于代码宣告阵亡，不如出门摸草。</p>\n<p>还有 u/Maximum-Face9536 反映，在 Claude Code 里只发了一条消息，模型报错返回不可用，但这一次失败的请求，就吃掉了普通 Pro 计划 21% 的额度。</p>\n<p>这正是 Fable 5 最扎普通用户心脏的地方。</p>\n<p>根源在于，用聊天时代的定价逻辑去理解一个 Agent 时代的产品，本来就对不上。</p>\n<p>Fable 5 具备\"自主验证\"能力，模型不会回答一次就收手——拆解任务、制定计划、调用工具、派发子 Agent、等待执行结果、发现错误、修改方案、重新执行、自我验证……每一个环节都在持续消耗 token，而且在任务启动之前，没有人知道这条链会延伸多长。</p>\n<p>社区里已经有人把账算出来了：一次中等复杂度的 Agent 任务，token 消耗轻松达到 50 万至 100 万。按输出端 $50/百万 token 计算，单次任务成本可能落在 25 到 50 美元之间——这还没把输入、缓存、子 Agent 调用的开销算进去。</p>\n<p>回到 Stripe 那个案例：5000 万行代码库、一天迁移完毕，但 token 账单从未公开。两个月的工程师人工成本折算下来可能是几万美元，而 token 账单，有没有可能比这个数字更高？没有人知道。</p>\n<h2><a href=\"#同一底座两张面孔\">同一底座，两张面孔</a></h2>\n<p>Fable 5 发布时，Mythos 5 也一并公布——这一点同样不该被忽视。</p>\n<p>两款模型的本质差异不在名字，而在于权限边界。Anthropic 官方表示，Fable 5 和 Mythos 5 共用同一个底座，区别仅在于 Fable 5 叠加了安全限制。涉及网络安全、生物、化学等敏感领域，Fable 5 会把你的问题悄悄转给 Opus 4.8 处理，全程不发出任何通知——官方将其命名为\"静默降级\"，声称触发比例不超过 5% 的会话。</p>\n<p>但 Karpathy 在发布当天就点破了其中的隐患：初期的分类器\"调得有些过于敏感\"，容易误判——正常的生物科研提问、代码安全审计、乃至部分无害的学术讨论，都可能被划进那 5% 里。</p>\n<p>同样底座的 Mythos 5 则没有这些阀门，完整能力，单独通道。但它只对 Project Glasswing 中经过审核的组织开放，名单未予公示。从 Anthropic 的描述中大致可以拼出轮廓：网络安全防御机构、关键基础设施企业、少数生命科学研究者，以及此前进入 Mythos Preview 项目的约 200 个组织，其中涵盖美国政府相关项目。</p>\n<p>于是，同一个模型，对外呈现出两副面孔。</p>\n<p>一副朝向普通开发者和企业用户：装了阀门，按用量计费，遇到敏感问题悄然换模型作答。另一副朝向经审核的特定机构：能力完整，通道独立，不对外公开。</p>\n<p>Anthropic 将这套机制称为\"可信访问\"。</p>\n<p>但问题随之浮现：谁是\"不可信的\"那方？按月付了订阅费的普通用户？交了 API 费用的中小企业开发者？还是那些没有渠道进入 Glasswing 名单的创业公司？</p>\n<p>Anthropic 没有点明，但结构分化已经白纸黑字摆在那里。当有资格使用完整模型能力的，恰好是资金最雄厚、政府关系最深、行业话语权最强的那批机构，这件事就不再只是安全治理的技术问题了。</p>\n<h2><a href=\"#普通人的位置正在下移\">普通人的位置，正在下移</a></h2>\n<p>Fable 5 发布之后，普通用户究竟落在这张地图的哪个角落？</p>\n<p>过去几年，整个大模型行业一直在高喊\"AI 民主化\"——最新最强的模型一旦发布，所有人同步体验，每月 $20 就能摸到全球最前沿的 AI 能力。这套叙事极具吸引力，也很像互联网时代的产品逻辑：规模越大，边际成本越低，用的人越多越便宜。</p>\n<p>Fable 5 给出了一个截然不同的答案：前沿 AI 不是按这个逻辑运转的，不会无差别开放给所有人。</p>\n<p>当用户分层的机制已经落地，普通人在这套结构里的位置，正被温和而坚定地往下压。</p>\n<p>如果按照使用门槛和能力粗略划分，如今 Anthropic 的模型矩阵大致是这样排列的：能力越往上，离普通用户越远。</p>\n<p>这个趋势有个更直白的名字：高端化。</p>\n<p>从商业逻辑看，把最强能力卖给最愿意付账的人，是一个完全合理的商业决策。算力有成本，前沿研发有成本，Anthropic 需要在 IPO 前向市场证明其收入结构的健康度。</p>\n<p>但高端化同时意味着，AI 正在完成一次身份切换：它不是 AI 民主化进程里的一步，而恰恰是 AI 分层化走到台面上的一步。</p>\n<p>最强的能力进入\"可信访问\"时代，最贵的账单按任务链条累加，最普通的用户被引导向那个\"够用就行\"的版本。</p>\n<p>$20/月就能触碰前沿 AI 的时代，可能真的翻篇了。</p>"
+  }
+]

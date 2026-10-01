@@ -32,10 +32,9 @@ await i18n.use(initReactI18next).init({
     en: {
       translation: {
         Auto: 'Auto',
-        'Cross-group': 'Cross-group',
-        Ratio: 'Ratio',
-        'Automatically selects the best available group with circuit breaker mechanism':
-          'Automatically selects the best available group with circuit breaker mechanism',
+        'Authorized models': 'Authorized models',
+        'Follow user group': 'Follow user group',
+        'Model restriction': 'Model restriction',
       },
     },
   },
@@ -43,18 +42,20 @@ await i18n.use(initReactI18next).init({
 
 function CellHarness(props: {
   group: string
-  ratio?: number | string
   crossGroupRetry?: boolean
-  shouldReduceMotion?: boolean
+  groupDescription?: string
+  modelLimits?: string
+  modelLimitsEnabled?: boolean
 }) {
   return (
     <I18nextProvider i18n={i18n}>
       <TooltipProvider>
         <ApiKeyGroupCell
           group={props.group}
-          ratio={props.ratio}
+          groupDescription={props.groupDescription}
+          modelLimits={props.modelLimits}
+          modelLimitsEnabled={props.modelLimitsEnabled}
           crossGroupRetry={props.crossGroupRetry ?? false}
-          shouldReduceMotion={props.shouldReduceMotion ?? false}
         />
       </TooltipProvider>
     </I18nextProvider>
@@ -62,99 +63,57 @@ function CellHarness(props: {
 }
 
 describe('API key group table cell', () => {
-  test('keeps the group and compact localized multiplier together with one subtle flowing edge', () => {
-    const { container } = render(
-      <CellHarness group='auto' ratio='自动' crossGroupRetry />
-    )
-    const group = screen.getByText('Cross-group')
-    const multiplier = screen
-      .getByText('Auto')
-      .closest<HTMLElement>('[data-slot="badge"]')
-    expect(group).toBeInTheDocument()
-    expect(multiplier).toHaveClass('h-5', 'min-w-12', 'rounded-md')
-    expect(multiplier).not.toHaveTextContent('Ratio')
-    expect(container).not.toHaveTextContent('自动')
-    expect(container.querySelector('[data-auto-group-frame]')).toBeNull()
-    const flow = container.querySelector('[data-auto-group-flow-border]')
-    expect(flow).toHaveClass('auto-group-flow-border-subtle')
-    expect(flow).toHaveAttribute('aria-hidden', 'true')
-    expect(group.closest('[data-api-key-group-cell]')).toContainElement(
-      multiplier
-    )
-  })
-
-  test('keeps the automatic tag visible but static when reduced motion is requested', () => {
-    const { container } = render(
-      <CellHarness group='auto' ratio='Auto' shouldReduceMotion />
-    )
-    expect(screen.getByText('Auto')).toBeInTheDocument()
-    expect(container.querySelector('[data-auto-group-flow-border]')).toBeNull()
-  })
-
-  test('does not invent a multiplier while automatic ratio data is unavailable', () => {
-    render(<CellHarness group='auto' />)
-    expect(screen.getByText('Cross-group')).toBeInTheDocument()
+  test('renders the group dot and name without a multiplier badge', () => {
+    const { container } = render(<CellHarness group='default' />)
+    expect(screen.getByText('default')).toBeInTheDocument()
+    expect(container.querySelector('.bg-primary.size-2')).not.toBeNull()
+    expect(screen.queryByText('1x')).not.toBeInTheDocument()
     expect(screen.queryByText('Auto')).not.toBeInTheDocument()
   })
 
-  test.each([
-    [0.8, 'bg-info/10', 'text-info', 'border-info/30'],
-    [1, 'bg-muted', 'text-muted-foreground', 'border-muted-foreground/30'],
-    [3, 'bg-warning/10', 'text-warning', 'border-warning/30'],
-  ])(
-    'preserves the original %s multiplier color in the compact layout',
-    (ratio, background, color, border) => {
-      const { container } = render(
-        <CellHarness group='default' ratio={ratio} />
-      )
-      const multiplier = screen.getByText(`${ratio}x`).parentElement
-      expect(multiplier).toHaveClass(
-        background,
-        color,
-        border,
-        'rounded-full',
-        'tabular-nums',
-        'h-5',
-        'min-w-12'
-      )
-      expect(
-        container.querySelector('[data-auto-group-flow-border]')
-      ).toBeNull()
-    }
-  )
-
-  test('labels the user group multiplier as inherited without inventing a numeric value', async () => {
-    render(<CellHarness group='' />)
-    expect(screen.getByText('User Group')).toBeInTheDocument()
-    expect(screen.getByText('Inherited')).toBeInTheDocument()
-    expect(screen.getByText('Inherited').parentElement).toHaveClass(
-      'border-muted-foreground/30',
-      'rounded-full'
-    )
-    expect(screen.queryByText('1x')).not.toBeInTheDocument()
-    await userEvent.tab()
-    expect(await screen.findByText('Follow user group')).toBeVisible()
+  test('marks cross-group retry keys with the automatic badge', () => {
+    render(<CellHarness group='default' crossGroupRetry />)
+    expect(screen.getByText('Auto')).toBeInTheDocument()
   })
 
-  test('keeps a long group name and exact multiplier available through keyboard focus', async () => {
+  test('exposes the group description through keyboard focus', async () => {
     const groupName = 'production-with-a-very-long-custom-group-name'
-    render(<CellHarness group={groupName} ratio={12.345678} />)
-    expect(
-      screen.getByText(groupName).closest('[data-slot="tooltip-trigger"]')
-    ).toHaveClass('max-w-50')
-    expect(screen.getByText('12.345678x')).toBeInTheDocument()
+    render(
+      <CellHarness group={groupName} groupDescription='Production traffic' />
+    )
+    expect(screen.getByText(groupName)).toBeInTheDocument()
+    await userEvent.tab()
+    expect(await screen.findByText('Production traffic')).toBeVisible()
+  })
+
+  test('falls back to the group name when no description is available', async () => {
+    render(<CellHarness group='vip' />)
     await userEvent.tab()
     expect(
-      await screen.findByText(groupName, {
+      await screen.findByText('vip', {
         selector: '[data-slot="tooltip-content"]',
       })
     ).toBeVisible()
   })
 
-  test('never turns a string-valued normal group ratio into an automatic multiplier', () => {
-    render(<CellHarness group='vip' ratio='自动' />)
-    expect(screen.getByText('vip')).toBeInTheDocument()
-    expect(screen.queryByText('Auto')).not.toBeInTheDocument()
-    expect(screen.queryByText('自动')).not.toBeInTheDocument()
+  test('lists the authorized models behind the restriction badge', async () => {
+    render(
+      <CellHarness
+        group='default'
+        modelLimitsEnabled
+        modelLimits='gpt-4o, claude-3-5-sonnet'
+      />
+    )
+    const badge = screen.getByText('Model restriction')
+    expect(badge).toBeInTheDocument()
+    await userEvent.hover(badge)
+    expect(await screen.findByText('Authorized models')).toBeVisible()
+    expect(screen.getByText('gpt-4o')).toBeVisible()
+    expect(screen.getByText('claude-3-5-sonnet')).toBeVisible()
+  })
+
+  test('hides the restriction badge while model limits are disabled', () => {
+    render(<CellHarness group='default' modelLimits='gpt-4o' />)
+    expect(screen.queryByText('Model restriction')).not.toBeInTheDocument()
   })
 })

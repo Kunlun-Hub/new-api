@@ -42,12 +42,6 @@ interface FooterProps {
   className?: string
 }
 
-const NEW_API_FOOTER_ATTRIBUTION_KEY = [
-  'footer',
-  'new' + 'api',
-  'projectAttributionSuffix',
-].join('.')
-
 function FooterLinkItem(props: { link: FooterLink }) {
   const { t } = useTranslation()
   const isExternal = props.link.href.startsWith('http')
@@ -59,7 +53,7 @@ function FooterLinkItem(props: { link: FooterLink }) {
         href={props.link.href}
         target='_blank'
         rel='noopener noreferrer'
-        className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
+        className='text-muted-foreground hover:text-primary block duration-150'
       >
         {label}
       </a>
@@ -69,7 +63,7 @@ function FooterLinkItem(props: { link: FooterLink }) {
   return (
     <Link
       to={props.link.href}
-      className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
+      className='text-muted-foreground hover:text-primary block duration-150'
     >
       {label}
     </Link>
@@ -121,47 +115,60 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
   )
 }
 
-// inline=true returns just the inner span for composition in a parent flex
-// row. inline=false wraps in a centered/right-aligned div (default).
-function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
+// Renders the enabled legal documents as their own footer column, so the
+// layout matches the reference site's agreement column.
+function LegalColumn() {
   const { t } = useTranslation()
-  const content = (
-    <span className='text-muted-foreground/45'>
-      &copy; {props.currentYear}{' '}
-      <a
-        href='https://github.com/QuantumNous/new-api'
-        target='_blank'
-        rel='noopener noreferrer'
-        className='text-foreground/70 hover:text-foreground font-medium transition-colors'
-      >
-        {t('New API')}
-      </a>
-      . {t(NEW_API_FOOTER_ATTRIBUTION_KEY)}
-    </span>
-  )
-  if (props.inline) {
-    return content
+  const { status } = useStatus()
+  const items: { key: string; label: string; href: string }[] = []
+  if (status?.user_agreement_enabled) {
+    items.push({
+      key: 'user-agreement',
+      label: t('User Agreement'),
+      href: '/user-agreement',
+    })
+  }
+  if (status?.privacy_policy_enabled) {
+    items.push({
+      key: 'privacy-policy',
+      label: t('Privacy Policy'),
+      href: '/privacy-policy',
+    })
+  }
+  if (items.length === 0) {
+    return null
   }
   return (
-    <div className='text-muted-foreground/45 text-center text-xs sm:text-right'>
-      {content}
+    <div className='space-y-4 text-sm'>
+      <span className='block font-medium'>
+        {t('footer.columns.legal.title')}
+      </span>
+      <div className='flex flex-wrap gap-4 sm:flex-col'>
+        {items.map((item) => (
+          <Link
+            key={item.key}
+            to={item.href}
+            className='text-muted-foreground hover:text-primary block duration-150'
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }
 
 export function Footer(props: FooterProps) {
   const { t } = useTranslation()
-  const {
-    systemName,
-    logo: systemLogo,
-    footerHtml,
-    demoSiteEnabled,
-  } = useSystemConfig()
+  const { systemName, logo: systemLogo, footerHtml } = useSystemConfig()
+  const { status } = useStatus()
 
   const displayLogo = systemLogo || props.logo || '/logo.png'
   const displayName = systemName || props.name || 'New API'
-  const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
+  const hasLegalLinks = Boolean(
+    status?.user_agreement_enabled || status?.privacy_policy_enabled
+  )
 
   const fallbackColumns = useMemo<FooterColumnProps[]>(
     () => [
@@ -236,10 +243,11 @@ export function Footer(props: FooterProps) {
               className='custom-footer text-muted-foreground min-w-0 text-center text-sm sm:text-left'
               dangerouslySetInnerHTML={{ __html: footerHtml }}
             />
-            <div className='border-border/60 text-muted-foreground/45 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t pt-4 text-xs sm:w-auto sm:justify-end sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5'>
-              <LegalLinks />
-              <ProjectAttribution currentYear={currentYear} inline />
-            </div>
+            {hasLegalLinks && (
+              <div className='border-border/60 text-muted-foreground/45 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t pt-4 text-xs sm:w-auto sm:justify-end sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5'>
+                <LegalLinks />
+              </div>
+            )}
           </div>
         </div>
       </footer>
@@ -248,59 +256,54 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
-      className={cn('border-border/40 relative z-10 border-t', props.className)}
+      className={cn(
+        'border-border/40 relative z-10 border-t py-8 sm:py-10 lg:pt-16',
+        props.className
+      )}
     >
-      <div className='mx-auto max-w-6xl px-6 py-12 md:py-16'>
-        <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
+      <div className='mx-auto max-w-6xl space-y-10 px-6'>
+        <div className='grid gap-12 md:grid-cols-5'>
           {/* Brand column */}
-          <div className='shrink-0'>
-            <Link to='/' className='group flex items-center gap-2.5'>
+          <div className='col-span-5 space-y-6 md:col-span-2 md:space-y-8'>
+            <Link
+              to='/'
+              className='flex size-10 items-center'
+              aria-label={t('Home')}
+            >
               <img
                 src={displayLogo}
                 alt={displayName}
-                className='size-7 rounded-lg object-contain'
+                className='size-10 rounded-lg object-contain'
               />
-              <span className='text-sm font-semibold tracking-tight'>
-                {displayName}
-              </span>
             </Link>
-            <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
+            <p className='text-muted-foreground text-sm text-balance'>
               {t('Powerful API Management Platform')}
             </p>
           </div>
 
           {/* Links columns */}
-          {isDemoSiteMode && (
-            <div className='grid grid-cols-3 gap-8 md:gap-16'>
-              {displayColumns.map((column, index) => (
-                <div key={index}>
-                  <p className='text-muted-foreground/50 mb-3 text-xs font-medium tracking-wider uppercase'>
-                    {t(column.title)}
-                  </p>
-                  <ul className='space-y-2.5'>
-                    {column.links.map((link, linkIndex) => (
-                      <li key={linkIndex}>
-                        <FooterLinkItem link={link} />
-                      </li>
-                    ))}
-                  </ul>
+          <div className='col-span-3 grid gap-6 sm:grid-cols-4'>
+            {displayColumns.map((column) => (
+              <div key={column.title} className='space-y-4 text-sm'>
+                <span className='block font-medium'>{t(column.title)}</span>
+                <div className='flex flex-wrap gap-4 sm:flex-col'>
+                  {column.links.map((link) => (
+                    <FooterLinkItem key={link.href} link={link} />
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+            <LegalColumn />
+          </div>
         </div>
 
-        {/* Copyright + optional legal links inline on the left, project
-            attribution on the right; wraps on narrow screens. */}
-        <div className='border-border/30 mt-12 flex flex-col items-center justify-between gap-x-3 gap-y-2 border-t pt-6 sm:flex-row'>
-          <div className='text-muted-foreground/40 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:justify-start'>
-            <span>
-              &copy; {currentYear} {displayName}.{' '}
-              {props.copyright ?? t('footer.defaultCopyright')}
-            </span>
-            <LegalLinks leadingSeparator />
-          </div>
-          <ProjectAttribution currentYear={currentYear} />
+        {/* Copyright + legal links */}
+        <div className='border-border/40 text-muted-foreground flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-dashed pt-4 text-xs'>
+          <span className='text-muted-foreground text-sm'>
+            &copy; {currentYear} {displayName}.{' '}
+            {props.copyright ?? t('footer.defaultCopyright')}
+          </span>
+          <LegalLinks />
         </div>
       </div>
     </footer>

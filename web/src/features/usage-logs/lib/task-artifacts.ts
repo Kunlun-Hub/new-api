@@ -193,6 +193,9 @@ export function parseTaskArtifactsResponse(
       response.data.legacy_content_url
     )
   }
+  if (response.data?.data != null) {
+    projection.taskData = response.data.data
+  }
   if (response.data?.legacy_audio_clips != null) {
     projection.legacyAudioClips = parseLegacyAudioClips(
       response.data.legacy_audio_clips

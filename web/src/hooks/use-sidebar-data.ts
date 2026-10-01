@@ -33,7 +33,6 @@ import {
   ReceiptText,
   ServerCog,
   Settings,
-  ShieldCheck,
   Ticket,
   User,
   Users,
@@ -76,12 +75,12 @@ export function useSidebarData(): SidebarData {
         title: t('General'),
         items: [
           {
-            title: t('Overview'),
+            title: t('Dashboard'),
             url: '/dashboard/overview',
             icon: Activity,
           },
           {
-            title: t('Dashboard'),
+            title: t('Model Analytics'),
             url: '/dashboard/models',
             icon: LayoutDashboard,
           },
@@ -93,6 +92,7 @@ export function useSidebarData(): SidebarData {
           {
             title: t('Logs'),
             icon: FileText,
+            defaultOpen: true,
             items: [
               {
                 title: t('Usage Logs'),
@@ -116,8 +116,29 @@ export function useSidebarData(): SidebarData {
         ],
       },
       {
+        id: 'finance',
+        title: t('Financial'),
+        items: [
+          {
+            title: t('Top Up'),
+            url: '/wallet',
+            icon: Wallet,
+          },
+          {
+            title: t('Invite Plan'),
+            url: '/invitation',
+            icon: Gift,
+          },
+          {
+            title: t('Orders / Invoices'),
+            url: '/orders',
+            icon: ReceiptText,
+          },
+        ],
+      },
+      {
         id: 'personal',
-        title: t('Personal'),
+        title: t('Management'),
         items: [
           {
             title: t('Personal Center'),
@@ -128,32 +149,6 @@ export function useSidebarData(): SidebarData {
             title: t('Tickets'),
             url: '/tickets',
             icon: LifeBuoy,
-          },
-          {
-            title: t('Security & Access'),
-            url: '/security',
-            icon: ShieldCheck,
-          },
-        ],
-      },
-      {
-        id: 'finance',
-        title: t('Financial'),
-        items: [
-          {
-            title: t('Recharge'),
-            url: '/wallet',
-            icon: Wallet,
-          },
-          {
-            title: t('Invitation Plan'),
-            url: '/invitation',
-            icon: Gift,
-          },
-          {
-            title: t('Orders & Invoices'),
-            url: '/orders',
-            icon: ReceiptText,
           },
         ],
       },

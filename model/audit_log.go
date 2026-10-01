@@ -136,6 +136,25 @@ func RecordAuditLog(c *gin.Context, entry AuditLog) {
 	}
 }
 
+// GetLastLoginIP returns the client IP recorded for the user's most recent
+// successful sign-in, or an empty string when no login event is available.
+func GetLastLoginIP(userId int) string {
+	if userId <= 0 {
+		return ""
+	}
+	var ip string
+	err := LOG_DB.Table("audit_logs").
+		Select("ip").
+		Where("user_id = ? AND category = ? AND success = ?", userId, AuditCategoryLogin, true).
+		Order("created_at DESC").
+		Limit(1).
+		Scan(&ip).Error
+	if err != nil {
+		return ""
+	}
+	return ip
+}
+
 func GetAuditLogs(filter AuditLogFilter, start, limit, viewerRole int) ([]*AuditLog, int64, error) {
 	query := LOG_DB.Model(&AuditLog{})
 	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {

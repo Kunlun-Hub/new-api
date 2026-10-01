@@ -58,6 +58,11 @@ const quotaSchema = z.object({
   InvitationUnlockEnabled: z.boolean(),
   InvitationUnlockMinInvites: z.coerce.number().min(0),
   InvitationUnlockMinConsumedQuota: z.coerce.number().min(0),
+  AffiliateTopupRewardPercent: z.coerce.number().min(0).max(1),
+  AffiliateTopupRewardTimes: z.coerce.number().int().min(0),
+  WithdrawalEnabled: z.boolean(),
+  WithdrawalMinQuota: z.coerce.number().min(0),
+  WithdrawalRatio: z.coerce.number().min(0),
   TopUpLink: z.string(),
   quota_setting: z.object({
     enable_free_model_pre_consume: z.boolean(),
@@ -339,6 +344,146 @@ export function QuotaSettingsSection({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name='AffiliateTopupRewardPercent'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Top-up commission rate')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={field.value ?? ''}
+                      onChange={handleNumberChange(field.onChange)}
+                      name={field.name}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Share of the invited user top-up credited to the inviter. 0.1 means 10%. Set to 0 to disable.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='AffiliateTopupRewardTimes'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Commissioned top-ups')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      min={0}
+                      value={field.value ?? ''}
+                      onChange={handleNumberChange(field.onChange)}
+                      name={field.name}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Only the first N successful top-ups of an invited user earn commission. Set to 0 to disable.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='WithdrawalMinQuota'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Minimum withdrawal quota')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      min={0}
+                      value={field.value ?? ''}
+                      onChange={handleNumberChange(field.onChange)}
+                      name={field.name}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Minimum affiliate quota a user can cash out ({{formattedQuota}}). Set to 0 to disable this condition.',
+                      {
+                        formattedQuota: formatQuotaInputValue(field.value),
+                      }
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='WithdrawalRatio'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Cash-out exchange rate')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      min={0}
+                      step={0.01}
+                      value={field.value ?? ''}
+                      onChange={handleNumberChange(field.onChange)}
+                      name={field.name}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'Local currency paid per USD of affiliate earnings, e.g. 1.6 means ¥1.60 per USD.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <SettingsFormGridItem span='full'>
+              <FormField
+                control={form.control}
+                name='WithdrawalEnabled'
+                render={({ field }) => (
+                  <SettingsSwitchItem>
+                    <SettingsSwitchContent>
+                      <FormLabel>{t('Enable affiliate cash-out')}</FormLabel>
+                      <FormDescription>
+                        {t(
+                          'Allow users to cash out affiliate earnings to Alipay. Applications are reviewed by admins.'
+                        )}
+                      </FormDescription>
+                    </SettingsSwitchContent>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={updateOption.isPending}
+                      />
+                    </FormControl>
+                  </SettingsSwitchItem>
+                )}
+              />
+            </SettingsFormGridItem>
+
             <SettingsFormGridItem span='full'>
               <FormField
                 control={form.control}
@@ -346,7 +491,9 @@ export function QuotaSettingsSection({
                 render={({ field }) => (
                   <SettingsSwitchItem>
                     <SettingsSwitchContent>
-                      <FormLabel>{t('Require unlock for invitation rewards')}</FormLabel>
+                      <FormLabel>
+                        {t('Require unlock for invitation rewards')}
+                      </FormLabel>
                       <FormDescription>
                         {t(
                           'When enabled, users must meet the unlock conditions above before transferring invitation rewards to their balance.'

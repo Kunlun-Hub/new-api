@@ -40,7 +40,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { login, wechatLoginByCode } from '@/features/auth/api'
-import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
@@ -68,7 +67,6 @@ export function UserAuthForm({
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
-  const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false)
   const [passkeyDomains, setPasskeyDomains] = useState<PasskeyDomains | null>(
@@ -80,7 +78,6 @@ export function UserAuthForm({
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
-  const legalConsentErrorMessage = t('Please agree to the legal terms first')
   const loginFailedMessage = t('Login failed')
 
   const { status } = useStatus()
@@ -104,13 +101,7 @@ export function UserAuthForm({
   } = useTurnstile()
   const { handleLoginResult } = useAuthRedirect()
 
-  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
-  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
-  const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
-  const passkeyButtonDisabled =
-    isPasskeyLoading ||
-    !passkeySupported ||
-    (requiresLegalConsent && !agreedToLegal)
+  const passkeyButtonDisabled = isPasskeyLoading || !passkeySupported
   const hasWeChatLogin = Boolean(status?.wechat_login)
   const hasOAuthLogin = Boolean(
     status?.github_oauth ||
@@ -120,13 +111,6 @@ export function UserAuthForm({
     status?.telegram_oauth ||
     (status?.custom_oauth_providers?.length ?? 0) > 0
   )
-  useEffect(() => {
-    if (requiresLegalConsent) {
-      setAgreedToLegal(false)
-    } else {
-      setAgreedToLegal(true)
-    }
-  }, [requiresLegalConsent])
 
   useEffect(() => {
     detectPasskeySupport()
@@ -157,11 +141,6 @@ export function UserAuthForm({
   }, [status])
 
   async function onSubmit(data: z.infer<typeof loginFormSchema>) {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
-      return
-    }
-
     if (!validateTurnstile()) return
 
     const submittedTurnstileToken = turnstileToken
@@ -195,11 +174,6 @@ export function UserAuthForm({
   }
 
   const handleOpenWeChatDialog = () => {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
-      return
-    }
-
     setIsWeChatDialogOpen(true)
   }
 
@@ -238,11 +212,6 @@ export function UserAuthForm({
   }
 
   async function handlePasskeyLogin() {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
-      return
-    }
-
     if (!passkeySupported) {
       toast.error(t('Passkey is not supported on this device'))
       return
@@ -304,63 +273,63 @@ export function UserAuthForm({
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(
-          'w-full rounded-[28px] border bg-card px-6 py-8 shadow-sm sm:px-10',
+          'group bg-card/85 border-border/60 from-transparent via-transparent hover:from-foreground/4 relative w-full overflow-hidden rounded-3xl border bg-linear-to-br to-transparent p-6 backdrop-blur-xl transition duration-300 sm:p-10',
           className
         )}
         {...props}
       >
-        <div className='flex flex-col items-center text-center'>
-          <span className='rounded-full border px-3 py-1 text-xs text-muted-foreground'>
+        <div className='mb-8 space-y-2 text-center'>
+          <div className='border-border/60 text-muted-foreground mx-auto mb-2 inline-flex items-center rounded-full border bg-white/5 px-3 py-1 text-xs tracking-[0.28em] uppercase'>
             {t('Sign in to your account')}
-          </span>
-          <h1 className='mt-4 text-[28px] font-bold tracking-tight'>
+          </div>
+          <h1 className='text-2xl font-semibold sm:text-3xl'>
             {t('Access your account')}
           </h1>
-          <p className='mt-2 text-sm text-muted-foreground'>
+          <p className='text-muted-foreground text-sm'>
             {t('Choose a social account, or continue with email and password.')}
           </p>
         </div>
 
         {hasOAuthLogin && (
-          <div className='mt-6'>
+          <div className='mb-8'>
             <OAuthProviders
               status={status}
               redirectTo={redirectTo}
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-              onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+              disabled={isLoading}
+              onWeChatLogin={
+                hasWeChatLogin ? handleOpenWeChatDialog : undefined
+              }
               isWeChatLoading={isWeChatSubmitting}
               showDivider={false}
               buttonLayout='grid'
-              buttonClassName='h-12 rounded-full'
+              compactLabels
+              buttonClassName='border-border/60 bg-card/70 h-9 gap-2 rounded-full transition-transform duration-300 hover:-translate-y-0.5 hover:text-primary'
             />
           </div>
         )}
 
         {showTopDivider && (
-          <div className='relative my-6'>
-            <div className='absolute inset-0 flex items-center'>
-              <span className='w-full border-t' />
-            </div>
-            <div className='relative flex justify-center text-sm'>
-              <span className='bg-card text-muted-foreground px-4'>
-                {t('Or')}
-              </span>
-            </div>
+          <div className='mb-6 flex items-center gap-3'>
+            <div className='bg-border/70 h-px flex-1' />
+            <span className='text-muted-foreground text-xs tracking-[0.34em] uppercase'>
+              {t('Or')}
+            </span>
+            <div className='bg-border/70 h-px flex-1' />
           </div>
         )}
 
         {passwordLoginEnabled && (
-          <div className='grid gap-4'>
+          <div className='grid gap-5'>
             <FormField
               control={form.control}
               name='username'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Username or email address')}</FormLabel>
+                  <FormLabel>{t('Email address')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t('Please enter your username or email')}
-                      className='h-12 rounded-full px-5'
+                      placeholder={t('Please enter a valid email address')}
+                      className='rounded-full px-4'
                       {...field}
                     />
                   </FormControl>
@@ -378,7 +347,7 @@ export function UserAuthForm({
                   <FormControl>
                     <PasswordInput
                       placeholder={t('Please enter your login password')}
-                      className='[&_input]:h-12 [&_input]:rounded-full [&_input]:px-5 [&_input]:pr-12'
+                      className='[&_input]:rounded-full [&_input]:px-4 [&_input]:pr-11'
                       {...field}
                     />
                   </FormControl>
@@ -389,12 +358,10 @@ export function UserAuthForm({
 
             <Button
               type='submit'
-              className='bg-foreground text-background hover:bg-foreground/90 h-12 w-full rounded-full text-[15px] font-medium'
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+              className='bg-foreground text-background hover:bg-foreground/90 w-full rounded-full'
+              disabled={isLoading}
             >
-              {isLoading ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : null}
+              {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
               {t('Continue with email')}
             </Button>
 
@@ -412,13 +379,13 @@ export function UserAuthForm({
         )}
 
         {passkeyLoginEnabled && (
-          <div className='mt-4 space-y-1'>
+          <div className='mt-5 space-y-1'>
             <Button
               type='button'
               variant='outline'
               disabled={passkeyButtonDisabled}
               onClick={handlePasskeyLogin}
-              className='h-12 w-full justify-center gap-2 rounded-full'
+              className='w-full justify-center gap-2 rounded-full'
             >
               {isPasskeyLoading ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -441,22 +408,16 @@ export function UserAuthForm({
           </div>
         )}
 
-        <LegalConsent
-          status={status}
-          checked={agreedToLegal}
-          onCheckedChange={setAgreedToLegal}
-          className='mt-4'
-        />
-
-        <div className='mt-6 flex items-center justify-between text-sm'>
-          {status?.self_use_mode_enabled || status?.register_enabled === false ? (
+        <div className='mt-4 flex items-center justify-between text-sm'>
+          {status?.self_use_mode_enabled ||
+          status?.register_enabled === false ? (
             <span />
           ) : (
             <p className='text-muted-foreground'>
               {t('No account yet?')}{' '}
               <Link
                 to='/sign-up'
-                className='font-medium underline underline-offset-4'
+                className='text-primary underline decoration-dotted underline-offset-3'
               >
                 {t('Register account')}
               </Link>
@@ -466,7 +427,7 @@ export function UserAuthForm({
             {t('Forgot password?')}{' '}
             <Link
               to='/forgot-password'
-              className='font-medium underline underline-offset-4'
+              className='text-primary underline decoration-dotted underline-offset-3'
             >
               {t('Reset password')}
             </Link>
@@ -499,11 +460,7 @@ export function UserAuthForm({
               <Button
                 type='button'
                 onClick={handleWeChatLogin}
-                disabled={
-                  isWeChatSubmitting ||
-                  !wechatCode.trim() ||
-                  (requiresLegalConsent && !agreedToLegal)
-                }
+                disabled={isWeChatSubmitting || !wechatCode.trim()}
                 className='gap-2'
               >
                 {isWeChatSubmitting ? (

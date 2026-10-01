@@ -1,3 +1,4 @@
+import { KeyRound } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -20,18 +21,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { ActionCard } from '@/components/ui/action-card'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
 import { SecureVerificationDialog } from '@/features/auth/secure-verification'
-import { AuditLogViewer } from '@/features/usage-logs/audit/components/audit-log-viewer'
+import { useChatPresets } from '@/features/chat/hooks/use-chat-presets'
 import dayjs from '@/lib/dayjs'
 
 import { useAccessToken } from '../hooks/use-access-token'
@@ -40,10 +33,10 @@ import { AccessTokenDialog } from './dialogs/access-token-dialog'
 export function AccessTokenCard() {
   const { t } = useTranslation()
   const access = useAccessToken()
+  const { serverAddress } = useChatPresets()
   const [confirmation, setConfirmation] = useState<'rotate' | 'revoke' | null>(
     null
   )
-  const [historyOpen, setHistoryOpen] = useState(false)
   const pending = access.pending
   const status = access.status.data
   const ready = !access.status.isError && !access.status.isPending && !!status
@@ -60,16 +53,22 @@ export function AccessTokenCard() {
   }
   return (
     <>
-      <Card data-card-hover='false' className='gap-3 p-3 sm:p-4'>
-        <div className='flex flex-wrap items-center justify-between gap-2'>
-          <h4 className='text-sm font-semibold'>{t('Access Token')}</h4>
-          <Button
-            size='sm'
-            variant='outline'
-            onClick={() => setHistoryOpen(true)}
-          >
-            {t('Access records')}
-          </Button>
+      <ActionCard
+        icon={<KeyRound aria-hidden='true' />}
+        title={t('System Token')}
+        description={t(
+          'Used to call internal site APIs only; it cannot request models. <access_token> is the system token, <user_id> is the numeric user ID.'
+        )}
+      >
+        <div className='space-y-1.5'>
+          <p className='text-muted-foreground text-xs'>
+            {t('Request header example')}
+          </p>
+          <pre className='bg-muted/60 text-muted-foreground overflow-x-auto rounded-md p-3 text-[11px] leading-relaxed'>
+            <code>
+              {`curl -X GET ${serverAddress}/api/... \\\n  -H "Authorization: Bearer <access_token>" \\\n  -H "X-Api-User: <user_id>"`}
+            </code>
+          </pre>
         </div>
         {access.status.isPending && (
           <p role='status' className='text-muted-foreground text-xs'>
@@ -93,40 +92,34 @@ export function AccessTokenCard() {
         )}
         {ready && (
           <>
-            <dl className='grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4'>
-              <div>
-                <dt className='text-muted-foreground'>{t('Status')}</dt>
-                <dd className='mt-1 font-medium'>
-                  {status.exists ? t('Generated') : t('Not generated')}
-                </dd>
-              </div>
-              {status.exists && (
-                <>
-                  <div>
-                    <dt className='text-muted-foreground'>{t('Created At')}</dt>
-                    <dd className='mt-1'>
-                      {status.created_at
-                        ? dayjs
-                            .unix(status.created_at)
-                            .format('YYYY-MM-DD HH:mm:ss')
-                        : t('Unknown')}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className='text-muted-foreground'>{t('Last used')}</dt>
-                    <dd className='mt-1'>{lastUsed}</dd>
-                  </div>
-                  <div>
-                    <dt className='text-muted-foreground'>
-                      {t('Last used IP')}
-                    </dt>
-                    <dd className='mt-1 break-all'>
-                      {status.last_used_ip || '—'}
-                    </dd>
-                  </div>
-                </>
-              )}
-            </dl>
+            {status.exists && (
+              <dl className='grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4'>
+                <div>
+                  <dt className='text-muted-foreground'>{t('Status')}</dt>
+                  <dd className='mt-1 font-medium'>{t('Generated')}</dd>
+                </div>
+                <div>
+                  <dt className='text-muted-foreground'>{t('Created At')}</dt>
+                  <dd className='mt-1'>
+                    {status.created_at
+                      ? dayjs
+                          .unix(status.created_at)
+                          .format('YYYY-MM-DD HH:mm:ss')
+                      : t('Unknown')}
+                  </dd>
+                </div>
+                <div>
+                  <dt className='text-muted-foreground'>{t('Last used')}</dt>
+                  <dd className='mt-1'>{lastUsed}</dd>
+                </div>
+                <div>
+                  <dt className='text-muted-foreground'>{t('Last used IP')}</dt>
+                  <dd className='mt-1 break-all'>
+                    {status.last_used_ip || '—'}
+                  </dd>
+                </div>
+              </dl>
+            )}
             <div className='flex flex-wrap justify-end gap-2'>
               {status.exists ? (
                 <>
@@ -149,17 +142,17 @@ export function AccessTokenCard() {
                 </>
               ) : (
                 <Button
-                  size='sm'
+                  className='w-full'
                   disabled={pending}
                   onClick={() => void access.generate()}
                 >
-                  {t('Generate')}
+                  {t('Generate Token')}
                 </Button>
               )}
             </div>
           </>
         )}
-      </Card>
+      </ActionCard>
       {access.token && (
         <AccessTokenDialog token={access.token} onClose={access.clearToken} />
       )}
@@ -184,38 +177,6 @@ export function AccessTokenCard() {
         isLoading={pending}
         handleConfirm={() => void confirm()}
       />
-      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-        <SheetContent className='w-full sm:max-w-5xl' showCloseButton={false}>
-          <SheetHeader className='border-b pr-20'>
-            <SheetTitle>{t('Access records')}</SheetTitle>
-            <SheetDescription>
-              {t(
-                'Audit records start after this feature was enabled. Earlier records remain in Common Logs.'
-              )}
-            </SheetDescription>
-          </SheetHeader>
-          <SheetClose
-            render={
-              <Button
-                size='sm'
-                variant='ghost'
-                className='absolute top-3 right-3'
-              />
-            }
-          >
-            {t('Close')}
-          </SheetClose>
-          <div className='min-h-0 flex-1 px-4 pb-4'>
-            {historyOpen && (
-              <AuditLogViewer
-                scope='self'
-                accessOnly
-                currentTokenRef={ready ? status.token_ref : undefined}
-              />
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
     </>
   )
 }

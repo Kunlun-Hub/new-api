@@ -313,7 +313,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
   const searchButton = hasSearch ? (
     <Button onClick={props.onSearch} disabled={props.searchLoading}>
       {props.searchLoading && <Loader2 className='animate-spin' />}
-      {t('Search')}
+      {t('Query')}
     </Button>
   ) : null
 

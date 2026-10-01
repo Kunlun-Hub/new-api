@@ -38,6 +38,7 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from '@/components/ai-elements/sources'
+import { AttachmentChip } from '@/components/attachment-chip'
 import { cn } from '@/lib/utils'
 
 import { MESSAGE_STATUS } from '../../constants'
@@ -115,6 +116,26 @@ export function PlaygroundMessageContent({
           <ReasoningTrigger />
           <ReasoningContent>{reasoningContent}</ReasoningContent>
         </Reasoning>
+      )}
+
+      {(message.attachments?.length ?? 0) > 0 && (
+        <div
+          className={cn(
+            'mb-2 flex max-w-[85%] min-w-0 justify-end gap-3 overflow-x-auto overscroll-x-contain py-1'
+          )}
+        >
+          {message.attachments?.map((attachment) => (
+            <a
+              className='block shrink-0'
+              href={attachment.url}
+              key={attachment.id}
+              rel='noreferrer'
+              target='_blank'
+            >
+              <AttachmentChip attachment={attachment} className='w-28' />
+            </a>
+          ))}
+        </div>
       )}
 
       {showLoader && (

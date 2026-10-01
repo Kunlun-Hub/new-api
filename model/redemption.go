@@ -175,7 +175,23 @@ func Redeem(key string, userId int) (quota int, err error) {
 		if result.RowsAffected == 0 {
 			return errors.New("该兑换码已被使用")
 		}
-		return creditTopUpQuota(tx, userId, redemption.Quota, nil)
+		if err := creditTopUpQuota(tx, userId, redemption.Quota, nil); err != nil {
+			return err
+		}
+		// 兑换码在订单列表中同样作为一笔充值订单展示（type=2）
+		now := common.GetTimestamp()
+		topUp := &TopUp{
+			UserId:        userId,
+			Amount:        int64(redemption.Quota),
+			Money:         0,
+			TradeNo:       fmt.Sprintf("REDEEM-%d", redemption.Id),
+			PaymentMethod: PaymentMethodRedemption,
+			CreateTime:    now,
+			CompleteTime:  now,
+			Status:        common.TopUpStatusSuccess,
+			Type:          TopUpTypeRedemption,
+		}
+		return tx.Create(topUp).Error
 	})
 	if err != nil {
 		common.SysError("redemption failed: " + err.Error())

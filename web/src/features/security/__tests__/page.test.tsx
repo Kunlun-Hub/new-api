@@ -140,13 +140,24 @@ async function renderPage(path = '/security') {
     path: '/security',
     component: Security,
   })
-  const personal = createRoute({
+  const authenticated = createRoute({
     getParentRoute: () => root,
-    path: '/profile',
+    id: '_authenticated',
+  })
+  const profileLayout = createRoute({
+    getParentRoute: () => authenticated,
+    path: 'profile',
+  })
+  const personal = createRoute({
+    getParentRoute: () => profileLayout,
+    path: '/',
     component: Profile,
   })
   const router = createRouter({
-    routeTree: root.addChildren([security, personal]),
+    routeTree: root.addChildren([
+      security,
+      authenticated.addChildren([profileLayout.addChildren([personal])]),
+    ]),
     history: createMemoryHistory({ initialEntries: [path] }),
   })
   await router.load()
@@ -183,7 +194,7 @@ describe('security page migration', () => {
     })
     expect(await within(verification).findByText('Passkey Login')).toBeVisible()
     expect(
-      await within(verification).findByText('Two-Factor Authentication')
+      await within(verification).findByText('Two-Factor Auth (2FA)')
     ).toBeVisible()
     expect(
       within(verification).getByRole('switch', { name: 'Record IP Address' })
@@ -194,9 +205,7 @@ describe('security page migration', () => {
       'xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.46fr)]'
     )
     const access = screen.getByRole('region', { name: 'Sessions & Access' })
-    expect(
-      within(access).getByRole('heading', { name: 'Access Token' })
-    ).toBeVisible()
+    expect(within(access).getByText('System Token')).toBeVisible()
     expect(
       await within(access).findByText('No active login sessions')
     ).toBeVisible()
@@ -216,14 +225,10 @@ describe('security page migration', () => {
     const bindings = await screen.findByRole('list', {
       name: 'Account Bindings',
     })
-    expect(within(bindings).getAllByRole('listitem')).toHaveLength(5)
+    expect(within(bindings).getAllByRole('listitem')).toHaveLength(7)
     expect(within(bindings).getByText('Gitea')).toBeVisible()
-    expect(bindings).toHaveClass(
-      'grid-cols-1',
-      'sm:grid-cols-2',
-      'lg:grid-cols-3',
-      'gap-2'
-    )
+    expect(within(bindings).getByText('Google')).toBeVisible()
+    expect(bindings).toHaveClass('grid-cols-1', 'gap-4', 'sm:grid-cols-2')
     expect(screen.queryByText('Custom OAuth')).not.toBeInTheDocument()
   })
 
@@ -248,22 +253,30 @@ describe('security page migration', () => {
     )
   })
 
-  it('Profile retains preferences and no longer mounts security controls or requests', async () => {
+  it('Profile renders the tabbed layout and loads security data only when its tab opens', async () => {
+    const user = userEvent.setup()
     await renderPage('/profile')
-    await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Save Settings' })
-      ).toBeVisible()
-    )
+    expect(
+      await screen.findByRole('list', { name: 'Account Bindings' })
+    ).toBeVisible()
     expect(
       screen.queryByRole('button', { name: 'Change Password' })
     ).not.toBeInTheDocument()
-    expect(screen.queryByText('Account Bindings')).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('switch', { name: 'Record IP Address' })
-    ).not.toBeInTheDocument()
-    expect(api.get).not.toHaveBeenCalledWith('/api/user/passkey')
+    expect(api.get).toHaveBeenCalledWith('/api/user/passkey')
     expect(api.get).not.toHaveBeenCalledWith('/api/user/2fa/status')
+    expect(api.get).not.toHaveBeenCalledWith('/api/user/sessions')
+
+    await user.click(screen.getByRole('tab', { name: 'Security Settings' }))
+    expect(await screen.findByText('Two-Factor Auth (2FA)')).toBeVisible()
+    expect(
+      await screen.findByRole('button', { name: 'Delete Account' })
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith(
+        '/api/user/2fa/status',
+        expect.anything()
+      )
+    )
     expect(api.get).not.toHaveBeenCalledWith('/api/user/sessions')
   })
 

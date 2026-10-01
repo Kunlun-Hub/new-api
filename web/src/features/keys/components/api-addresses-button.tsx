@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronDown, Globe, Plus } from 'lucide-react'
+import { ChevronDown, Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
@@ -36,29 +36,12 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useApiInfo } from '@/features/dashboard/hooks/use-status-data'
-import { useStatus } from '@/hooks/use-status'
 
-import { useApiKeys } from './api-keys-provider'
+import { useApiAddresses } from '../hooks/use-api-addresses'
 
-export function ApiKeysPrimaryButtons() {
+export function ApiAddressesButton() {
   const { t } = useTranslation()
-  const { setOpen } = useApiKeys()
-  const { status, loading } = useStatus()
-  const { items } = useApiInfo()
-  const serverAddress =
-    (typeof status?.server_address === 'string' &&
-      status.server_address.trim()) ||
-    ''
-  const addresses = items.length
-    ? items
-    : [
-        {
-          url: serverAddress || window.location.origin,
-          route: serverAddress ? t('Default API address') : t('Current domain'),
-          description: '',
-        },
-      ]
+  const { addresses, loading } = useApiAddresses()
 
   return (
     <div className='flex flex-wrap gap-2'>
@@ -112,10 +95,6 @@ export function ApiKeysPrimaryButtons() {
           )}
         </PopoverContent>
       </Popover>
-      <Button size='sm' onClick={() => setOpen('create')}>
-        <Plus className='h-4 w-4' />
-        {t('Create API Key')}
-      </Button>
     </div>
   )
 }

@@ -17,10 +17,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { Wallet } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarRail,
+} from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
 import { useSidebarView } from '@/hooks/use-sidebar-view'
+import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { MOTION_TRANSITION, MOTION_VARIANTS } from '@/lib/motion'
 
 import { NavGroup } from './nav-group'
@@ -44,9 +55,11 @@ import { SidebarViewHeader } from './sidebar-view-header'
  * in the registry; this component requires no changes.
  */
 export function AppSidebar() {
+  const { t } = useTranslation()
   const { collapsible, variant } = useLayout()
   const { key, view, navGroups } = useSidebarView()
   const shouldReduce = useReducedMotion()
+  const isWalletVisible = useIsSidebarModuleVisible('/wallet')
 
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
@@ -70,6 +83,38 @@ export function AppSidebar() {
           </motion.div>
         </AnimatePresence>
       </SidebarContent>
+
+      {!view && (
+        <SidebarFooter className='group-data-[collapsible=icon]:hidden gap-2'>
+          {isWalletVisible && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <a
+                  href='/wallet'
+                  className='border-border/60 bg-card/50 hover:bg-muted flex items-center gap-3 rounded-xl border p-3 transition-colors'
+                >
+                  <span className='bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-lg'>
+                    <Wallet className='size-4' />
+                  </span>
+                  <span className='flex min-w-0 flex-col gap-0.5'>
+                    <span className='text-foreground truncate text-sm font-semibold'>
+                      {t('Top Up')}
+                    </span>
+                    <span className='text-muted-foreground truncate text-xs'>
+                      {t('Self-service recharge, fast and secure!')}
+                    </span>
+                  </span>
+                </a>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <ProfileDropdown variant='card' />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      )}
 
       <SidebarRail />
     </Sidebar>

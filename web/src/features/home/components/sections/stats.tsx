@@ -141,46 +141,30 @@ export function Stats(_props: StatsProps) {
     : []
 
   return (
-    <div className='border-border/40 bg-muted/10 relative z-10 border-y'>
-      <div className='mx-auto max-w-6xl px-6 py-10 md:py-12'>
-        {stats.length === 0 ? (
-          <div className='grid grid-cols-1 gap-8 sm:grid-cols-3 md:gap-12'>
-            {[0, 1, 2].map((slot) => (
-              <div
-                key={slot}
-                className='flex flex-col items-center text-center'
-              >
-                <Skeleton className='h-7 w-20 md:h-8' />
-                <Skeleton className='mt-2 h-3 w-24' />
+    <div className='w-full px-4 py-8'>
+      <div className='border-border/60 bg-card/50 mx-auto grid max-w-6xl gap-4 rounded-2xl border p-6 text-center backdrop-blur-sm sm:grid-cols-3'>
+        {stats.length === 0
+          ? [0, 1, 2].map((slot) => (
+              <div key={slot} className='space-y-2'>
+                <Skeleton className='mx-auto h-4 w-24' />
+                <Skeleton className='mx-auto h-8 w-20' />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div
-            className={`grid grid-cols-1 gap-8 md:gap-12 ${
-              stats.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
-            }`}
-          >
-            {stats.map((s) => (
-              <div
-                key={s.label}
-                className='flex flex-col items-center text-center'
-              >
-                <span className='text-2xl font-bold tracking-tight md:text-3xl'>
+            ))
+          : stats.map((stat) => (
+              <div key={stat.label} className='space-y-1'>
+                <div className='text-muted-foreground text-sm tracking-[0.3em] uppercase'>
+                  {stat.label}
+                </div>
+                <div className='text-foreground text-3xl font-semibold'>
                   <Counter
-                    end={s.end}
-                    suffix={s.suffix}
-                    decimals={s.decimals}
-                    compact={s.compact}
+                    end={stat.end}
+                    suffix={stat.suffix}
+                    decimals={stat.decimals}
+                    compact={stat.compact}
                   />
-                </span>
-                <span className='text-muted-foreground mt-1.5 text-xs'>
-                  {s.label}
-                </span>
+                </div>
               </div>
             ))}
-          </div>
-        )}
       </div>
     </div>
   )

@@ -19,6 +19,22 @@ For commercial licensing, please contact support@quantumnous.com
 // Static translation keys that don't get picked up by the t('...') regex.
 // These cover dynamic labels (e.g. constants, configs) that are passed into t at runtime.
 export const STATIC_I18N_KEYS = [
+  // Midjourney artwork action buttons (labels resolved from the upstream customId).
+  'Reroll',
+  'Strong variation',
+  'Subtle variation',
+  'Zoom out 2x',
+  'Zoom out 1.5x',
+  '← Pan left',
+  '→ Pan right',
+  '↑ Pan up',
+  '↓ Pan down',
+  'Upscale (subtle)',
+  'Upscale (creative)',
+  'Upscale 2x',
+  'Upscale 4x',
+  'Custom zoom',
+  'Make square',
   'Task usage metadata is unavailable. Pricing details cannot be displayed.',
   'This expression cannot be expanded into a price table. View the original expression below.',
   'This operation is only supported for vLLM or SGLang channels',
@@ -219,6 +235,7 @@ export const STATIC_I18N_KEYS = [
   'Token-based',
   'Per Request',
   'Task billing',
+  'All Logs',
   'All Types',
   'Chat',
   'Response',

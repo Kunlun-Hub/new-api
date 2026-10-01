@@ -69,6 +69,7 @@ export interface DrawingLogFilters extends CommonFilters {
  */
 export interface TaskLogFilters extends CommonFilters {
   taskId?: string
+  status?: string
 }
 
 /**
@@ -291,6 +292,7 @@ export interface MidjourneyLog {
   channel_id: number
   code: number
   mj_id: string
+  mode?: string
   action: string // IMAGINE, UPSCALE, VARIATION, etc. (backend field name)
   submit_time: number // milliseconds
   finish_time?: number // milliseconds
@@ -299,10 +301,14 @@ export interface MidjourneyLog {
   progress: string
   prompt: string
   prompt_en?: string
+  quota?: number
   description?: string
   buttons?: string
   properties?: string
   image_url?: string
+  image_urls?: string
+  video_url?: string
+  video_urls?: string
   status: string // NOT_START, SUBMITTED, IN_PROGRESS, SUCCESS, FAILURE, MODAL
   other?: string
   created_at?: number
@@ -330,7 +336,8 @@ export interface TaskLog {
   progress_message_en?: string
   data?: unknown
   properties?: {
-    input?: string
+    /** Raw JSON string from the API; parsed before rendering task parameters. */
+    input?: string | Record<string, unknown>
     upstream_model_name?: string
     origin_model_name?: string
   }
@@ -401,6 +408,8 @@ export interface TaskArtifactProjection {
   artifacts: TaskArtifact[]
   legacyContentUrl?: string
   legacyAudioClips?: AudioClip[]
+  /** Persisted upstream snapshot, only returned when explicitly requested. */
+  taskData?: unknown
 }
 
 export interface TaskArtifactsResponse {
@@ -411,6 +420,7 @@ export interface TaskArtifactsResponse {
     artifacts?: unknown
     legacy_content_url?: unknown
     legacy_audio_clips?: unknown
+    data?: unknown
   }
 }
 
@@ -485,6 +495,7 @@ export interface GetTaskLogsParams {
   page_size?: number
   channel_id?: string
   task_id?: string
+  status?: string
   start_timestamp?: number
   end_timestamp?: number
 }

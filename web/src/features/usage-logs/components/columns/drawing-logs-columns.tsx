@@ -17,69 +17,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  Blend,
-  FileText,
-  HelpCircle,
-  ImageIcon,
-  Maximize2,
-  Move,
-  Paintbrush,
-  RefreshCw,
-  Scissors,
-  Shuffle,
-  Upload,
-  UserRound,
-  Video,
-  WandSparkles,
-  ZoomIn,
-  type LucideIcon,
-} from 'lucide-react'
+import { Coffee, Rocket, Zap } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyButton } from '@/components/copy-button'
 import { StatusBadge } from '@/components/status-badge'
-import { formatTimestampToDate } from '@/lib/format'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { formatQuota, formatTimestampToDate } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
-import { MJ_TASK_TYPES } from '../../constants'
 import {
   mjTaskTypeMapper,
   mjStatusMapper,
   mjSubmitResultMapper,
 } from '../../lib/mappers'
+import { countMjArtifacts, isMjTaskFailure } from '../../lib/mj-artifacts'
 import type { MidjourneyLog } from '../../types'
 import { ImageDialog } from '../dialogs/image-dialog'
-import { PromptDialog } from '../dialogs/prompt-dialog'
-import {
-  createDurationColumn,
-  createChannelColumn,
-  createProgressColumn,
-  createFailReasonColumn,
-} from './column-helpers'
-
-const drawingTypeIconMap: Record<string, LucideIcon> = {
-  [MJ_TASK_TYPES.IMAGINE]: ImageIcon,
-  [MJ_TASK_TYPES.UPSCALE]: Maximize2,
-  [MJ_TASK_TYPES.VIDEO]: Video,
-  [MJ_TASK_TYPES.EDITS]: Paintbrush,
-  [MJ_TASK_TYPES.VARIATION]: Shuffle,
-  [MJ_TASK_TYPES.HIGH_VARIATION]: Shuffle,
-  [MJ_TASK_TYPES.LOW_VARIATION]: Shuffle,
-  [MJ_TASK_TYPES.PAN]: Move,
-  [MJ_TASK_TYPES.DESCRIBE]: FileText,
-  [MJ_TASK_TYPES.BLEND]: Blend,
-  [MJ_TASK_TYPES.UPLOAD]: Upload,
-  [MJ_TASK_TYPES.SHORTEN]: Scissors,
-  [MJ_TASK_TYPES.REROLL]: RefreshCw,
-  [MJ_TASK_TYPES.INPAINT]: WandSparkles,
-  [MJ_TASK_TYPES.SWAP_FACE]: UserRound,
-  [MJ_TASK_TYPES.ZOOM]: ZoomIn,
-  [MJ_TASK_TYPES.CUSTOM_ZOOM]: ZoomIn,
-}
-
-function getDrawingTypeIcon(action: string): LucideIcon {
-  return drawingTypeIconMap[action] ?? HelpCircle
-}
+import { createChannelColumn, createFailReasonColumn } from './column-helpers'
 
 export function useDrawingLogsColumns(
   isAdmin: boolean
@@ -91,24 +48,15 @@ export function useDrawingLogsColumns(
         accessorKey: 'submit_time',
         header: t('Submit Time'),
         cell: ({ row }) => {
-          const log = row.original
           const submitTime = row.getValue('submit_time') as number
 
           return (
-            <div className='flex min-w-0 flex-col gap-0.5'>
-              <span className='truncate font-mono text-xs tabular-nums'>
-                {formatTimestampToDate(submitTime, 'milliseconds')}
-              </span>
-              <StatusBadge
-                label={t(mjStatusMapper.getLabel(log.status))}
-                variant={mjStatusMapper.getVariant(log.status)}
-                size='sm'
-                copyable={false}
-              />
-            </div>
+            <span className='whitespace-nowrap'>
+              {formatTimestampToDate(submitTime, 'milliseconds')}
+            </span>
           )
         },
-        size: 180,
+        size: 130,
       },
     ]
 
@@ -122,18 +70,19 @@ export function useDrawingLogsColumns(
       accessorKey: 'action',
       header: t('Type'),
       cell: ({ row }) => {
-        const action = row.getValue('action') as string
+        const action = row.getValue('action') as string | undefined
+
+        if (!action) {
+          return <Badge variant='outline'>-</Badge>
+        }
+
         return (
-          <StatusBadge
-            label={t(mjTaskTypeMapper.getLabel(action))}
-            variant={mjTaskTypeMapper.getVariant(action)}
-            icon={getDrawingTypeIcon(action)}
-            size='sm'
-            copyable={false}
-            className='-ml-1.5'
-          />
+          <Badge variant='outline'>
+            {t(mjTaskTypeMapper.getLabel(action, action))}
+          </Badge>
         )
       },
+      size: 90,
     })
 
     columns.push({
@@ -143,30 +92,100 @@ export function useDrawingLogsColumns(
         const mjId = row.getValue('mj_id') as string
 
         if (!mjId) {
-          return <span className='text-muted-foreground/60 text-xs'>-</span>
+          return <span className='text-muted-foreground'>-</span>
         }
 
         return (
-          <div className='flex max-w-[160px] flex-col gap-0.5'>
-            <StatusBadge
-              label={mjId}
-              copyText={mjId}
-              variant='neutral'
-              size='sm'
-              className='border-border/60 bg-muted/30 !text-foreground max-w-full truncate rounded-md border px-1.5 py-0.5 font-mono'
-            />
-          </div>
+          <CopyButton
+            value={mjId}
+            position='right'
+            className='h-auto w-auto min-w-0 justify-start bg-transparent! p-0 whitespace-nowrap'
+            iconClassName='size-3.5'
+          >
+            <span className='block max-w-36 truncate font-mono text-[13px] font-normal'>
+              {mjId}
+            </span>
+          </CopyButton>
         )
       },
+      size: 120,
       meta: { mobileTitle: true },
     })
 
     columns.push(
-      createDurationColumn<MidjourneyLog>({
-        submitTimeKey: 'submit_time',
-        finishTimeKey: 'finish_time',
-        headerLabel: t('Duration'),
-      })
+      {
+        accessorKey: 'mode',
+        header: t('Mode'),
+        cell: ({ row }) => {
+          const mode = row.getValue('mode') as string | undefined
+
+          if (!mode) {
+            return <span className='text-muted-foreground/60 text-xs'>-</span>
+          }
+
+          let ModeIcon = Zap
+          if (mode === 'Relax') {
+            ModeIcon = Coffee
+          } else if (mode === 'Turbo') {
+            ModeIcon = Rocket
+          }
+
+          return (
+            <Badge variant='outline' className='flex items-center'>
+              <ModeIcon className='fill-primary size-3' />
+              <b className='text-xs'>{mode}</b>
+            </Badge>
+          )
+        },
+        size: 90,
+      },
+      {
+        accessorKey: 'progress',
+        header: t('Progress'),
+        cell: ({ row }) => {
+          const progress = (row.getValue('progress') as string) ?? ''
+          const percent = Number.parseInt(progress.replace('%', ''), 10) || 0
+
+          return (
+            <div className='flex items-center gap-1'>
+              <Progress value={percent} className='h-1 w-16' />
+              <span className='block text-xs font-semibold'>{percent}%</span>
+            </div>
+          )
+        },
+        size: 90,
+      },
+      {
+        id: 'duration',
+        header: t('Duration'),
+        cell: ({ row }) => {
+          const { submit_time: submitTime, finish_time: finishTime } =
+            row.original
+          const durationSec =
+            submitTime && finishTime && finishTime > 0
+              ? (finishTime - submitTime) / 1000
+              : null
+
+          if (durationSec === null) {
+            return <span className='text-muted-foreground text-xs'>-</span>
+          }
+
+          return (
+            <span
+              className={cn(
+                'text-[13px] font-semibold',
+                durationSec > 60 && 'font-medium text-red-500',
+                durationSec > 30 &&
+                  durationSec <= 60 &&
+                  'font-medium text-amber-500'
+              )}
+            >
+              <b className='font-semibold'>{durationSec.toFixed(1)}</b>s
+            </span>
+          )
+        },
+        size: 90,
+      }
     )
 
     if (isAdmin) {
@@ -190,7 +209,78 @@ export function useDrawingLogsColumns(
     }
 
     columns.push(
-      createProgressColumn<MidjourneyLog>({ headerLabel: t('Progress') }),
+      {
+        accessorKey: 'prompt',
+        header: t('Prompt'),
+        cell: ({ row }) => {
+          const prompt = row.getValue('prompt') as string
+
+          if (!prompt) {
+            return <span className='text-muted-foreground/60 text-xs'>-</span>
+          }
+
+          return (
+            <span
+              className='block max-w-[200px] truncate text-[13px]'
+              title={prompt}
+            >
+              {prompt}
+            </span>
+          )
+        },
+        size: 110,
+        maxSize: 220,
+      },
+      {
+        accessorKey: 'quota',
+        header: t('Cost'),
+        size: 90,
+        cell: ({ row }) => {
+          const log = row.original
+
+          if (log.progress !== '100%') {
+            return (
+              <span className='text-muted-foreground whitespace-nowrap'>
+                {t('Pending settlement')}
+              </span>
+            )
+          }
+
+          return (
+            <span className='cursor-help font-medium whitespace-nowrap'>
+              {formatQuota(log.quota ?? 0)}
+            </span>
+          )
+        },
+      },
+      {
+        accessorKey: 'status',
+        header: t('Status'),
+        size: 90,
+        meta: { pinned: 'right' as const },
+        cell: ({ row }) => {
+          const log = row.original
+          const status = isMjTaskFailure(log) ? 'FAILURE' : log.status
+          const statusClassName = mjStatusMapper.getBadgeClassName(status)
+          const artifactCount = countMjArtifacts(log)
+
+          return (
+            <div className='inline-flex items-center gap-1.5 whitespace-nowrap'>
+              <Badge
+                variant={statusClassName ? 'default' : 'outline'}
+                className={statusClassName}
+              >
+                {t(mjStatusMapper.getLabel(status))}
+              </Badge>
+              {log.status === 'SUCCESS' && artifactCount > 0 ? (
+                <span className='text-muted-foreground font-mono text-xs'>
+                  ×{artifactCount}
+                </span>
+              ) : null}
+            </div>
+          )
+        },
+      },
       {
         accessorKey: 'image_url',
         header: t('Image'),
@@ -208,7 +298,10 @@ export function useDrawingLogsColumns(
               <button
                 type='button'
                 className='group text-left text-xs'
-                onClick={() => setDialogOpen(true)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setDialogOpen(true)
+                }}
                 title={t('Click to view image')}
               >
                 <span className='text-foreground truncate leading-snug group-hover:underline'>
@@ -224,46 +317,12 @@ export function useDrawingLogsColumns(
             </>
           )
         },
-      },
-      {
-        accessorKey: 'prompt',
-        header: t('Prompt'),
-        cell: function PromptCell({ row }) {
-          const log = row.original
-          const prompt = row.getValue('prompt') as string
-          const [dialogOpen, setDialogOpen] = useState(false)
-
-          if (!prompt) {
-            return <span className='text-muted-foreground/60 text-xs'>-</span>
-          }
-
-          return (
-            <>
-              <button
-                type='button'
-                className='group flex max-w-[220px] items-center text-left text-xs'
-                onClick={() => setDialogOpen(true)}
-                title={t('Click to view full prompt')}
-              >
-                <span className='text-muted-foreground truncate leading-snug group-hover:underline'>
-                  {prompt}
-                </span>
-              </button>
-              <PromptDialog
-                prompt={prompt}
-                promptEn={log.prompt_en}
-                open={dialogOpen}
-                onOpenChange={setDialogOpen}
-              />
-            </>
-          )
-        },
-        size: 200,
-        maxSize: 220,
+        size: 70,
       },
       createFailReasonColumn<MidjourneyLog>({
         headerLabel: t('Fail Reason'),
         cellTitle: t('Click to view full error message'),
+        size: 80,
       })
     )
 

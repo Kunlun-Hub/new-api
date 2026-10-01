@@ -118,7 +118,7 @@ it.each(['2fa', 'passkey'] as const)(
       )
     )
     const enable = await screen.findByRole('button', {
-      name: factor === '2fa' ? 'Enable' : 'Enable Passkey',
+      name: factor === '2fa' ? 'Enable 2FA' : 'Enable Passkey',
     })
     await waitFor(() => expect(enable).toBeEnabled())
     await user.click(enable)
@@ -265,7 +265,7 @@ it('shows a retry when the 2FA status query fails instead of offering enrollment
     'Status unavailable'
   )
   expect(
-    screen.queryByRole('button', { name: 'Enable' })
+    screen.queryByRole('button', { name: 'Enable 2FA' })
   ).not.toBeInTheDocument()
   get.mockResolvedValue({
     data: {
@@ -274,7 +274,7 @@ it('shows a retry when the 2FA status query fails instead of offering enrollment
     },
   })
   await user.click(screen.getByRole('button', { name: 'Retry' }))
-  expect(await screen.findByRole('button', { name: 'Enable' })).toBeEnabled()
+  expect(await screen.findByRole('button', { name: 'Enable 2FA' })).toBeEnabled()
 })
 
 it('consumes Passkey authorization at setup and activates using only the dedicated flow', async () => {
@@ -358,7 +358,7 @@ it('consumes Passkey authorization at setup and activates using only the dedicat
       <TwoFACard loading={false} />
     </QueryClientProvider>
   )
-  await user.click(await screen.findByRole('button', { name: 'Enable' }))
+  await user.click(await screen.findByRole('button', { name: 'Enable 2FA' }))
   await screen.findByText(
     'We will prompt your device to confirm using biometrics or your hardware key.'
   )
@@ -559,7 +559,7 @@ it.each(['proof', 'setup'] as const)(
     const info = vi.spyOn(toast, 'info')
     const success = vi.spyOn(toast, 'success')
     render(<TwoFACard loading={false} />)
-    await user.click(await screen.findByRole('button', { name: 'Enable' }))
+    await user.click(await screen.findByRole('button', { name: 'Enable 2FA' }))
     await user.type(
       await screen.findByLabelText('Password', { selector: 'input' }),
       'password'
@@ -683,7 +683,7 @@ it.each(['wrong code', 'response lost'] as const)(
     })
     const user = userEvent.setup()
     render(<TwoFACard loading={false} />)
-    await user.click(await screen.findByRole('button', { name: 'Enable' }))
+    await user.click(await screen.findByRole('button', { name: 'Enable 2FA' }))
     await user.type(
       await screen.findByLabelText('Password', { selector: 'input' }),
       'password'
@@ -725,7 +725,7 @@ it.each(['wrong code', 'response lost'] as const)(
       expect(config?.headers).toBeUndefined()
     }
     expect(
-      screen.queryByRole('button', { name: 'Enable' })
+      screen.queryByRole('button', { name: 'Enable 2FA' })
     ).not.toBeInTheDocument()
   }
 )

@@ -16,15 +16,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { TicketDetail } from '@/features/tickets/ticket-detail'
+import { Tickets } from '@/features/tickets'
+import { getConsoleFeatureForGuard } from '@/lib/console-features'
 
 export const Route = createFileRoute('/_authenticated/tickets/$ticketId')({
+  beforeLoad: async ({ context }) => {
+    const enabled = await getConsoleFeatureForGuard(context.queryClient, 'tickets')
+    if (!enabled) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const { ticketId } = Route.useParams()
-  return <TicketDetail ticketId={ticketId} />
+  const id = Number(ticketId)
+  return <Tickets initialTicketId={Number.isFinite(id) ? id : undefined} />
 }

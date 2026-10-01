@@ -16,25 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useStatus } from '@/hooks/use-status'
-
 import { AuthLayout } from '../auth-layout'
-import { TermsFooter } from '../components/terms-footer'
 import { SignUpForm } from './components/sign-up-form'
 
 export function SignUp() {
-  const { status } = useStatus()
-
   return (
     <AuthLayout>
-      <div className='w-full max-w-[460px] space-y-6'>
+      <div className='w-full max-w-lg'>
         <SignUpForm />
-
-        <TermsFooter
-          variant='sign-up'
-          status={status}
-          className='text-center'
-        />
       </div>
     </AuthLayout>
   )

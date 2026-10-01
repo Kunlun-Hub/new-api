@@ -136,6 +136,7 @@ export interface TopupInfo {
   discount: Record<number, number>
   /** Optional topup link for purchasing codes */
   topup_link?: string
+  epay_tip?: string
   /** Whether Creem topup is enabled */
   enable_creem_topup?: boolean
   /** Available Creem products */
@@ -150,12 +151,36 @@ export interface TopupInfo {
   enable_waffo_pancake_topup?: boolean
   /** Minimum topup amount for Waffo Pancake */
   waffo_pancake_min_topup?: number
+  /** Limited-time promotion title shown above the amount grid */
+  promo_title?: string
+  /** Promotion countdown target (Unix seconds, 0 hides the countdown) */
+  promo_end_time?: number
+  /** Promotion banner image URL (https) */
+  promo_banner_url?: string
+  /** Promotion banner click target (https) */
+  promo_link?: string
+  /** Groups that grant an extra top-up discount */
+  topup_group_discounts?: TopupGroupDiscount[]
   /** Whether redemption code usage is enabled */
   enable_redemption?: boolean
   /** Whether compliance confirmation has been completed */
   payment_compliance_confirmed?: boolean
   /** Current compliance terms version */
   payment_compliance_terms_version?: string
+  /** Accumulated successful top-up quota (quota units) */
+  total_topup?: number
+}
+
+/**
+ * Group that grants an extra discount on top-ups (e.g. VIP 10% off)
+ */
+export interface TopupGroupDiscount {
+  /** Group identifier */
+  group: string
+  /** Human readable group description */
+  description: string
+  /** Top-up ratio; below 1 means a discount */
+  ratio: number
 }
 
 /**
@@ -271,6 +296,12 @@ export interface TopupRecord {
   complete_time?: number
   /** Payment status */
   status: TopupStatus
+  /** 1 = online top-up, 2 = redemption code */
+  type: number
+  /** Whether the order has already been invoiced */
+  is_invoiced: boolean
+  /** Invoice status derived from the user's invoice applications */
+  invoice_status?: '' | 'pending' | 'approved' | 'rejected'
 }
 
 /**

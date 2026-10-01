@@ -100,7 +100,7 @@ it('marks only retired log types as deprecated while keeping historical filters 
     ).toBeVisible()
   }
   for (const label of [
-    'All Types',
+    'All Logs',
     'Top-up',
     'Consume',
     'System',
@@ -117,13 +117,13 @@ it('marks only retired log types as deprecated while keeping historical filters 
   expect(screen.getByRole('combobox', { name: 'Type' })).toHaveTextContent(
     'Deprecated'
   )
-  await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Query' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ type: ['3'], page: 1 })
   )
   await userEvent.click(screen.getByRole('combobox', { name: 'Type' }))
   await userEvent.click(screen.getByRole('option', { name: /^Login/ }))
-  await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Query' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ type: ['7'], page: 1 })
   )

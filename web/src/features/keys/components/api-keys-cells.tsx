@@ -16,13 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Check, Copy, Loader2 } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
+import { CopyButton } from '@/components/copy-button'
 import { BadgeCell } from '@/components/data-table'
-import { MaskedValueTrigger } from '@/components/masked-value-display'
 import { StatusBadge } from '@/components/status-badge'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
@@ -30,108 +31,47 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { copyToClipboard } from '@/lib/copy-to-clipboard'
+import { handleServerError } from '@/lib/handle-server-error'
 
+import { updateApiKeyStatus } from '../api'
+import { API_KEY_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import type { ApiKey } from '../types'
 import { useApiKeys } from './api-keys-provider'
 
+/**
+ * Desktop key cell: `sk-xx***xxx` mask with a copy button, matching the
+ * reference console. The full key is fetched on demand because the list API
+ * only returns a masked value.
+ */
 export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
   const { t } = useTranslation()
-  const {
-    resolveRealKey,
-    resolvedKeys,
-    loadingKeys,
-    copiedKeyId,
-    markKeyCopied,
-  } = useApiKeys()
-  const [popoverOpen, setPopoverOpen] = useState(false)
-
-  const isLoading = !!loadingKeys[apiKey.id]
-  const resolvedFullKey = resolvedKeys[apiKey.id]
-  const isCopied = copiedKeyId === apiKey.id
-  const maskedKey = `sk-${apiKey.key}`
-
-  const handlePopoverOpen = useCallback(
-    (open: boolean) => {
-      setPopoverOpen(open)
-      if (open && !resolvedFullKey) {
-        resolveRealKey(apiKey.id)
-      }
-    },
-    [resolvedFullKey, resolveRealKey, apiKey.id]
-  )
-
-  const handleCopy = useCallback(async () => {
-    const realKey = resolvedFullKey || (await resolveRealKey(apiKey.id))
-    if (!realKey) return
-
-    const ok = await copyToClipboard(realKey)
-    if (ok) markKeyCopied(apiKey.id)
-  }, [resolvedFullKey, resolveRealKey, apiKey.id, markKeyCopied])
-
-  let copyIcon = <Copy className='size-3.5' />
-  let copyTooltip = t('Copy API key')
-  if (isLoading) {
-    copyIcon = <Loader2 className='size-3.5 animate-spin' />
-    copyTooltip = t('Loading...')
-  } else if (isCopied) {
-    copyIcon = <Check className='size-3.5 text-green-600' />
-    copyTooltip = t('Copied!')
-  }
+  const { resolveRealKey, loadingKeys } = useApiKeys()
+  const maskedKey = apiKey.key
+  const display =
+    maskedKey.length > 6
+      ? `sk-${maskedKey.slice(0, 2)}***${maskedKey.slice(-3)}`
+      : `sk-${maskedKey}`
 
   return (
-    <div className='flex max-w-full min-w-0 items-center'>
-      <Popover open={popoverOpen} onOpenChange={handlePopoverOpen}>
-        <PopoverTrigger render={<MaskedValueTrigger />}>
-          <span className='truncate'>{maskedKey}</span>
-        </PopoverTrigger>
-        <PopoverContent
-          className='w-auto max-w-[min(90vw,28rem)]'
-          align='start'
-        >
-          <div className='space-y-2'>
-            <p className='text-muted-foreground text-xs'>{t('Full API Key')}</p>
-            {isLoading ? (
-              <div className='flex items-center gap-2 py-2'>
-                <Loader2 className='size-3.5 animate-spin' />
-                <span className='text-muted-foreground text-xs'>
-                  {t('Loading...')}
-                </span>
-              </div>
-            ) : (
-              <input
-                readOnly
-                value={resolvedFullKey || maskedKey}
-                autoFocus
-                onFocus={(e) => e.target.select()}
-                className='bg-muted/50 w-full min-w-[280px] rounded-md border px-3 py-2 font-mono text-xs outline-none'
-              />
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-7 shrink-0'
-              onClick={handleCopy}
-              disabled={isLoading}
-            />
-          }
-        >
-          {copyIcon}
-        </TooltipTrigger>
-        <TooltipContent>{copyTooltip}</TooltipContent>
-      </Tooltip>
-    </div>
+    <CopyButton
+      value={() => resolveRealKey(apiKey.id)}
+      position='right'
+      size='default'
+      className='max-w-full min-w-0 gap-x-2 px-2.5 font-normal'
+      iconClassName='size-4'
+      tooltip={t('Copy API key')}
+      successTooltip={t('Copied!')}
+      aria-label={t('Copy API key')}
+      disabled={Boolean(loadingKeys[apiKey.id])}
+    >
+      <b className='truncate'>{display}</b>
+    </CopyButton>
   )
 }
 
@@ -243,5 +183,76 @@ function ApiKeyRestrictionCell(props: {
         {details}
       </TooltipContent>
     </Tooltip>
+  )
+}
+
+export function ApiKeyStatusBadge({ status }: { status: number }) {
+  const { t } = useTranslation()
+
+  switch (status) {
+    case API_KEY_STATUS.ENABLED:
+      return null
+    case API_KEY_STATUS.DISABLED:
+      return (
+        <Badge className='border-yellow-500/30 bg-yellow-500/15 text-yellow-600'>
+          {t('Disabled')}
+        </Badge>
+      )
+    case API_KEY_STATUS.EXPIRED:
+      return (
+        <Badge className='border-amber-500/20 bg-amber-500/15 text-amber-600'>
+          {t('Expired')}
+        </Badge>
+      )
+    case API_KEY_STATUS.EXHAUSTED:
+      return (
+        <Badge className='border-red-500/20 bg-red-500/15 text-red-600'>
+          {t('Exhausted')}
+        </Badge>
+      )
+    default:
+      return <Badge variant='outline'>{t('Unknown')}</Badge>
+  }
+}
+
+export function ApiKeyStatusSwitch({ apiKey }: { apiKey: ApiKey }) {
+  const { t } = useTranslation()
+  const { triggerRefresh } = useApiKeys()
+  const [pending, setPending] = useState(false)
+  const isEnabled = apiKey.status === API_KEY_STATUS.ENABLED
+
+  const handleToggle = async (checked: boolean) => {
+    setPending(true)
+    try {
+      const result = await updateApiKeyStatus(
+        apiKey.id,
+        checked ? API_KEY_STATUS.ENABLED : API_KEY_STATUS.DISABLED
+      )
+      if (result.success) {
+        toast.success(
+          t(
+            checked
+              ? SUCCESS_MESSAGES.API_KEY_ENABLED
+              : SUCCESS_MESSAGES.API_KEY_DISABLED
+          )
+        )
+        triggerRefresh()
+      } else {
+        handleServerError(result, t(ERROR_MESSAGES.STATUS_UPDATE_FAILED))
+      }
+    } catch (error) {
+      handleServerError(error, t(ERROR_MESSAGES.UNEXPECTED))
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <Switch
+      checked={isEnabled}
+      disabled={pending}
+      className='cursor-pointer'
+      onCheckedChange={(checked) => void handleToggle(checked)}
+    />
   )
 }

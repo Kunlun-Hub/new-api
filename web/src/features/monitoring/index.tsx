@@ -155,7 +155,7 @@ export function Monitoring() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <PageTransition className='mx-auto w-full max-w-[1280px] space-y-6 px-3 pt-16 pb-10 sm:px-6 sm:pt-20 xl:px-8'>
+      <PageTransition className='mx-auto w-full max-w-[1280px] space-y-6 px-3 py-10 sm:px-6 sm:py-16 xl:px-8'>
         <header className='space-y-3'>
           <div className='flex flex-wrap items-start justify-between gap-3'>
             <div className='space-y-1'>

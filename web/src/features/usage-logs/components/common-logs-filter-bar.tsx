@@ -22,6 +22,7 @@ import type { Table } from '@tanstack/react-table'
 import { Eye, EyeOff } from 'lucide-react'
 import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,13 +44,17 @@ import { getGroups } from '@/features/users/api'
 import { useMediaQuery } from '@/hooks'
 import { getUserGroups } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
+import { exportLogs } from '../api'
 import { LOG_TYPE_ALL_VALUE, LOG_TYPE_FILTERS } from '../constants'
 import { buildSearchParams } from '../lib/filter'
-import { getDefaultTimeRange } from '../lib/utils'
+import { buildApiParams, getDefaultTimeRange } from '../lib/utils'
 import type { CommonLogFilters } from '../types'
-import { CommonLogsStats } from './common-logs-stats'
-import { CompactDateTimeRangePicker } from './compact-date-time-range-picker'
+import {
+  CompactDateTimeField,
+  CompactDateTimeRangePicker,
+} from './compact-date-time-range-picker'
 import {
   LogsFilterField,
   LogsFilterInput,
@@ -254,6 +259,45 @@ export function CommonLogsFilterBar<TData>(
     queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
   }, [navigate, queryClient])
 
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const result = await exportLogs(
+        buildApiParams({
+          page: 1,
+          pageSize: 1,
+          searchParams,
+          columnFilters: [],
+          isAdmin,
+        }),
+        isAdmin
+      )
+      if (!result.ok) {
+        toast.error(
+          result.code === 'no_records'
+            ? t('No consumption records in the selected time range')
+            : (result.message ?? t('Export failed'))
+        )
+        return
+      }
+      const blob = new Blob([`\uFEFF${result.csv}`], {
+        type: 'text/csv;charset=utf-8',
+      })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = result.filename
+      document.body.append(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }, [isAdmin, searchParams, t])
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') handleApply()
@@ -262,7 +306,6 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const hasExpandedFilters =
-    !!filters.token ||
     !!filters.username ||
     !!filters.channel ||
     !!filters.requestId ||
@@ -270,10 +313,14 @@ export function CommonLogsFilterBar<TData>(
 
   const hasTypeFilter = logType !== LOG_TYPE_ALL_VALUE
   const hasAdditionalFilters =
-    !!filters.model || !!filters.group || hasTypeFilter || hasExpandedFilters
+    !!filters.token ||
+    !!filters.model ||
+    !!filters.group ||
+    hasTypeFilter ||
+    hasExpandedFilters
 
   const expandedFilterCount = [
-    filters.token,
+    filters.group,
     isAdmin ? filters.username : undefined,
     isAdmin ? filters.channel : undefined,
     filters.requestId,
@@ -296,7 +343,6 @@ export function CommonLogsFilterBar<TData>(
     'Only used to find historical logs. New records are available in Audit Logs.'
   )
 
-  const statsBar = <CommonLogsStats />
   const sensitiveToggle = (
     <Tooltip>
       <TooltipTrigger
@@ -318,7 +364,9 @@ export function CommonLogsFilterBar<TData>(
     </Tooltip>
   )
 
-  const dateRangeFilter = (
+  // Desktop shows the start and end bounds as two fields, matching the
+  // reference console; the combined range trigger stays for narrow layouts.
+  const dateRangeFilter = isMobile ? (
     <LogsFilterField wide>
       <CompactDateTimeRangePicker
         start={filters.startTime}
@@ -326,17 +374,43 @@ export function CommonLogsFilterBar<TData>(
         onChange={({ start, end }) => {
           handleChange('startTime', start)
           handleChange('endTime', end)
-          if (isMobile) {
-            handleApply({ ...filters, startTime: start, endTime: end })
-          }
+          handleApply({ ...filters, startTime: start, endTime: end })
         }}
+      />
+    </LogsFilterField>
+  ) : (
+    <>
+      <LogsFilterField className='w-full lg:w-56'>
+        <CompactDateTimeField
+          label={t('Start')}
+          value={filters.startTime}
+          onChange={(value) => handleChange('startTime', value)}
+        />
+      </LogsFilterField>
+      <LogsFilterField className='w-full lg:w-56'>
+        <CompactDateTimeField
+          label={t('End')}
+          value={filters.endTime}
+          onChange={(value) => handleChange('endTime', value)}
+        />
+      </LogsFilterField>
+    </>
+  )
+  const tokenFilter = (
+    <LogsFilterField className='w-full lg:w-36'>
+      <LogsFilterInput
+        placeholder={t('Token Name')}
+        className={sensitiveInputClass}
+        value={filters.token || ''}
+        onChange={(e) => handleChange('token', e.target.value)}
+        onKeyDown={handleKeyDown}
       />
     </LogsFilterField>
   )
   const modelFilter = (
-    <LogsFilterField>
+    <LogsFilterField className='w-full lg:w-36'>
       <LogsFilterInput
-        placeholder={t('Model Name')}
+        placeholder={t('Model')}
         value={filters.model || ''}
         onChange={(e) => handleChange('model', e.target.value)}
         onKeyDown={handleKeyDown}
@@ -344,14 +418,14 @@ export function CommonLogsFilterBar<TData>(
     </LogsFilterField>
   )
   const groupFilter = (
-    <LogsFilterField className={sensitiveInputClass}>
+    <LogsFilterField className={cn('w-full lg:w-36', sensitiveInputClass)}>
       <Combobox
         options={groupOptions}
         allowCustomValue
         aria-label={t('Group')}
         emptyText={t('No group found.')}
         placeholder={t('Group')}
-        className='h-8 min-w-0 text-sm leading-5'
+        className='h-9 min-w-0 text-sm leading-5'
         popupClassName={sensitiveInputClass}
         value={filters.group || ''}
         onValueChange={(value) => handleChange('group', value ?? '')}
@@ -388,7 +462,7 @@ export function CommonLogsFilterBar<TData>(
         >
           <SelectValue className='min-w-0'>
             <span className='truncate'>
-              {selectedLogType?.label ?? t('All Types')}
+              {selectedLogType?.label ?? t('All Logs')}
             </span>
             {selectedLogType?.deprecated && (
               <Badge
@@ -434,15 +508,7 @@ export function CommonLogsFilterBar<TData>(
   )
   const advancedFilters = (
     <>
-      <LogsFilterField>
-        <LogsFilterInput
-          placeholder={t('Token Name')}
-          className={sensitiveInputClass}
-          value={filters.token || ''}
-          onChange={(e) => handleChange('token', e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-      </LogsFilterField>
+      {groupFilter}
       {isAdmin && (
         <LogsFilterField>
           <LogsFilterInput
@@ -487,22 +553,25 @@ export function CommonLogsFilterBar<TData>(
     <LogsFilterToolbar
       table={props.table}
       compactMobile
-      stats={statsBar}
       actionStart={sensitiveToggle}
       primaryFilters={
         <>
           {dateRangeFilter}
+          {tokenFilter}
           {modelFilter}
-          {groupFilter}
-          {typeFilter}
         </>
+      }
+      secondaryFilters={
+        <div className='min-w-0 lg:w-36 [&_[data-slot=select-trigger]]:w-full'>
+          {typeFilter}
+        </div>
       }
       advancedFilters={advancedFilters}
       mobilePinnedFilters={dateRangeFilter}
       mobileFilters={
         <>
+          {tokenFilter}
           {modelFilter}
-          {groupFilter}
           {typeFilter}
           {advancedFilters}
         </>
@@ -517,6 +586,8 @@ export function CommonLogsFilterBar<TData>(
       onSearch={() => handleApply()}
       searchLoading={fetchingLogs > 0}
       onReset={handleReset}
+      onExport={handleExport}
+      exporting={exporting}
     />
   )
 }

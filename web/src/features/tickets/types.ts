@@ -22,6 +22,7 @@ export type TicketCategory = 'billing' | 'technical' | 'account' | 'other'
 
 export interface Ticket {
   id: number
+  ticket_no: string
   user_id: number
   title: string
   category: string
@@ -43,6 +44,14 @@ export interface TicketReply {
 export interface TicketDetail {
   ticket: Ticket
   replies: TicketReply[]
+}
+
+export interface TicketAttachment {
+  url: string
+  name: string
+  content_type: string
+  size: number
+  is_image: boolean
 }
 
 export interface TicketPage {

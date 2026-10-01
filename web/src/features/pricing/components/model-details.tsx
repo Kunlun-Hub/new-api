@@ -16,49 +16,47 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import {
   ArrowLeft,
-  CalendarClock,
-  Code2,
-  FileText,
-  HeartPulse,
-  Info,
+  ArrowUpRight,
+  Brain,
+  Calendar,
+  ChevronRight,
   Layers,
-  Maximize2,
   Sparkles,
-  Timer,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
 import { StaticDataTable } from '@/components/data-table'
-import { sideDrawerContentClassName } from '@/components/drawer-layout'
 import { GroupBadge } from '@/components/group-badge'
 import { PublicLayout } from '@/components/layout'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getPerfMetrics } from '@/features/performance-metrics/api'
 import {
-  formatLatency,
-  formatThroughput,
-  formatUptimePct,
-  getSuccessRateTextClass,
-} from '@/features/performance-metrics/lib/format'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
+import { toIntlLocale } from '@/i18n/languages'
 import { getLobeIcon } from '@/lib/lobe-icon'
-import { requireServerSuccess } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
@@ -67,20 +65,30 @@ import { usePricingData } from '../hooks/use-pricing-data'
 import type { ParsedTaskTier } from '../lib/billing-expr'
 import { formatBillingCondition } from '../lib/billing-expression/condition-display'
 import {
+  formatContextLength,
+  getCapabilityBadges,
+  getMetaTagBadges,
+} from '../lib/capability-badges'
+import {
   formatTaskUsageUnitPrice,
   getDynamicPriceEntries,
   getDynamicPriceUnitLabelKey,
   getDynamicPricingSummary,
   getDynamicPricingTiers,
   getTaskUsageQuantityUnitLabelKey,
+  hasTaskUsageSchema,
   isDynamicPricingModel,
   isUnconfiguredTaskUsageModel,
   type DynamicPriceEntry,
 } from '../lib/dynamic-price'
-import { parseTags } from '../lib/filters'
-import { getAvailableGroups, isTokenBasedModel } from '../lib/model-helpers'
+import {
+  getAvailableGroups,
+  getConfiguredGroupRatio,
+  isTokenBasedModel,
+  replaceModelInPath,
+} from '../lib/model-helpers'
 import { withPluginPricing } from '../lib/plugin-pricing'
-import { formatFixedPrice, formatGroupPrice } from '../lib/price'
+import { formatFixedPrice, formatGroupPrice, formatPrice } from '../lib/price'
 import {
   evaluateTaskUsageExamples,
   getTaskEnumFields,
@@ -94,16 +102,12 @@ import {
   taskTierConditions,
   pricingDisplayFallbackKey,
 } from '../lib/task-price-display'
-import type {
-  ModelCapability,
-  PriceType,
-  PricingModel,
-  TokenUnit,
-} from '../types'
+import type { PriceType, PricingModel, TokenUnit } from '../types'
 import { DynamicPricingBreakdown } from './dynamic-pricing-breakdown'
-import { ModelBillingModeBadge } from './model-billing-mode-badge'
-import { ModelDetailsApi } from './model-details-api'
-import { ModelDetailsPerformance } from './model-details-performance'
+import { ModelAvailabilitySection } from './model-details-availability'
+import { ModelTryDrawer } from './model-try-drawer'
+
+const MODEL_DETAILS_SKELETON_KEYS = ['first', 'second', 'third', 'fourth']
 
 // ----------------------------------------------------------------------------
 // Local UI helpers
@@ -183,269 +187,197 @@ function UnconfiguredTaskPricingNotice(props: { model: PricingModel }) {
   )
 }
 
-const CAPABILITY_LABEL_KEYS: Record<ModelCapability, string> = {
-  function_calling: 'Function calling',
-  streaming: 'Streaming',
-  vision: 'Vision',
-  json_mode: 'JSON mode',
-  structured_output: 'Structured output',
-  reasoning: 'Reasoning',
-  tools: 'Tools',
-  system_prompt: 'System prompt',
-  web_search: 'Web search',
-  code_interpreter: 'Code interpreter',
-  caching: 'Prompt caching',
-  embeddings: 'Embeddings',
-}
+// ----------------------------------------------------------------------------
+// Model header (always visible above the detail sections)
+// ----------------------------------------------------------------------------
 
-const MODALITY_LABEL_KEYS: Record<string, string> = {
-  text: 'Text',
-  image: 'Image',
-  audio: 'Audio',
-  video: 'Video',
-  file: 'File',
-}
-
-const TOKEN_FORMAT = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 1,
-})
-const MODEL_DETAILS_SKELETON_KEYS = ['first', 'second', 'third', 'fourth']
-
-function formatCatalogTokenCount(tokens: number): string {
-  if (!Number.isFinite(tokens) || tokens <= 0) return ''
-  if (tokens >= 1_000_000) {
-    return `${TOKEN_FORMAT.format(tokens / 1_000_000)}M`
-  }
-  if (tokens >= 1_000) {
-    return `${TOKEN_FORMAT.format(tokens / 1_000)}K`
-  }
-  return TOKEN_FORMAT.format(tokens)
-}
-
-function formatCatalogYearMonth(value?: string): string {
-  if (!value) return ''
-  const [yearStr, monthStr] = value.split('-')
-  const year = Number(yearStr)
-  const month = Number(monthStr)
-  if (!Number.isFinite(year) || !Number.isFinite(month)) return value
-  const date = new Date(Date.UTC(year, month - 1, 1))
-  return date.toLocaleString(undefined, { year: 'numeric', month: 'short' })
-}
-
-function normalizeCatalogItems(items?: readonly string[]): string[] {
-  if (!items) return []
-  return items.filter((item) => item.trim().length > 0)
-}
-
-function OverviewMetric(props: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: React.ReactNode
-  valueClassName?: string
+function ModelHeader(props: {
+  model: PricingModel
+  onTry?: (modelName: string) => void
 }) {
-  const Icon = props.icon
-
-  return (
-    <div className='flex min-w-0 items-center gap-2 px-3 py-2'>
-      <Icon className='text-muted-foreground/70 size-3.5 shrink-0' />
-      <div className='min-w-0 flex-1'>
-        <div className='text-muted-foreground truncate text-[10px] font-medium tracking-wider uppercase'>
-          {props.label}
-        </div>
-        <div
-          className={cn(
-            'text-foreground truncate font-mono text-sm font-semibold tabular-nums',
-            props.valueClassName
-          )}
-        >
-          {props.value}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function OverviewSummaryGrid(props: { model: PricingModel }) {
-  const { t } = useTranslation()
-  const metricsQuery = useQuery({
-    queryKey: ['perf-metrics', props.model.model_name],
-    queryFn: async () =>
-      requireServerSuccess(await getPerfMetrics(props.model.model_name, 24)),
-    staleTime: 60 * 1000,
-  })
-
-  const summary = metricsQuery.data?.data.summary
-  const successRate = summary?.success_rate ?? Number.NaN
-  const avgTps = summary?.avg_tps ?? 0
-  const avgLatency = summary?.avg_latency_ms ?? 0
-
-  return (
-    <div className='bg-muted/20 grid overflow-hidden rounded-lg border sm:grid-cols-3 sm:divide-x'>
-      <OverviewMetric
-        icon={Timer}
-        label='TPS'
-        value={formatThroughput(avgTps)}
-      />
-      <OverviewMetric
-        icon={Timer}
-        label={t('Average latency')}
-        value={formatLatency(avgLatency)}
-      />
-      <OverviewMetric
-        icon={HeartPulse}
-        label={t('Success rate')}
-        value={formatUptimePct(successRate)}
-        valueClassName={getSuccessRateTextClass(successRate)}
-      />
-    </div>
-  )
-}
-
-function CatalogPillList(props: { items: string[] }) {
-  return (
-    <div className='flex min-w-0 flex-wrap gap-1.5'>
-      {props.items.map((item) => (
-        <span
-          key={item}
-          className='bg-muted text-muted-foreground rounded-md px-2 py-1 text-xs font-medium'
-        >
-          {item}
-        </span>
-      ))}
-    </div>
-  )
-}
-
-function CatalogTextValue(props: { children: React.ReactNode }) {
-  return (
-    <span className='text-foreground min-w-0 truncate text-sm font-semibold'>
-      {props.children}
-    </span>
-  )
-}
-
-function CatalogInfoCell(props: { label: string; children: React.ReactNode }) {
-  return (
-    <div className='bg-card flex min-w-0 flex-col gap-1 px-3 py-2.5'>
-      <span className='text-muted-foreground text-[10px] font-medium tracking-wider uppercase'>
-        {props.label}
-      </span>
-      {props.children}
-    </div>
-  )
-}
-
-function ModalityLabels(props: { items: string[] }) {
-  const { t } = useTranslation()
-  if (props.items.length === 0) return null
-
-  return (
-    <span className='inline-flex items-center gap-1 align-middle'>
-      {props.items.map((item) => (
-        <span key={item} className='font-medium'>
-          {t(MODALITY_LABEL_KEYS[item] ?? item)}
-        </span>
-      ))}
-    </span>
-  )
-}
-
-function ModelBackendQuickStats(props: { model: PricingModel }) {
   const { t } = useTranslation()
   const model = props.model
-  const inputModalities = normalizeCatalogItems(model.input_modalities)
-  const outputModalities = normalizeCatalogItems(model.output_modalities)
-  const contextLength = model.context_length ?? 0
-  const maxOutput = model.max_output_tokens ?? 0
-  const knowledgeCutoff = formatCatalogYearMonth(model.knowledge_cutoff)
-  const releaseDate = formatCatalogYearMonth(model.release_date)
+  const modelIconKey = model.icon || model.vendor_icon
+  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 32) : null
+  const capabilities = getCapabilityBadges(model)
+  const metaTagBadges = getMetaTagBadges(model)
+
+  return (
+    <header className='mb-8 flex gap-4 max-md:flex-col md:items-start'>
+      <div className='bg-card border-border flex size-15 shrink-0 items-center justify-center rounded-2xl border shadow-lg'>
+        {modelIcon}
+      </div>
+
+      <div className='min-w-0 flex-1'>
+        <div className='flex flex-wrap items-center gap-3 max-md:justify-center'>
+          <h1 className='text-foreground truncate text-2xl font-bold'>
+            {model.model_name}
+          </h1>
+          <CopyButton
+            value={model.model_name || ''}
+            className='size-7'
+            iconClassName='size-4'
+            tooltip={t('Copy model name')}
+            successTooltip={t('Copied!')}
+            aria-label={t('Copy model name')}
+          />
+        </div>
+
+        <div className='mt-2 flex flex-wrap items-center gap-2 md:mt-1'>
+          {metaTagBadges.map((badge) => (
+            <Badge
+              key={badge.key}
+              variant='outline'
+              className='border-border/60 text-foreground max-md:text-muted-foreground h-5 rounded-4xl px-2 py-0.5 text-xs font-medium'
+            >
+              {t(badge.labelKey)}
+            </Badge>
+          ))}
+          {capabilities.map((capability) => (
+            <Badge
+              key={capability.key}
+              variant='outline'
+              className='border-border/60 text-foreground max-md:text-muted-foreground h-5 rounded-4xl px-2 py-0.5 text-xs font-medium'
+            >
+              {t(capability.labelKey)}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <div className='flex shrink-0 items-center gap-2'>
+        {props.onTry && (
+          <Button
+            onClick={() => props.onTry?.(model.model_name)}
+            className='border-border/60 h-9 gap-1.5 rounded-full px-4 max-md:grow'
+            variant='outline'
+          >
+            <Sparkles className='size-4' />
+            {t('Online trial')}
+          </Button>
+        )}
+        <CopyButton
+          className='border-border/60 h-9 gap-1.5 rounded-full px-4 text-[0.8rem] max-md:grow'
+          iconClassName='size-4'
+          tooltip={t('Copy Link')}
+          successTooltip={t('Copied!')}
+          value={
+            typeof window === 'undefined'
+              ? model.model_name
+              : window.location.href
+          }
+          variant='outline'
+        >
+          {t('Copy Link')}
+        </CopyButton>
+      </div>
+    </header>
+  )
+}
+
+function formatCatalogDate(
+  value: string | undefined,
+  locale: string
+): string | null {
+  if (!value) return null
+  const parts = value.split('-').map((part) => Number(part))
+  const [year, month, day] = parts
+  if (!Number.isFinite(year)) return value
+  if (!Number.isFinite(month)) return String(year)
+  const hasDay = Number.isFinite(day) && day > 0
+  const date = new Date(Date.UTC(year, month - 1, hasDay ? day : 1))
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
+    year: 'numeric',
+    month: 'long',
+    ...(hasDay ? { day: 'numeric' } : {}),
+    timeZone: 'UTC',
+  }).format(date)
+}
+
+function ModelStatsRow(props: { model: PricingModel }) {
+  const { t, i18n } = useTranslation()
+  const model = props.model
+  const contextLabel = formatContextLength(model.context_length)
+  const maxOutputLabel = formatContextLength(model.max_output_tokens)
+  const releaseDate = formatCatalogDate(model.release_date, i18n.language)
+  const knowledgeCutoff = formatCatalogDate(
+    model.knowledge_cutoff,
+    i18n.language
+  )
 
   const stats: {
     key: string
     icon: React.ComponentType<{ className?: string }>
     label: string
     value: React.ReactNode
-    hint?: string
+    emphasize?: boolean
   }[] = []
 
-  if (contextLength > 0) {
+  if (contextLabel) {
     stats.push({
       key: 'context',
-      icon: Layers,
-      label: t('Context'),
-      value: formatCatalogTokenCount(contextLength),
-      hint: t('Maximum input window'),
+      icon: Brain,
+      label: t('Context length'),
+      value: contextLabel,
+      emphasize: true,
     })
   }
-
-  if (maxOutput > 0) {
+  if (maxOutputLabel) {
     stats.push({
       key: 'max-output',
-      icon: Maximize2,
+      icon: ArrowUpRight,
       label: t('Max output'),
-      value: formatCatalogTokenCount(maxOutput),
-      hint: t('Maximum tokens per response'),
+      value: maxOutputLabel,
+      emphasize: true,
     })
   }
-
-  if (inputModalities.length > 0 || outputModalities.length > 0) {
+  if (releaseDate) {
     stats.push({
-      key: 'modalities',
-      icon: FileText,
-      label: t('Modalities'),
-      value: (
-        <span className='inline-flex items-center gap-1'>
-          <ModalityLabels items={inputModalities} />
-          {inputModalities.length > 0 && outputModalities.length > 0 && (
-            <span className='text-muted-foreground/40'>→</span>
-          )}
-          <ModalityLabels items={outputModalities} />
-        </span>
-      ),
+      key: 'release',
+      icon: Calendar,
+      label: t('Release date'),
+      value: releaseDate,
     })
   }
-
   if (knowledgeCutoff) {
     stats.push({
       key: 'knowledge',
-      icon: Sparkles,
+      icon: Calendar,
       label: t('Knowledge cutoff'),
       value: knowledgeCutoff,
     })
   }
-
-  if (releaseDate) {
-    stats.push({
-      key: 'release',
-      icon: CalendarClock,
-      label: t('Released'),
-      value: releaseDate,
-    })
-  }
-
-  if (stats.length === 0) return null
+  stats.push({
+    key: 'ratio',
+    icon: Layers,
+    label: `${t('Model ratio')} / ${t('Completion ratio')}`,
+    value: `${model.model_ratio ?? '-'} / ${(model.completion_ratio ?? 0).toFixed(2)}`,
+    emphasize: true,
+  })
 
   return (
-    <div className='bg-muted/20 grid grid-cols-2 gap-px overflow-hidden rounded-lg border @md/details:grid-cols-3 @2xl/details:grid-cols-5'>
+    <div className='no-scrollbar mb-6 flex gap-2 overflow-x-auto pb-1 md:gap-4'>
       {stats.map((stat) => {
         const Icon = stat.icon
         return (
           <div
             key={stat.key}
-            className='bg-background flex min-w-0 flex-col gap-0.5 px-3 py-2.5'
+            className='border-border/50 bg-card/50 flex shrink-0 grow items-center gap-3 rounded-xl border p-4'
           >
-            <span className='text-muted-foreground inline-flex min-w-0 items-center gap-1 text-[10px] font-medium tracking-wider uppercase'>
-              <Icon className='size-3 shrink-0' />
-              <span className='truncate'>{stat.label}</span>
-            </span>
-            <span className='text-foreground truncate text-sm font-semibold tabular-nums'>
-              {stat.value}
-            </span>
-            {stat.hint && (
-              <span className='text-muted-foreground/60 truncate text-[10px]'>
-                {stat.hint}
-              </span>
-            )}
+            <Icon className='text-muted-foreground h-5 w-5 shrink-0' />
+            <div className='min-w-0'>
+              <p className='text-muted-foreground truncate text-xs'>
+                {stat.label}
+              </p>
+              <p
+                className={cn(
+                  'font-semibold',
+                  stat.emphasize ? 'text-lg' : 'text-sm'
+                )}
+              >
+                {stat.value}
+              </p>
+            </div>
           </div>
         )
       })}
@@ -453,189 +385,88 @@ function ModelBackendQuickStats(props: { model: PricingModel }) {
   )
 }
 
-function ModelBackendSignalsSection(props: { model: PricingModel }) {
+function ModelDescriptionSection(props: { model: PricingModel }) {
   const { t } = useTranslation()
-  const capabilities = normalizeCatalogItems(props.model.capabilities)
-  const inputModalities = normalizeCatalogItems(props.model.input_modalities)
-  const outputModalities = normalizeCatalogItems(props.model.output_modalities)
-
-  if (
-    capabilities.length === 0 &&
-    inputModalities.length === 0 &&
-    outputModalities.length === 0
-  ) {
-    return null
-  }
+  const description =
+    props.model.description || props.model.vendor_description || null
+  if (!description) return null
 
   return (
-    <section>
-      <SectionTitle>
-        {t('Capabilities')} / {t('Supported modalities')}
-      </SectionTitle>
-      <div className='grid gap-3 rounded-xl border p-3 @2xl/details:grid-cols-[minmax(0,1.5fr)_minmax(260px,1fr)]'>
-        {capabilities.length > 0 ? (
-          <CatalogPillList
-            items={capabilities.map((capability) =>
-              t(
-                CAPABILITY_LABEL_KEYS[capability as ModelCapability] ??
-                  capability
-              )
-            )}
-          />
-        ) : (
-          <div />
-        )}
-        {(inputModalities.length > 0 || outputModalities.length > 0) && (
-          <div className='grid gap-2 sm:grid-cols-2'>
-            {inputModalities.length > 0 && (
-              <div className='flex items-center justify-between gap-3 rounded-lg border px-3 py-2'>
-                <span className='text-muted-foreground text-xs font-medium'>
-                  {t('Input')}
-                </span>
-                <CatalogTextValue>
-                  <ModalityLabels items={inputModalities} />
-                </CatalogTextValue>
-              </div>
-            )}
-            {outputModalities.length > 0 && (
-              <div className='flex items-center justify-between gap-3 rounded-lg border px-3 py-2'>
-                <span className='text-muted-foreground text-xs font-medium'>
-                  {t('Output')}
-                </span>
-                <CatalogTextValue>
-                  <ModalityLabels items={outputModalities} />
-                </CatalogTextValue>
-              </div>
-            )}
+    <section className='border-border/50 mb-6 rounded-xl border p-5 md:p-6'>
+      <h2 className='text-foreground mb-2 text-sm font-medium'>
+        {t('Model Description')}
+      </h2>
+      <p className='text-muted-foreground text-sm leading-relaxed'>
+        {description}
+      </p>
+    </section>
+  )
+}
+
+function ModelEndpointSection(props: {
+  model: PricingModel
+  endpointMap: Record<string, { path?: string; method?: string }>
+}) {
+  const { t } = useTranslation()
+
+  const endpoints = useMemo(() => {
+    const types = props.model.supported_endpoint_types ?? []
+    return types
+      .map((type) => {
+        const info = props.endpointMap[type] ?? {}
+        let path = info.path ?? ''
+        if (path && path.includes('{model}')) {
+          path = replaceModelInPath(path, props.model.model_name || '')
+        }
+        return { type, path, method: info.method || 'POST' }
+      })
+      .filter((endpoint) => Boolean(endpoint.path))
+  }, [props.model, props.endpointMap])
+
+  if (endpoints.length === 0) return null
+
+  return (
+    <section className='border-border/50 mb-6 overflow-hidden rounded-xl border'>
+      <div className='border-border/40 border-b px-6 py-4'>
+        <h2 className='text-foreground text-sm font-medium'>
+          {t('Supported endpoints')}
+        </h2>
+      </div>
+      <div className='divide-border/40 divide-y'>
+        {endpoints.map((endpoint) => (
+          <div
+            key={`${endpoint.type}-${endpoint.path}`}
+            className='group/ep flex items-center gap-2 px-6 py-3'
+          >
+            <Badge
+              className='h-5 shrink-0 rounded-4xl px-2 py-0.5 text-xs font-medium'
+              variant='secondary'
+            >
+              {endpoint.type}
+            </Badge>
+            <CopyButton
+              aria-label={t('Copy')}
+              className='h-8 min-w-0 gap-1 rounded-full px-2.5 font-mono text-[0.8rem]'
+              iconClassName='size-3.5'
+              size='sm'
+              tooltip={t('Copy')}
+              successTooltip={t('Copied!')}
+              value={endpoint.path}
+            >
+              <span className='min-w-0 truncate'>{endpoint.path}</span>
+            </CopyButton>
+            <Badge
+              className='ml-auto h-5 shrink-0 rounded-4xl px-2 py-0.5 text-[10px] font-medium'
+              variant='secondary'
+            >
+              {endpoint.method}
+            </Badge>
           </div>
-        )}
+        ))}
       </div>
     </section>
   )
 }
-
-function ModelBackendProviderSection(props: { model: PricingModel }) {
-  const { t } = useTranslation()
-  const model = props.model
-  const groups = normalizeCatalogItems(model.enable_groups)
-  const endpoints = normalizeCatalogItems(model.supported_endpoint_types)
-  const tags = parseTags(model.tags)
-  const cells: React.ReactNode[] = []
-
-  if (model.vendor_name) {
-    cells.push(
-      <CatalogInfoCell key='provider' label={t('Provider')}>
-        <CatalogTextValue>{model.vendor_name}</CatalogTextValue>
-      </CatalogInfoCell>
-    )
-  }
-
-  cells.push(
-    <CatalogInfoCell key='type' label={t('Type')}>
-      <ModelBillingModeBadge model={model} />
-    </CatalogInfoCell>
-  )
-
-  if (groups.length > 0) {
-    cells.push(
-      <CatalogInfoCell key='groups' label={t('Groups')}>
-        <CatalogPillList items={groups} />
-      </CatalogInfoCell>
-    )
-  }
-
-  if (endpoints.length > 0) {
-    cells.push(
-      <CatalogInfoCell key='endpoints' label={t('Endpoints')}>
-        <CatalogPillList items={endpoints} />
-      </CatalogInfoCell>
-    )
-  }
-
-  if (tags.length > 0) {
-    cells.push(
-      <CatalogInfoCell key='tags' label={t('Tags')}>
-        <CatalogPillList items={tags} />
-      </CatalogInfoCell>
-    )
-  }
-
-  if (model.parameter_count) {
-    cells.push(
-      <CatalogInfoCell key='parameters' label={t('Parameters')}>
-        <CatalogTextValue>{model.parameter_count}</CatalogTextValue>
-      </CatalogInfoCell>
-    )
-  }
-
-  if (cells.length === 0) return null
-
-  return (
-    <section>
-      <SectionTitle>{t('Model')}</SectionTitle>
-      <div className='border-border/60 bg-border/60 grid grid-cols-1 gap-px overflow-hidden rounded-lg border sm:grid-cols-2'>
-        {cells}
-      </div>
-    </section>
-  )
-}
-
-function ModelBackendDetailsSection(props: { model: PricingModel }) {
-  return (
-    <>
-      <ModelBackendQuickStats model={props.model} />
-      <ModelBackendSignalsSection model={props.model} />
-      <ModelBackendProviderSection model={props.model} />
-    </>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Model header (always visible above the detail sections)
-// ----------------------------------------------------------------------------
-
-function ModelHeader(props: { model: PricingModel }) {
-  const { t } = useTranslation()
-  const model = props.model
-  const modelIconKey = model.icon || model.vendor_icon
-  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 20) : null
-  const description = model.description || model.vendor_description || null
-
-  return (
-    <header className='pb-4'>
-      <div className='flex items-center gap-2.5'>
-        {modelIcon}
-        <h1 className='font-mono text-xl font-bold tracking-tight sm:text-2xl'>
-          {model.model_name}
-        </h1>
-        <CopyButton
-          value={model.model_name || ''}
-          className='size-6'
-          iconClassName='size-3'
-          tooltip={t('Copy model name')}
-          successTooltip={t('Copied!')}
-          aria-label={t('Copy model name')}
-        />
-      </div>
-      <div className='mt-1 flex flex-wrap items-center gap-1.5 text-xs'>
-        {model.vendor_name && (
-          <span className='text-muted-foreground'>{model.vendor_name}</span>
-        )}
-        <span className='text-muted-foreground/30'>·</span>
-        <ModelBillingModeBadge model={model} />
-      </div>
-      {description && (
-        <p className='text-muted-foreground mt-2 text-sm leading-relaxed'>
-          {description}
-        </p>
-      )}
-    </header>
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Base price card (used in the Overview tab)
-// ----------------------------------------------------------------------------
 
 function PriceSection(props: {
   model: PricingModel
@@ -997,15 +828,190 @@ type GroupPricingSectionProps = {
   showRechargePrice?: boolean
 }
 
+/** Price columns of the available-groups table; `create_cache_1h` has no
+ * stored ratio on the model and only exists inside a tiered expression. */
+type GroupPriceColumn =
+  | 'input'
+  | 'output'
+  | 'cache'
+  | 'create_cache'
+  | 'create_cache_1h'
+
+const DYNAMIC_PRICE_FIELDS: Record<GroupPriceColumn, string> = {
+  input: 'inputPrice',
+  output: 'outputPrice',
+  cache: 'cacheReadPrice',
+  create_cache: 'cacheCreatePrice',
+  create_cache_1h: 'cacheCreate1hPrice',
+}
+
+function FlatGroupPricingTable(props: GroupPricingSectionProps) {
+  const { t } = useTranslation()
+  const showRechargePrice = props.showRechargePrice ?? false
+  const tokenUnitLabel = props.tokenUnit === 'K' ? '/K' : '/M'
+  const availableGroups = useMemo(
+    () => getAvailableGroups(props.model, props.usableGroup || {}),
+    [props.model, props.usableGroup]
+  )
+
+  if (availableGroups.length === 0) {
+    return (
+      <p className='text-muted-foreground px-6 py-4 text-sm'>
+        {t(
+          'This model is not available in any group, or no group pricing information is configured.'
+        )}
+      </p>
+    )
+  }
+
+  const dynamicPriceOptions = (group: string) => ({
+    tokenUnit: props.tokenUnit,
+    showRechargePrice,
+    priceRate: props.priceRate,
+    usdExchangeRate: props.usdExchangeRate,
+    groupRatioMultiplier: props.groupRatio[group] || 1,
+    usageSchema: props.model.billing_usage_schema,
+  })
+  const dynamicTiers = isDynamicPricingModel(props.model)
+    ? getDynamicPricingTiers(props.model)
+    : []
+
+  const firstTierEntries =
+    dynamicTiers.length > 0
+      ? getDynamicPriceEntries(dynamicTiers[0], dynamicPriceOptions('default'))
+      : []
+  const hasDynamicField = (type: GroupPriceColumn) => {
+    const field = DYNAMIC_PRICE_FIELDS[type]
+    return Boolean(
+      field && firstTierEntries.some((entry) => entry.field === field)
+    )
+  }
+
+  const priceFor = (group: string, type: GroupPriceColumn) => {
+    if (dynamicTiers.length > 0) {
+      const field = DYNAMIC_PRICE_FIELDS[type]
+      const entry = field
+        ? getDynamicPriceEntries(
+            dynamicTiers[0],
+            dynamicPriceOptions(group)
+          ).find((item) => item.field === field)
+        : undefined
+      if (entry?.formatted) {
+        return entry.unit === 'token'
+          ? `${entry.formatted}${tokenUnitLabel}`
+          : entry.formatted
+      }
+    }
+    if (type === 'create_cache_1h') {
+      return '-'
+    }
+    return `${formatPrice(
+      props.model,
+      type,
+      props.tokenUnit,
+      showRechargePrice,
+      props.priceRate,
+      props.usdExchangeRate,
+      group
+    )}${tokenUnitLabel}`
+  }
+
+  const showCacheRead =
+    props.model.cache_ratio != null || hasDynamicField('cache')
+  const showCacheWrite =
+    props.model.create_cache_ratio != null || hasDynamicField('create_cache')
+  const showCacheWrite1h = hasDynamicField('create_cache_1h')
+
+  return (
+    <Table className='[&_tbody>tr]:h-auto! [&_th]:text-xs! [&_th_*]:text-xs!'>
+      <TableHeader>
+        <TableRow className='hover:bg-transparent'>
+          <TableHead className='text-foreground px-6 py-3 font-medium'>
+            {t('Token group')}
+          </TableHead>
+          <TableHead className='text-foreground px-6 py-3 font-medium'>
+            {t('Description')}
+          </TableHead>
+          <TableHead className='text-foreground px-6 py-3 text-right font-medium'>
+            {t('Group Ratio')}
+          </TableHead>
+          <TableHead className='text-foreground px-6 py-3 text-right font-medium'>
+            {t('Input price')}
+          </TableHead>
+          <TableHead className='text-foreground px-6 py-3 text-right font-medium'>
+            {t('Output price')}
+          </TableHead>
+          {showCacheRead && (
+            <TableHead className='text-foreground px-6 py-3 text-right font-medium'>
+              {t('Cache Read')}
+            </TableHead>
+          )}
+          {showCacheWrite && (
+            <TableHead className='text-foreground px-6 py-3 text-right font-medium'>
+              {showCacheWrite1h ? t('Cache Write (5m)') : t('Cache write')}
+            </TableHead>
+          )}
+          {showCacheWrite1h && (
+            <TableHead className='text-foreground px-6 py-3 text-right font-medium'>
+              {t('Cache Write (1h)')}
+            </TableHead>
+          )}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {availableGroups.map((group) => {
+          const ratio = props.groupRatio[group] || 1
+          return (
+            <TableRow key={group} className='border-border/30'>
+              <TableCell className='px-6 py-3 font-medium'>{group}</TableCell>
+              <TableCell className='text-muted-foreground px-6 py-3 font-normal!'>
+                {props.usableGroup?.[group]?.desc || '-'}
+              </TableCell>
+              <TableCell className='px-6 py-3 text-right font-mono font-normal!'>
+                {ratio}x
+              </TableCell>
+              <TableCell className='px-6 py-3 text-right font-mono font-normal!'>
+                {priceFor(group, 'input')}
+              </TableCell>
+              <TableCell className='px-6 py-3 text-right font-mono font-normal!'>
+                {priceFor(group, 'output')}
+              </TableCell>
+              {showCacheRead && (
+                <TableCell className='px-6 py-3 text-right font-mono font-normal!'>
+                  {priceFor(group, 'cache')}
+                </TableCell>
+              )}
+              {showCacheWrite && (
+                <TableCell className='px-6 py-3 text-right font-mono font-normal!'>
+                  {priceFor(group, 'create_cache')}
+                </TableCell>
+              )}
+              {showCacheWrite1h && (
+                <TableCell className='px-6 py-3 text-right font-mono font-normal!'>
+                  {priceFor(group, 'create_cache_1h')}
+                </TableCell>
+              )}
+            </TableRow>
+          )
+        })}
+      </TableBody>
+    </Table>
+  )
+}
+
 function GroupPricingSection(props: GroupPricingSectionProps) {
   const { t } = useTranslation()
   const variants = props.model.billing_plugin_variants
   if (!variants?.length) {
-    return <ProviderGroupPricingSection {...props} />
+    const useFlatTable =
+      isTokenBasedModel(props.model) && !hasTaskUsageSchema(props.model)
+    if (useFlatTable) {
+      return <FlatGroupPricingTable {...props} />
+    }
+    return <ProviderGroupPricingSection {...props} hideTitle />
   }
   return (
-    <section>
-      <SectionTitle>{t('Pricing by Group')}</SectionTitle>
+    <section className='px-6 py-4'>
       <Tabs key={props.model.model_name} defaultValue={variants[0].plugin_key}>
         <TabsList
           aria-label={t('Provider')}
@@ -1444,18 +1450,6 @@ function ProviderGroupPricingSection(
   )
 }
 
-const TAB_VALUES = ['overview', 'performance', 'api'] as const
-type TabValue = (typeof TAB_VALUES)[number]
-
-const TAB_META: Record<
-  TabValue,
-  { icon: React.ComponentType<{ className?: string }>; labelKey: string }
-> = {
-  overview: { icon: Info, labelKey: 'Overview' },
-  performance: { icon: HeartPulse, labelKey: 'Performance' },
-  api: { icon: Code2, labelKey: 'API' },
-}
-
 export interface ModelDetailsContentProps {
   model: PricingModel
   groupRatio: Record<string, number>
@@ -1466,6 +1460,7 @@ export interface ModelDetailsContentProps {
   usdExchangeRate: number
   tokenUnit: TokenUnit
   showRechargePrice?: boolean
+  onTry?: (modelName: string) => void
 }
 
 export function ModelDetailsContent(props: ModelDetailsContentProps) {
@@ -1486,78 +1481,121 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
     simpleTaskPricing ||
     taskTiers.length === 0
 
+  const tierGroupOptions = useMemo(
+    () =>
+      isDynamic && !simpleTaskPricing
+        ? getAvailableGroups(props.model, props.usableGroup || {})
+        : [],
+    [isDynamic, simpleTaskPricing, props.model, props.usableGroup]
+  )
+  const [tierGroup, setTierGroup] = useState<string | null>(null)
+  const selectedTierGroup =
+    tierGroup && tierGroupOptions.includes(tierGroup)
+      ? tierGroup
+      : (tierGroupOptions[0] ?? '')
+
   return (
-    <div className='@container/details space-y-4'>
-      <ModelHeader model={props.model} />
+    <div className='@container/details'>
+      <ModelHeader model={props.model} onTry={props.onTry} />
 
-      <Tabs defaultValue='overview' className='gap-4'>
-        <TabsList className='bg-muted/60 grid w-full grid-cols-3 gap-1 rounded-lg p-1 group-data-horizontal/tabs:h-auto'>
-          {TAB_VALUES.map((value) => {
-            const Icon = TAB_META[value].icon
-            return (
-              <TabsTrigger
-                key={value}
-                value={value}
-                className='h-8 min-w-0 gap-1.5 rounded-md px-3 text-xs sm:text-sm'
+      <ModelStatsRow model={props.model} />
+
+      <ModelDescriptionSection model={props.model} />
+
+      <section className='border-border/50 mb-6 overflow-hidden rounded-xl border'>
+        <div className='border-border/40 border-b px-6 py-4'>
+          <h2 className='text-foreground text-sm font-medium'>
+            {t('Available groups')}
+          </h2>
+          <p className='text-muted-foreground mt-0.5 text-xs'>
+            {t(
+              'Different token groups have different prices, unit: million tokens (M)'
+            )}
+          </p>
+        </div>
+        <GroupPricingSection
+          model={props.model}
+          groupRatio={props.groupRatio}
+          usableGroup={props.usableGroup}
+          autoGroups={props.autoGroups}
+          priceRate={props.priceRate}
+          usdExchangeRate={props.usdExchangeRate}
+          tokenUnit={props.tokenUnit}
+          showRechargePrice={showRechargePrice}
+        />
+      </section>
+
+      {isDynamic && !simpleTaskPricing && (
+        <section className='border-border/50 mb-6 overflow-hidden rounded-xl border'>
+          <div className='border-border/40 flex flex-wrap items-center gap-3 border-b px-6 py-4'>
+            <div className='min-w-0 flex-1'>
+              <h2 className='text-foreground text-sm font-medium'>
+                {t('Tiered pricing')}
+              </h2>
+              <p className='text-muted-foreground mt-0.5 text-xs'>
+                {t(
+                  'Requests are billed at the matching tier price when the following token conditions are met'
+                )}
+              </p>
+            </div>
+            {tierGroupOptions.length > 1 && (
+              <Select
+                items={tierGroupOptions.map((group) => ({
+                  value: group,
+                  label: group,
+                }))}
+                value={selectedTierGroup}
+                onValueChange={(next) => setTierGroup(next)}
               >
-                <Icon className='size-3.5' />
-                <span className='truncate'>{t(TAB_META[value].labelKey)}</span>
-              </TabsTrigger>
-            )
-          })}
-        </TabsList>
-
-        <TabsContent value='overview' className='space-y-6 outline-none'>
-          <OverviewSummaryGrid model={props.model} />
-
-          <section className='bg-card/60 space-y-5 rounded-xl border p-4 shadow-sm'>
-            <SectionTitle>{t('Pricing')}</SectionTitle>
-            {showBasePrices && (
-              <PriceSection
-                model={props.model}
-                priceRate={props.priceRate}
-                usdExchangeRate={props.usdExchangeRate}
-                tokenUnit={props.tokenUnit}
-                showRechargePrice={showRechargePrice}
-              />
+                <SelectTrigger className='w-40' aria-label={t('Token group')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {tierGroupOptions.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
-            {isDynamic && !simpleTaskPricing && (
-              <DynamicPricingBreakdown
-                billingExpr={props.model.billing_expr}
-                usageSchema={props.model.billing_usage_schema}
-                taskPriceOptions={{
-                  showRechargePrice,
-                  priceRate: props.priceRate,
-                  usdExchangeRate: props.usdExchangeRate,
-                }}
-              />
+          </div>
+          <DynamicPricingBreakdown
+            billingExpr={props.model.billing_expr}
+            compact
+            detailTierTable={!props.model.billing_usage_schema}
+            groupRatioMultiplier={getConfiguredGroupRatio(
+              props.groupRatio,
+              selectedTierGroup
             )}
-            <GroupPricingSection
-              model={props.model}
-              groupRatio={props.groupRatio}
-              usableGroup={props.usableGroup}
-              autoGroups={props.autoGroups}
-              priceRate={props.priceRate}
-              usdExchangeRate={props.usdExchangeRate}
-              tokenUnit={props.tokenUnit}
-              showRechargePrice={showRechargePrice}
-            />
-          </section>
-
-          <ModelBackendDetailsSection model={props.model} />
-        </TabsContent>
-
-        <TabsContent value='performance' className='outline-none'>
-          <ModelDetailsPerformance model={props.model} />
-        </TabsContent>
-
-        <TabsContent value='api' className='outline-none'>
-          <ModelDetailsApi
-            model={props.model}
-            endpointMap={props.endpointMap}
+            usageSchema={props.model.billing_usage_schema}
+            taskPriceOptions={{
+              showRechargePrice,
+              priceRate: props.priceRate,
+              usdExchangeRate: props.usdExchangeRate,
+            }}
           />
-        </TabsContent>
-      </Tabs>
+        </section>
+      )}
+
+      {showBasePrices && props.model.billing_usage_schema && (
+        <section className='border-border/50 mb-6 rounded-xl border px-6 py-4'>
+          <PriceSection
+            model={props.model}
+            priceRate={props.priceRate}
+            usdExchangeRate={props.usdExchangeRate}
+            tokenUnit={props.tokenUnit}
+            showRechargePrice={showRechargePrice}
+          />
+        </section>
+      )}
+
+      <ModelEndpointSection
+        model={props.model}
+        endpointMap={props.endpointMap}
+      />
+
+      <ModelAvailabilitySection model={props.model} />
     </div>
   )
 }
@@ -1565,35 +1603,6 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
 // ----------------------------------------------------------------------------
 // Drawer & page wrappers
 // ----------------------------------------------------------------------------
-
-export interface ModelDetailsDrawerProps extends ModelDetailsContentProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export function ModelDetailsDrawer(props: ModelDetailsDrawerProps) {
-  const { t } = useTranslation()
-  const { open, onOpenChange, ...contentProps } = props
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side='right'
-        className={sideDrawerContentClassName(
-          'sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl'
-        )}
-      >
-        <SheetHeader className='sr-only'>
-          <SheetTitle>{props.model.model_name}</SheetTitle>
-          <SheetDescription>{t('Model details')}</SheetDescription>
-        </SheetHeader>
-        <div className='flex-1 overflow-y-auto px-4 pt-11 pb-5 sm:px-6 sm:pt-12 sm:pb-6'>
-          <ModelDetailsContent {...contentProps} />
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
 
 export function ModelDetails() {
   const { t } = useTranslation()
@@ -1615,6 +1624,27 @@ export function ModelDetails() {
   const tokenUnit: TokenUnit =
     search.tokenUnit === 'K' ? 'K' : DEFAULT_TOKEN_UNIT
 
+  const [tryModelName, setTryModelName] = useState<string | null>(null)
+
+  const tryModel = useMemo(
+    () => models.find((item) => item.model_name === tryModelName) ?? null,
+    [models, tryModelName]
+  )
+
+  const handleTry = useCallback(
+    (modelName: string) => {
+      if (!useAuthStore.getState().auth.user) {
+        void navigate({
+          to: '/sign-in',
+          search: { redirect: window.location.href },
+        })
+        return
+      }
+      setTryModelName(modelName)
+    },
+    [navigate]
+  )
+
   const model = useMemo(() => {
     if (!models || !modelId) return null
     return models.find((m) => m.model_name === modelId) || null
@@ -1627,7 +1657,7 @@ export function ModelDetails() {
   if (isLoading) {
     return (
       <PublicLayout>
-        <div className='mx-auto max-w-5xl px-4 sm:px-6'>
+        <div className='mx-auto w-full max-w-6xl px-4 py-8 lg:px-10'>
           <Skeleton className='mb-4 h-5 w-16' />
           <div className='space-y-2'>
             <Skeleton className='h-7 w-64' />
@@ -1669,32 +1699,64 @@ export function ModelDetails() {
 
   return (
     <PublicLayout>
-      <div className='mx-auto max-w-5xl px-4 sm:px-6'>
-        <Button
-          variant='ghost'
-          size='sm'
-          onClick={handleBack}
-          className='text-muted-foreground hover:text-foreground mb-4 h-auto gap-1 px-0 py-1 text-xs'
-        >
-          <ArrowLeft className='size-3.5' />
-          {t('Back')}
-        </Button>
+      <div className='mx-auto w-full max-w-6xl px-4 py-8 lg:px-10'>
+        <nav className='text-muted-foreground mb-10 flex min-w-0 flex-wrap items-center gap-1.5 text-sm'>
+          <button
+            className='hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-sm transition-colors'
+            onClick={handleBack}
+            type='button'
+          >
+            <ArrowLeft className='size-4' />
+            {t('Back')}
+          </button>
+          {model.vendor_name && (
+            <>
+              <ChevronRight className='text-muted-foreground/60 size-3.5 shrink-0' />
+              <span className='truncate'>{model.vendor_name}</span>
+            </>
+          )}
+          <ChevronRight className='text-muted-foreground/60 size-3.5 shrink-0' />
+          <span className='text-foreground truncate font-normal'>
+            {model.model_name}
+          </span>
+        </nav>
 
         <ModelDetailsContent
-          model={model}
-          groupRatio={groupRatio || {}}
-          usableGroup={usableGroup || {}}
           autoGroups={autoGroups || []}
-          priceRate={priceRate ?? 1}
-          usdExchangeRate={usdExchangeRate ?? 1}
-          tokenUnit={tokenUnit}
-          showRechargePrice={search.rechargePrice ?? false}
           endpointMap={
             (endpointMap as Record<
               string,
               { path?: string; method?: string }
             >) || {}
           }
+          groupRatio={groupRatio || {}}
+          model={model}
+          onTry={handleTry}
+          priceRate={priceRate ?? 1}
+          showRechargePrice={search.rechargePrice ?? false}
+          tokenUnit={tokenUnit}
+          usableGroup={usableGroup || {}}
+          usdExchangeRate={usdExchangeRate ?? 1}
+        />
+
+        <ModelTryDrawer
+          endpointMap={
+            (endpointMap as Record<
+              string,
+              { path?: string; method?: string }
+            >) || {}
+          }
+          groupRatio={groupRatio}
+          model={tryModel}
+          onOpenChange={(open: boolean) => {
+            if (!open) setTryModelName(null)
+          }}
+          open={Boolean(tryModel)}
+          priceRate={priceRate}
+          selectedGroup={search.group}
+          showRechargePrice={search.rechargePrice ?? false}
+          tokenUnit={tokenUnit}
+          usdExchangeRate={usdExchangeRate}
         />
       </div>
     </PublicLayout>

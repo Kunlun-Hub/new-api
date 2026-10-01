@@ -51,6 +51,8 @@ import {
 const headerNavSchema = z.object({
   home: z.boolean(),
   console: z.boolean(),
+  blog: z.boolean(),
+  help: z.boolean(),
   pricingEnabled: z.boolean(),
   pricingRequireAuth: z.boolean(),
   rankingsEnabled: z.boolean(),
@@ -59,6 +61,7 @@ const headerNavSchema = z.object({
   monitoringRequireAuth: z.boolean(),
   docs: z.boolean(),
   about: z.boolean(),
+  studio: z.boolean(),
   showSearch: z.boolean(),
 })
 
@@ -76,6 +79,10 @@ const toFormValues = (config: HeaderNavModulesConfig): HeaderNavFormValues => ({
     config.console === undefined
       ? HEADER_NAV_DEFAULT.console
       : Boolean(config.console),
+  blog:
+    config.blog === undefined ? HEADER_NAV_DEFAULT.blog : Boolean(config.blog),
+  help:
+    config.help === undefined ? HEADER_NAV_DEFAULT.help : Boolean(config.help),
   pricingEnabled:
     config.pricing?.enabled === undefined
       ? HEADER_NAV_DEFAULT.pricing.enabled
@@ -106,6 +113,10 @@ const toFormValues = (config: HeaderNavModulesConfig): HeaderNavFormValues => ({
     config.about === undefined
       ? HEADER_NAV_DEFAULT.about
       : Boolean(config.about),
+  studio:
+    config.studio === undefined
+      ? HEADER_NAV_DEFAULT.studio
+      : Boolean(config.studio),
   showSearch:
     config.showSearch === undefined
       ? Boolean(HEADER_NAV_DEFAULT.showSearch)
@@ -134,8 +145,11 @@ export function HeaderNavigationSection({
       ...config,
       home: values.home,
       console: values.console,
+      blog: values.blog,
+      help: values.help,
       docs: values.docs,
       about: values.about,
+      studio: values.studio,
       showSearch: values.showSearch,
       pricing: {
         ...(config.pricing ?? HEADER_NAV_DEFAULT.pricing),
@@ -185,6 +199,16 @@ export function HeaderNavigationSection({
       description: t('User dashboard and quota controls.'),
     },
     {
+      key: 'blog',
+      title: t('Blog'),
+      description: t('Articles, opinions and product updates.'),
+    },
+    {
+      key: 'help',
+      title: t('Help Center'),
+      description: t('Tutorials, usage docs and frequently asked questions.'),
+    },
+    {
       key: 'docs',
       title: t('Docs'),
       description: t('Documentation or external knowledge base.'),
@@ -193,6 +217,13 @@ export function HeaderNavigationSection({
       key: 'about',
       title: t('About'),
       description: t('Static page describing the platform.'),
+    },
+    {
+      key: 'studio',
+      title: t('Studio'),
+      description: t(
+        'Creative studio entry with discover, chat, image and video pages.'
+      ),
     },
     {
       key: 'showSearch',
@@ -204,7 +235,10 @@ export function HeaderNavigationSection({
   const accessModules: Array<{
     enabledKey: keyof HeaderNavFormValues
     requireAuthKey: keyof HeaderNavFormValues
-    requireAuthDependsOn: 'pricingEnabled' | 'rankingsEnabled' | 'monitoringEnabled'
+    requireAuthDependsOn:
+      | 'pricingEnabled'
+      | 'rankingsEnabled'
+      | 'monitoringEnabled'
     title: string
     description: string
     requireAuthTitle: string

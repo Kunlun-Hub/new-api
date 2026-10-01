@@ -248,6 +248,24 @@ func TestTaskListsOmitPersistedSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, exists)
 	assert.JSONEq(t, string(task.Data), string(stored.Data), "single-task lookups keep the snapshot")
+
+	// The task log dialog loads the omitted snapshot from the artifacts
+	// endpoint on demand, so it must only travel when explicitly requested.
+	task.Data = []byte(`{"snapshot_marker":"probe"}`)
+	require.NoError(t, model.DB.Save(task).Error)
+	requestArtifacts := func(rawQuery string) string {
+		recorder := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(recorder)
+		c.Set("id", task.UserId)
+		c.Set("role", common.RoleCommonUser)
+		c.Params = gin.Params{{Key: "task_id", Value: task.TaskID}}
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/task/"+task.TaskID+"/artifacts"+rawQuery, nil)
+		GetDashboardTaskArtifacts(c)
+		require.Equal(t, http.StatusOK, recorder.Code)
+		return recorder.Body.String()
+	}
+	assert.NotContains(t, requestArtifacts(""), "snapshot_marker")
+	assert.Contains(t, requestArtifacts("?include_data=1"), "snapshot_marker")
 }
 
 func TestTaskArtifactAccessRequiresActiveOwner(t *testing.T) {

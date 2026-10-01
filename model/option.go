@@ -146,6 +146,11 @@ func InitOptionMap() {
 	common.OptionMap["InvitationUnlockEnabled"] = strconv.FormatBool(common.InvitationUnlockEnabled)
 	common.OptionMap["InvitationUnlockMinInvites"] = strconv.Itoa(common.InvitationUnlockMinInvites)
 	common.OptionMap["InvitationUnlockMinConsumedQuota"] = strconv.Itoa(common.InvitationUnlockMinConsumedQuota)
+	common.OptionMap["AffiliateTopupRewardPercent"] = strconv.FormatFloat(common.AffiliateTopupRewardPercent, 'f', -1, 64)
+	common.OptionMap["AffiliateTopupRewardTimes"] = strconv.Itoa(common.AffiliateTopupRewardTimes)
+	common.OptionMap["WithdrawalEnabled"] = strconv.FormatBool(common.WithdrawalEnabled)
+	common.OptionMap["WithdrawalMinQuota"] = strconv.Itoa(common.WithdrawalMinQuota)
+	common.OptionMap["WithdrawalRatio"] = strconv.FormatFloat(common.WithdrawalRatio, 'f', -1, 64)
 	common.OptionMap["QuotaRemindThreshold"] = strconv.Itoa(common.QuotaRemindThreshold)
 	common.OptionMap["PreConsumedQuota"] = strconv.Itoa(common.PreConsumedQuota)
 	common.OptionMap["ModelRequestRateLimitCount"] = strconv.Itoa(setting.ModelRequestRateLimitCount)
@@ -381,6 +386,8 @@ func updateOptionMap(key string, value string) (err error) {
 			common.PasswordLoginEnabled = boolValue
 		case "InvitationUnlockEnabled":
 			common.InvitationUnlockEnabled = boolValue
+		case "WithdrawalEnabled":
+			common.WithdrawalEnabled = boolValue
 		case "EmailVerificationEnabled":
 			common.EmailVerificationEnabled = boolValue
 		case "GitHubOAuthEnabled":
@@ -617,6 +624,14 @@ func updateOptionMap(key string, value string) (err error) {
 		common.InvitationUnlockMinInvites, _ = strconv.Atoi(value)
 	case "InvitationUnlockMinConsumedQuota":
 		common.InvitationUnlockMinConsumedQuota, _ = strconv.Atoi(value)
+	case "AffiliateTopupRewardPercent":
+		common.AffiliateTopupRewardPercent, _ = strconv.ParseFloat(value, 64)
+	case "AffiliateTopupRewardTimes":
+		common.AffiliateTopupRewardTimes, _ = strconv.Atoi(value)
+	case "WithdrawalMinQuota":
+		common.WithdrawalMinQuota, _ = strconv.Atoi(value)
+	case "WithdrawalRatio":
+		common.WithdrawalRatio, _ = strconv.ParseFloat(value, 64)
 	case "QuotaRemindThreshold":
 		common.QuotaRemindThreshold, _ = strconv.Atoi(value)
 	case "PreConsumedQuota":

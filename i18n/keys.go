@@ -101,6 +101,7 @@ const (
 	MsgUserCannotDeleteRootUser      = "user.cannot_delete_root_user"
 	MsgUserCannotDisableRootUser     = "user.cannot_disable_root_user"
 	MsgUserCannotDemoteRootUser      = "user.cannot_demote_root_user"
+	MsgUserCannotDemoteLastRootUser  = "user.cannot_demote_last_root_user"
 	MsgUserAlreadyAdmin              = "user.already_admin"
 	MsgUserAlreadyCommon             = "user.already_common"
 	MsgUserAdminCannotPromote        = "user.admin_cannot_promote"
@@ -259,6 +260,41 @@ const (
 	MsgSettingGotifyUrlInvalid = "setting.gotify_url_invalid"
 	MsgSettingUrlMustHttp      = "setting.url_must_http"
 	MsgSettingSaved            = "setting.saved"
+
+	MsgStudioBackupReadFailed  = "studio.backup_read_failed"
+	MsgStudioBackupWriteFailed = "studio.backup_write_failed"
+
+	MsgStudioShareInvalid       = "studio.share_invalid"
+	MsgStudioShareInvalidMedia  = "studio.share_invalid_media"
+	MsgStudioShareNotFound      = "studio.share_not_found"
+	MsgStudioSharePendingLimit  = "studio.share_pending_limit"
+	MsgStudioShareMediaInvalid  = "studio.share_media_invalid"
+	MsgStudioShareMediaTooLarge = "studio.share_media_too_large"
+
+	MsgUserOssUploadInvalid         = "user_oss.upload_invalid"
+	MsgUserOssUploadTooLarge        = "user_oss.upload_too_large"
+	MsgUserOssTransferFailed        = "user_oss.transfer_failed"
+	MsgUserOssVideoCoverFailed      = "user_oss.video_cover_failed"
+	MsgUserOssVideoCoverUnavailable = "user_oss.video_cover_unavailable"
+
+	MsgSettingStorageInvalid      = "setting.storage_invalid"
+	MsgSettingStorageVerifyFailed = "setting.storage_verify_failed"
+	MsgSettingStorageSaved        = "setting.storage_saved"
+	MsgSettingStorageRemoved      = "setting.storage_removed"
+
+	MsgSettingWecomUrlEmpty       = "setting.wecom_url_empty"
+	MsgSettingWecomUrlInvalid     = "setting.wecom_url_invalid"
+	MsgSettingDingtalkUrlEmpty    = "setting.dingtalk_url_empty"
+	MsgSettingDingtalkUrlInvalid  = "setting.dingtalk_url_invalid"
+	MsgSettingFeishuUrlEmpty      = "setting.feishu_url_empty"
+	MsgSettingFeishuUrlInvalid    = "setting.feishu_url_invalid"
+	MsgSettingTelegramTokenEmpty  = "setting.telegram_token_empty"
+	MsgSettingTelegramChatIdEmpty = "setting.telegram_chat_id_empty"
+
+	MsgNotificationTestTitle   = "notification.test_title"
+	MsgNotificationTestContent = "notification.test_content"
+	MsgNotificationTestSent    = "notification.test_sent"
+	MsgNotificationTestFailed  = "notification.test_failed"
 )
 
 // Deployment related messages (io.net)
@@ -342,4 +378,9 @@ const (
 	MsgCustomOAuthHasBindings       = "custom_oauth.has_bindings"
 	MsgCustomOAuthBindingNotFound   = "custom_oauth.binding_not_found"
 	MsgCustomOAuthProviderIdInvalid = "custom_oauth.provider_id_field_invalid"
+)
+
+// Log export related messages
+const (
+	MsgNoLogsToExport = "log.no_records_in_range"
 )

@@ -292,3 +292,25 @@ func TestCacheUpdateChannelSyncsAdvancedCustomConfig(t *testing.T) {
 
 	assert.Nil(t, channel2advancedCustomConfig[401])
 }
+
+func TestParseContextLengthTag(t *testing.T) {
+	cases := []struct {
+		name string
+		tags string
+		want int
+	}{
+		{"million", "Reasoning,Tools,Vision,1M", 1000000},
+		{"fractional million", "Vision,1.1M", 1100000},
+		{"thousand", "Tools,128K", 128000},
+		{"chinese tags", "推理,工具,文件,开源权重,多模态,1M", 1000000},
+		{"lowercase unit", "vision,32k", 32000},
+		{"no size tag", "Reasoning,Tools,Files", 0},
+		{"empty", "", 0},
+		{"invalid number", "Tools,abcK", 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, parseContextLengthTag(tc.tags))
+		})
+	}
+}

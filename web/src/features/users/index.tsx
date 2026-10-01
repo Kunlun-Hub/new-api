@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 
 import { UsersDeleteDialog } from './components/users-delete-dialog'
 import { UsersMutateDrawer } from './components/users-mutate-drawer'
@@ -32,7 +32,15 @@ function UsersContent() {
 
   return (
     <>
-      <SectionPageLayout fixedContent>
+      <SectionPageLayout>
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Dashboard'), href: '/dashboard/overview' },
+              { label: t('Users') },
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>{t('Users')}</SectionPageLayout.Title>
         <SectionPageLayout.Actions>
           <UsersPrimaryButtons />

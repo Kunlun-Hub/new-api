@@ -65,8 +65,8 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const href = useLocation({ select: (location) => location.href })
 
   return (
-    <SidebarGroup className='px-2 py-1'>
-      <SidebarGroupLabel className='text-muted-foreground/70 px-2 text-[11px] font-medium tracking-wider uppercase'>
+    <SidebarGroup className='p-2'>
+      <SidebarGroupLabel className='text-sidebar-foreground/70 px-2 text-xs font-medium'>
         {title}
       </SidebarGroupLabel>
       <SidebarMenu>
@@ -156,8 +156,8 @@ function SidebarMenuCollapsible({
   const { isMobile, setOpenMobile } = useSidebar()
   // 检查当前路径是否匹配子菜单项
   const isSubItemActive = checkIsActive(href, item)
-  // 使用受控状态，初始值基于当前路径是否匹配
-  const [isOpen, setIsOpen] = useState(() => isSubItemActive)
+  // 使用受控状态，初始值基于配置或当前路径是否匹配
+  const [isOpen, setIsOpen] = useState(() => item.defaultOpen ?? isSubItemActive)
 
   // 当路径变化时，如果匹配子菜单项，自动展开父级菜单
   useEffect(() => {

@@ -60,8 +60,8 @@ function getPinnedColumnClassName(
 ) {
   const edgeClassName =
     pinnedColumn.side === 'left'
-      ? 'shadow-[8px_0_10px_-10px_hsl(var(--foreground))]'
-      : 'shadow-[-8px_0_10px_-10px_hsl(var(--foreground))]'
+      ? 'shadow-[inset_-1px_0_0_0_color-mix(in_oklab,var(--color-border)_40%,transparent)]'
+      : 'shadow-[inset_1px_0_0_0_color-mix(in_oklab,var(--color-border)_40%,transparent)]'
 
   return cn(
     'sticky whitespace-nowrap',

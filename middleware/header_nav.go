@@ -101,6 +101,11 @@ func parseHeaderNavBool(value any, fallback bool) bool {
 	}
 }
 
+// HeaderNavModuleEnabled reports whether one header-nav module is switched on.
+func HeaderNavModuleEnabled(module string) bool {
+	return getHeaderNavAccess(module).Enabled
+}
+
 func HeaderNavModuleAuth(module string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		access := getHeaderNavAccess(module)

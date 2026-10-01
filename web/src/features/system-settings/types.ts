@@ -208,12 +208,17 @@ export type AuthSettings = {
 export type ContentSettings = {
   'console_setting.api_info': string
   'console_setting.announcements': string
+  'console_setting.price_notice': string
   'console_setting.faq': string
   'console_setting.uptime_kuma_groups': string
   'console_setting.api_info_enabled': boolean
   'console_setting.announcements_enabled': boolean
+  'console_setting.price_notice_enabled': boolean
   'console_setting.faq_enabled': boolean
   'console_setting.uptime_kuma_enabled': boolean
+  'console_setting.orders_enabled': boolean
+  'console_setting.invoices_enabled': boolean
+  'console_setting.tickets_enabled': boolean
   DataExportEnabled: boolean
   DataExportDefaultTime: string
   DataExportInterval: number
@@ -277,6 +282,11 @@ export type BillingSettings = {
   InvitationUnlockEnabled: boolean
   InvitationUnlockMinInvites: number
   InvitationUnlockMinConsumedQuota: number
+  AffiliateTopupRewardPercent: number
+  AffiliateTopupRewardTimes: number
+  WithdrawalEnabled: boolean
+  WithdrawalMinQuota: number
+  WithdrawalRatio: number
   TopUpLink: string
   'quota_setting.enable_free_model_pre_consume': boolean
   'quota_setting.trust_quota_usd': number
@@ -316,8 +326,13 @@ export type BillingSettings = {
   MinTopUp: number
   CustomCallbackAddress: string
   PayMethods: string
+  'payment_setting.epay_tip': string
   'payment_setting.amount_options': string
   'payment_setting.amount_discount': string
+  'payment_setting.promo_title': string
+  'payment_setting.promo_end_time': number
+  'payment_setting.promo_banner_url': string
+  'payment_setting.promo_link': string
   'payment_setting.compliance_confirmed': boolean
   'payment_setting.compliance_terms_version': string
   'payment_setting.compliance_confirmed_at': number

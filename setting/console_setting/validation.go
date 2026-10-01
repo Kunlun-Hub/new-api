@@ -75,6 +75,8 @@ func ValidateConsoleSettings(settingsStr string, settingType string) error {
 		return validateApiInfo(settingsStr)
 	case "Announcements":
 		return validateAnnouncements(settingsStr)
+	case "PriceNotice":
+		return validatePriceNotice(settingsStr)
 	case "FAQ":
 		return validateFAQ(settingsStr)
 	case "UptimeKumaGroups":
@@ -190,6 +192,52 @@ func validateAnnouncements(announcementsStr string) error {
 	return nil
 }
 
+func validatePriceNotice(priceNoticeStr string) error {
+	list, err := parseJSONArray(priceNoticeStr, "调价公告")
+	if err != nil {
+		return err
+	}
+	if len(list) > 100 {
+		return fmt.Errorf("调价公告数量不能超过100个")
+	}
+	validTypes := map[string]bool{
+		"price_up": true, "price_cut": true, "update": true,
+	}
+	for i, notice := range list {
+		content, ok := notice["content"].(string)
+		if !ok || content == "" {
+			return fmt.Errorf("第%d个调价公告缺少内容字段", i+1)
+		}
+		publishDateAny, exists := notice["publishDate"]
+		if !exists {
+			return fmt.Errorf("第%d个调价公告缺少发布日期字段", i+1)
+		}
+		publishDateStr, ok := publishDateAny.(string)
+		if !ok || publishDateStr == "" {
+			return fmt.Errorf("第%d个调价公告的发布日期不能为空", i+1)
+		}
+		if _, err := time.Parse(time.RFC3339, publishDateStr); err != nil {
+			return fmt.Errorf("第%d个调价公告的发布日期格式错误", i+1)
+		}
+		if t, exists := notice["type"]; exists {
+			if typeStr, ok := t.(string); ok {
+				if !validTypes[typeStr] {
+					return fmt.Errorf("第%d个调价公告的类型值不合法", i+1)
+				}
+			}
+		}
+		if exceedsMaxCharacters(content, 500) {
+			return fmt.Errorf("第%d个调价公告的内容长度不能超过500字符", i+1)
+		}
+		if extra, exists := notice["extra"]; exists {
+			if extraStr, ok := extra.(string); ok && exceedsMaxCharacters(extraStr, 100) {
+				return fmt.Errorf("第%d个调价公告的说明长度不能超过100字符", i+1)
+			}
+		}
+	}
+	return nil
+}
+
 func validateFAQ(faqStr string) error {
 	list, err := parseJSONArray(faqStr, "FAQ信息")
 	if err != nil {
@@ -230,6 +278,14 @@ func getPublishTime(item map[string]interface{}) time.Time {
 
 func GetAnnouncements() []map[string]interface{} {
 	list := getJSONList(GetConsoleSetting().Announcements)
+	sort.SliceStable(list, func(i, j int) bool {
+		return getPublishTime(list[i]).After(getPublishTime(list[j]))
+	})
+	return list
+}
+
+func GetPriceNotice() []map[string]interface{} {
+	list := getJSONList(GetConsoleSetting().PriceNotice)
 	sort.SliceStable(list, func(i, j int) bool {
 		return getPublishTime(list[i]).After(getPublishTime(list[j]))
 	})

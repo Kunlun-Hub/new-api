@@ -63,6 +63,8 @@ interface ChangePasswordDialogProps {
   onOpenChange: (open: boolean) => void
   username: string
   hasPassword?: boolean
+  /** New password typed on the profile form, carried into the dialog. */
+  initialNewPassword?: string
   onSuccess?: () => void
 }
 
@@ -78,8 +80,11 @@ export function ChangePasswordDialog(props: ChangePasswordDialogProps) {
   const cancel = security.cancel
 
   useEffect(() => {
-    reset(emptyPasswordForm)
-  }, [reset, security.sessionKey, hasPassword])
+    reset({
+      ...emptyPasswordForm,
+      newPassword: props.initialNewPassword ?? '',
+    })
+  }, [reset, security.sessionKey, hasPassword, props.initialNewPassword])
   useEffect(() => {
     if (!props.open) {
       cancel()

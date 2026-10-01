@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -60,6 +60,8 @@ interface PlaygroundChatProps {
   onCancelEdit?: (open: boolean) => void
   onSaveEditAndSubmit?: (newContent: string) => void
   messageLayoutMode?: PlaygroundMessageLayoutMode
+  /** Replaces the default starter-prompt empty state when provided. */
+  emptyState?: ReactNode
 }
 
 export function PlaygroundChat({
@@ -76,6 +78,7 @@ export function PlaygroundChat({
   onCancelEdit,
   onSaveEditAndSubmit,
   messageLayoutMode = 'alternating',
+  emptyState,
 }: PlaygroundChatProps) {
   const { t } = useTranslation()
   const [editText, setEditText] = useState('')
@@ -128,74 +131,87 @@ export function PlaygroundChat({
     const isSourceVisible = sourceMessageKeys.has(message.key)
 
     return (
-      <Message
-        className='group flex-row-reverse py-2.5'
-        from={message.from}
-        key={message.key}
-      >
-        <div className='w-full min-w-0 flex-1 basis-full'>
-          {isEditing ? (
-            <PlaygroundMessageEditor
-              editText={editText}
-              message={message}
-              onCancelEdit={onCancelEdit}
-              onEditTextChange={setEditText}
-              onSaveEdit={onSaveEdit}
-              onSaveEditAndSubmit={onSaveEditAndSubmit}
-              originalText={originalText}
-            />
-          ) : (
-            <PlaygroundMessageContent
-              alignment={alignment}
-              actions={
-                <MessageActions
-                  message={message}
-                  onCopy={onCopyMessage}
-                  onRegenerate={onRegenerateMessage}
-                  onToggleSource={handleToggleMessageSource}
-                  onEdit={onEditMessage}
-                  onDelete={onDeleteMessage}
-                  isSourceVisible={isSourceVisible}
-                  isGenerating={isGenerating}
-                  alwaysVisible={alwaysShowActions}
-                  className='mt-1.5'
-                />
-              }
-              isSourceVisible={isSourceVisible}
-              message={message}
-              errorActions={
-                isError ? (
-                  <MessageErrorActions
-                    disabled={isGenerating}
-                    onRetry={
-                      onRegenerateMessage
-                        ? () => onRegenerateMessage(message)
-                        : undefined
-                    }
-                    onEditPrompt={
-                      onEditMessage && previousUserMessage
-                        ? () => onEditMessage(previousUserMessage)
-                        : undefined
-                    }
-                    onDelete={
-                      onDeleteMessage
-                        ? () => onDeleteMessage(message)
-                        : undefined
-                    }
+      <Fragment key={message.key}>
+        <Message className='group flex-row-reverse py-2.5' from={message.from}>
+          <div className='w-full min-w-0 flex-1 basis-full'>
+            {isEditing ? (
+              <PlaygroundMessageEditor
+                editText={editText}
+                message={message}
+                onCancelEdit={onCancelEdit}
+                onEditTextChange={setEditText}
+                onSaveEdit={onSaveEdit}
+                onSaveEditAndSubmit={onSaveEditAndSubmit}
+                originalText={originalText}
+              />
+            ) : (
+              <PlaygroundMessageContent
+                alignment={alignment}
+                actions={
+                  <MessageActions
+                    message={message}
+                    onCopy={onCopyMessage}
+                    onRegenerate={onRegenerateMessage}
+                    onToggleSource={handleToggleMessageSource}
+                    onEdit={onEditMessage}
+                    onDelete={onDeleteMessage}
+                    isSourceVisible={isSourceVisible}
+                    isGenerating={isGenerating}
+                    alwaysVisible={alwaysShowActions}
+                    className='mt-1.5'
                   />
-                ) : undefined
-              }
-              versionContent={content}
-            />
-          )}
-        </div>
-      </Message>
+                }
+                isSourceVisible={isSourceVisible}
+                message={message}
+                errorActions={
+                  isError ? (
+                    <MessageErrorActions
+                      disabled={isGenerating}
+                      onRetry={
+                        onRegenerateMessage
+                          ? () => onRegenerateMessage(message)
+                          : undefined
+                      }
+                      onEditPrompt={
+                        onEditMessage && previousUserMessage
+                          ? () => onEditMessage(previousUserMessage)
+                          : undefined
+                      }
+                      onDelete={
+                        onDeleteMessage
+                          ? () => onDeleteMessage(message)
+                          : undefined
+                      }
+                    />
+                  ) : undefined
+                }
+                versionContent={content}
+              />
+            )}
+          </div>
+        </Message>
+        {message.contextBoundary && (
+          <div
+            className='text-muted-foreground before:bg-border/60 after:bg-border/60 relative flex min-h-4 w-full items-center gap-2 text-left text-sm before:mr-1 before:h-px before:min-w-0 before:flex-1 after:ml-1 after:h-px after:min-w-0 after:flex-1'
+            data-slot='marker'
+            data-variant='separator'
+          >
+            <span className='min-w-0 flex-none text-center wrap-break-word'>
+              {t('Context cleared')}
+            </span>
+          </div>
+        )}
+      </Fragment>
     )
   })
 
   if (visibleMessages.length === 0 && onSelectPrompt) {
     chatContent = [
-      <PlaygroundEmptyState key='empty' onSelectPrompt={onSelectPrompt} />,
+      emptyState ? (
+        <div key='empty'>{emptyState}</div>
+      ) : (
+        <PlaygroundEmptyState key='empty' onSelectPrompt={onSelectPrompt} />
+      ),
     ]
   }
 

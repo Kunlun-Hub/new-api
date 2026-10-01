@@ -16,10 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Mail, Shield, Send, Link2, Unlink } from 'lucide-react'
+import {
+  CircleDot,
+  KeyRound,
+  Link2,
+  Mail,
+  MessageCircleMore,
+  Send,
+  Unlink,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SiGithub, SiWechat, SiLinux } from 'react-icons/si'
+import { SiGithub, SiGooglechrome, SiLinux } from 'react-icons/si'
 import { toast } from 'sonner'
 
 import { IconDiscord } from '@/assets/brand-icons'
@@ -31,6 +39,7 @@ import {
   openOAuthPopup,
   type OAuthPopupExchange,
 } from '@/features/auth/lib/oauth-popup'
+import { usePasskeyManagement } from '@/features/auth/passkey'
 import { SecureVerificationDialog } from '@/features/auth/secure-verification'
 import type { CustomOAuthProviderInfo } from '@/features/auth/types'
 import { getSelfOAuthBindings, unbindCustomOAuth } from '@/features/profile/api'
@@ -83,11 +92,15 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     null
   )
   const security = useAccountSecurity()
+  const passkey = usePasskeyManagement()
   const unbinding = security.pending
   const [preparedBinding, setPreparedBinding] =
     useState<PreparedOAuthBinding | null>(null)
   const bindingsLocked =
-    security.pending || Boolean(preparedBinding) || dialogs.hasAnyOpen
+    security.pending ||
+    passkey.registering ||
+    Boolean(preparedBinding) ||
+    dialogs.hasAnyOpen
 
   const customProviders = status?.custom_oauth_providers as
     | CustomOAuthProviderInfo[]
@@ -216,6 +229,21 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
   const handleBindCustomOAuth = (provider: CustomOAuthProviderInfo) =>
     startOAuthBinding(provider.slug)
 
+  const handlePasskeyBind = async () => {
+    const result = await security.run(async (signal) => {
+      const proofToken = await security.verify(
+        { scope: 'passkey.register' },
+        signal
+      )
+      await passkey.register(proofToken)
+      return { notification_warning: false }
+    })
+    if (result) {
+      toast.success(t('Passkey registered successfully'))
+      onUpdate()
+    }
+  }
+
   const closeDialogs = dialogs.closeAll
   useEffect(() => {
     setPreparedBinding(null)
@@ -225,10 +253,38 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
 
   if (!profile || !status || loading) return null
 
+  const githubId = (profile as unknown as Record<string, unknown>).github_id as
+    | string
+    | undefined
+  const discordId = (profile as unknown as Record<string, unknown>)
+    .discord_id as string | undefined
+  const oidcId = (profile as unknown as Record<string, unknown>).oidc_id as
+    | string
+    | undefined
+  const wechatId = (profile as unknown as Record<string, unknown>).wechat_id as
+    | string
+    | undefined
+  const telegramId = (profile as unknown as Record<string, unknown>)
+    .telegram_id as string | undefined
+  const linuxDoId = (profile as unknown as Record<string, unknown>)
+    .linux_do_id as string | undefined
+
+  const googleProvider = customProviders?.find(
+    (provider) =>
+      provider.slug.toLowerCase() === 'google' ||
+      provider.name.trim().toLowerCase() === 'google'
+  )
+  const googleBinding = googleProvider
+    ? customBindingsByProviderId.get(googleProvider.id)
+    : undefined
+
+  // The reference site only surfaces the providers it supports. Ours keeps the
+  // same core list and reveals the extra channels once an administrator enables
+  // them or the account is already linked to one.
   const bindings: BindingItem[] = [
     {
       id: 'email',
-      label: t('Email'),
+      label: t('Bind Email'),
       icon: Mail,
       value: profile.email,
       isBound: Boolean(profile.email),
@@ -236,180 +292,131 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
       onBind: () => dialogs.open('email'),
     },
     {
-      id: 'wechat',
-      label: t('WeChat'),
-      icon: SiWechat as React.ComponentType<{ className?: string }>,
-      value: undefined,
-      isBound: Boolean(
-        (profile as unknown as Record<string, unknown>).wechat_id
-      ),
-      isEnabled: status?.wechat_login || false,
-      onBind: () => dialogs.open('wechat'),
-    },
-    {
       id: 'github',
       label: t('GitHub'),
       icon: SiGithub,
-      value: (profile as unknown as Record<string, unknown>).github_id as
-        | string
-        | undefined,
-      isBound: Boolean(
-        (profile as unknown as Record<string, unknown>).github_id
-      ),
+      value: githubId,
+      isBound: Boolean(githubId),
       isEnabled: status?.github_oauth || false,
       onBind: () => void startOAuthBinding('github'),
     },
     {
-      id: 'discord',
-      label: t('Discord'),
-      icon: IconDiscord,
-      value: (profile as unknown as Record<string, unknown>).discord_id as
-        | string
-        | undefined,
-      isBound: Boolean(
-        (profile as unknown as Record<string, unknown>).discord_id
-      ),
-      isEnabled: status?.discord_oauth || false,
-      onBind: () => void startOAuthBinding('discord'),
+      id: 'google',
+      label: t('Google'),
+      icon: SiGooglechrome,
+      value: googleBinding?.provider_user_id,
+      isBound: Boolean(googleBinding),
+      isEnabled: Boolean(googleProvider),
+      onBind: () => {
+        if (googleProvider) void handleBindCustomOAuth(googleProvider)
+      },
     },
     {
       id: 'oidc',
       label: t('OIDC'),
-      icon: Shield,
-      value: (profile as unknown as Record<string, unknown>).oidc_id as
-        | string
-        | undefined,
-      isBound: Boolean((profile as unknown as Record<string, unknown>).oidc_id),
+      icon: CircleDot,
+      value: oidcId,
+      isBound: Boolean(oidcId),
       isEnabled: status?.oidc_enabled || false,
       onBind: () => void startOAuthBinding('oidc'),
     },
     {
+      id: 'wechat',
+      label: t('WeChat'),
+      icon: MessageCircleMore,
+      value: wechatId,
+      isBound: Boolean(wechatId),
+      isEnabled: status?.wechat_login || false,
+      onBind: () => dialogs.open('wechat'),
+    },
+    {
+      id: 'passkey',
+      label: t('Passkey'),
+      icon: KeyRound,
+      value: passkey.enabled
+        ? t('Bound')
+        : t('Not bound — bind to enable passwordless sign-in'),
+      isBound: passkey.enabled,
+      isEnabled: Boolean(status?.passkey_login) && passkey.supported,
+      onBind: () => void handlePasskeyBind(),
+    },
+  ]
+
+  if (status?.discord_oauth || discordId) {
+    bindings.push({
+      id: 'discord',
+      label: t('Discord'),
+      icon: IconDiscord,
+      value: discordId,
+      isBound: Boolean(discordId),
+      isEnabled: status?.discord_oauth || false,
+      onBind: () => void startOAuthBinding('discord'),
+    })
+  }
+  if (status?.telegram_oauth || telegramId) {
+    bindings.push({
       id: 'telegram',
       label: t('Telegram'),
       icon: Send,
-      value: (profile as unknown as Record<string, unknown>).telegram_id as
-        | string
-        | undefined,
-      isBound: Boolean(
-        (profile as unknown as Record<string, unknown>).telegram_id
-      ),
+      value: telegramId,
+      isBound: Boolean(telegramId),
       isEnabled: status?.telegram_oauth || false,
       onBind: () => void startOAuthBinding('telegram'),
-    },
-    {
+    })
+  }
+  if (status?.linuxdo_oauth || linuxDoId) {
+    bindings.push({
       id: 'linuxdo',
       label: t('LinuxDO'),
       icon: SiLinux as React.ComponentType<{ className?: string }>,
-      value: (profile as unknown as Record<string, unknown>).linux_do_id as
-        | string
-        | undefined,
-      isBound: Boolean(
-        (profile as unknown as Record<string, unknown>).linux_do_id
-      ),
+      value: linuxDoId,
+      isBound: Boolean(linuxDoId),
       isEnabled: status?.linuxdo_oauth || false,
       onBind: () => void startOAuthBinding('linuxdo'),
-    },
-  ].filter((binding) => binding.isEnabled)
+    })
+  }
 
   return (
     <>
       <ul
         aria-label={t('Account Bindings')}
-        className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3'
+        className='grid grid-cols-1 gap-4 sm:grid-cols-2'
       >
         {bindings.map((binding) => {
+          const googleUnbindTarget =
+            binding.id === 'google' && binding.isBound
+              ? googleBinding
+              : undefined
           let actionLabel = t('Bind')
-          if (binding.isBound && binding.id === 'email') {
-            actionLabel = t('Change')
-          } else if (binding.isBound) {
+          if (!binding.isEnabled) {
+            actionLabel = t('Not enabled')
+          } else if (binding.isBound && binding.id !== 'email') {
             actionLabel = t('Bound')
           }
 
           return (
             <li
               key={binding.id}
-              className='flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2'
+              className='hover:from-foreground/4 border-border/40 flex min-w-0 items-center gap-3 rounded-xl border bg-linear-to-br via-transparent to-transparent p-4 transition duration-300'
             >
-              <div className='flex min-w-0 items-center gap-2'>
-                <div className='bg-muted shrink-0 rounded-md p-1.5'>
-                  <binding.icon className='h-4 w-4' />
-                </div>
-                <div className='min-w-0'>
-                  <div className='flex items-center gap-1.5'>
-                    <p
-                      className='truncate text-sm font-medium'
-                      title={binding.label}
-                    >
-                      {binding.label}
-                    </p>
-                    {binding.isBound && (
-                      <StatusBadge
-                        label={t('Bound')}
-                        variant='success'
-                        copyable={false}
-                      />
-                    )}
-                  </div>
-                  <p className='text-muted-foreground truncate text-xs'>
-                    {binding.value || t('Not bound')}
-                  </p>
+              <div className='border-border/40 bg-background/60 flex size-10 shrink-0 items-center justify-center rounded-lg border'>
+                <binding.icon className='text-foreground/70 size-5' />
+              </div>
+              <div className='min-w-0 flex-1'>
+                <div className='text-sm font-medium'>{binding.label}</div>
+                <div
+                  className='text-muted-foreground truncate text-xs'
+                  title={binding.value || undefined}
+                >
+                  {binding.value || t('Not bound')}
                 </div>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                className='h-7 shrink-0 px-2.5 text-xs'
-                onClick={binding.onBind}
-                disabled={
-                  bindingsLocked || (binding.isBound && binding.id !== 'email')
-                }
-              >
-                {actionLabel}
-              </Button>
-            </li>
-          )
-        })}
-        {customProviders?.map((provider) => {
-          const binding = customBindingsByProviderId.get(provider.id)
-          const isBound = !!binding
-          return (
-            <li
-              key={provider.id}
-              className='flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2.5 py-2'
-            >
-              <div className='flex min-w-0 items-center gap-2'>
-                <div className='bg-muted shrink-0 rounded-md p-1.5'>
-                  <Link2 className='h-4 w-4' />
-                </div>
-                <div className='min-w-0'>
-                  <div className='flex items-center gap-1.5'>
-                    <p
-                      className='truncate text-sm font-medium'
-                      title={provider.name}
-                    >
-                      {provider.name}
-                    </p>
-                    {isBound && (
-                      <StatusBadge
-                        label={t('Bound')}
-                        variant='success'
-                        copyable={false}
-                      />
-                    )}
-                  </div>
-                  <p className='text-muted-foreground truncate text-xs'>
-                    {isBound
-                      ? binding?.provider_user_id || t('Bound')
-                      : t('Not bound')}
-                  </p>
-                </div>
-              </div>
-              {isBound ? (
+              {googleUnbindTarget ? (
                 <Button
                   variant='ghost'
                   size='sm'
-                  className='text-destructive h-7 shrink-0 px-2.5 text-xs'
-                  onClick={() => setUnbindTarget(binding)}
+                  className='text-destructive shrink-0'
+                  onClick={() => setUnbindTarget(googleUnbindTarget)}
                   disabled={bindingsLocked}
                 >
                   <Unlink className='mr-1 h-3 w-3' />
@@ -419,16 +426,82 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
                 <Button
                   variant='outline'
                   size='sm'
-                  className='h-7 shrink-0 px-2.5 text-xs'
-                  onClick={() => void handleBindCustomOAuth(provider)}
-                  disabled={bindingsLocked}
+                  className='border-border/60 shrink-0'
+                  onClick={binding.onBind}
+                  disabled={
+                    !binding.isEnabled ||
+                    bindingsLocked ||
+                    (binding.isBound && binding.id !== 'email')
+                  }
                 >
-                  {t('Bind')}
+                  {actionLabel}
                 </Button>
               )}
             </li>
           )
         })}
+        {customProviders
+          ?.filter((provider) => provider.id !== googleProvider?.id)
+          .map((provider) => {
+            const binding = customBindingsByProviderId.get(provider.id)
+            const isBound = !!binding
+            return (
+              <li
+                key={provider.id}
+                className='hover:from-foreground/4 border-border/40 flex min-w-0 items-center gap-3 rounded-xl border bg-linear-to-br via-transparent to-transparent p-4 transition duration-300'
+              >
+                <div className='flex min-w-0 flex-1 items-center gap-2'>
+                  <div className='border-border/40 bg-background/60 flex size-10 shrink-0 items-center justify-center rounded-lg border'>
+                    <Link2 className='text-foreground/70 size-5' />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-center gap-1.5'>
+                      <p
+                        className='truncate text-sm font-medium'
+                        title={provider.name}
+                      >
+                        {provider.name}
+                      </p>
+                      {isBound && (
+                        <StatusBadge
+                          label={t('Bound')}
+                          variant='success'
+                          copyable={false}
+                        />
+                      )}
+                    </div>
+                    <p className='text-muted-foreground truncate text-xs'>
+                      {isBound
+                        ? binding?.provider_user_id || t('Bound')
+                        : t('Not bound')}
+                    </p>
+                  </div>
+                </div>
+                {isBound ? (
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-destructive shrink-0'
+                    onClick={() => setUnbindTarget(binding)}
+                    disabled={bindingsLocked}
+                  >
+                    <Unlink className='mr-1 h-3 w-3' />
+                    {t('Unbind')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='border-border/60 shrink-0'
+                    onClick={() => void handleBindCustomOAuth(provider)}
+                    disabled={bindingsLocked}
+                  >
+                    {t('Bind')}
+                  </Button>
+                )}
+              </li>
+            )
+          })}
       </ul>
 
       {security.showVerification && (

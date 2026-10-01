@@ -142,6 +142,11 @@ const paymentSchema = z.object({
       })
     }
   }),
+  EpayTip: z.string(),
+  PromoTitle: z.string(),
+  PromoEndTime: z.coerce.number().min(0),
+  PromoBannerURL: z.string(),
+  PromoLink: z.string(),
   StripeApiSecret: z.string(),
   StripeWebhookSecret: z.string(),
   StripePriceId: z.string(),
@@ -428,6 +433,11 @@ export function PaymentSettingsSection({
       PayMethods: values.PayMethods.trim(),
       AmountOptions: values.AmountOptions.trim(),
       AmountDiscount: values.AmountDiscount.trim(),
+      EpayTip: values.EpayTip.trim(),
+      PromoTitle: values.PromoTitle.trim(),
+      PromoEndTime: values.PromoEndTime,
+      PromoBannerURL: values.PromoBannerURL.trim(),
+      PromoLink: values.PromoLink.trim(),
       StripeApiSecret: values.StripeApiSecret.trim(),
       StripeWebhookSecret: values.StripeWebhookSecret.trim(),
       StripePriceId: values.StripePriceId.trim(),
@@ -472,6 +482,11 @@ export function PaymentSettingsSection({
       PayMethods: initialRef.current.PayMethods.trim(),
       AmountOptions: initialRef.current.AmountOptions.trim(),
       AmountDiscount: initialRef.current.AmountDiscount.trim(),
+      EpayTip: initialRef.current.EpayTip.trim(),
+      PromoTitle: initialRef.current.PromoTitle.trim(),
+      PromoEndTime: initialRef.current.PromoEndTime,
+      PromoBannerURL: initialRef.current.PromoBannerURL.trim(),
+      PromoLink: initialRef.current.PromoLink.trim(),
       StripeApiSecret: initialRef.current.StripeApiSecret.trim(),
       StripeWebhookSecret: initialRef.current.StripeWebhookSecret.trim(),
       StripePriceId: initialRef.current.StripePriceId.trim(),
@@ -560,6 +575,41 @@ export function PaymentSettingsSection({
       updates.push({
         key: 'payment_setting.amount_discount',
         value: sanitized.AmountDiscount,
+      })
+    }
+
+    if (sanitized.EpayTip !== initial.EpayTip) {
+      updates.push({
+        key: 'payment_setting.epay_tip',
+        value: sanitized.EpayTip,
+      })
+    }
+
+    if (sanitized.PromoTitle !== initial.PromoTitle) {
+      updates.push({
+        key: 'payment_setting.promo_title',
+        value: sanitized.PromoTitle,
+      })
+    }
+
+    if (sanitized.PromoEndTime !== initial.PromoEndTime) {
+      updates.push({
+        key: 'payment_setting.promo_end_time',
+        value: sanitized.PromoEndTime,
+      })
+    }
+
+    if (sanitized.PromoBannerURL !== initial.PromoBannerURL) {
+      updates.push({
+        key: 'payment_setting.promo_banner_url',
+        value: sanitized.PromoBannerURL,
+      })
+    }
+
+    if (sanitized.PromoLink !== initial.PromoLink) {
+      updates.push({
+        key: 'payment_setting.promo_link',
+        value: sanitized.PromoLink,
       })
     }
 
@@ -952,6 +1002,25 @@ export function PaymentSettingsSection({
 
                 <FormField
                   control={form.control}
+                  name='EpayTip'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Payment tip')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        {t(
+                          'Shown below the payment methods on the top-up page'
+                        )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name='PayMethods'
                   render={({ field }) => (
                     <FormItem>
@@ -1132,6 +1201,139 @@ export function PaymentSettingsSection({
                       </FormItem>
                     )}
                   />
+                </div>
+                <div className='space-y-4 rounded-lg border p-4'>
+                  <div>
+                    <h4 className='font-medium'>{t('Top-up promotion')}</h4>
+                    <p className='text-muted-foreground text-sm'>
+                      {t(
+                        'Optional limited-time promotion for the Top Up page. Leave the title empty to hide it.'
+                      )}
+                    </p>
+                  </div>
+
+                  <div className='grid gap-6 md:grid-cols-2 md:items-start'>
+                    <FormField
+                      control={form.control}
+                      name='PromoTitle'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('Promotion title')}</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={t(
+                                'Double festival sale, top up for more'
+                              )}
+                              {...field}
+                              onChange={(event) =>
+                                field.onChange(event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t(
+                              'Headline shown below the account balance on the Top Up page'
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='PromoEndTime'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('Promotion end time')}</FormLabel>
+                          <FormControl>
+                            <Input
+                              type='datetime-local'
+                              value={
+                                field.value
+                                  ? new Date(
+                                      field.value * 1000 -
+                                        new Date(
+                                          field.value * 1000
+                                        ).getTimezoneOffset() *
+                                          60000
+                                    )
+                                      .toISOString()
+                                      .slice(0, 16)
+                                  : ''
+                              }
+                              onChange={(event) =>
+                                field.onChange(
+                                  event.target.value
+                                    ? Math.floor(
+                                        new Date(event.target.value).getTime() /
+                                          1000
+                                      )
+                                    : 0
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t(
+                              'Countdown target time; leave empty to hide the countdown'
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='PromoBannerURL'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('Promotion banner URL')}</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='https://example.com/banner.webp'
+                              {...field}
+                              onChange={(event) =>
+                                field.onChange(event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t(
+                              'HTTPS image displayed inside the promotion block'
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='PromoLink'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('Promotion link')}</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='https://example.com/activity'
+                              {...field}
+                              onChange={(event) =>
+                                field.onChange(event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t(
+                              'Optional page opened when the banner is clicked'
+                            )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
             </TabsContent>

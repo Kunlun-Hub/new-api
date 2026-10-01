@@ -16,81 +16,43 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 
-import { getCookie, setCookie } from '@/lib/cookies'
+import { removeCookie } from '@/lib/cookies'
 
 export type Collapsible = 'offcanvas' | 'icon' | 'none'
 export type Variant = 'inset' | 'sidebar' | 'floating'
 
-// Cookie constants following the pattern from sidebar.tsx
-const LAYOUT_COLLAPSIBLE_COOKIE_NAME = 'layout_collapsible'
-const LAYOUT_VARIANT_COOKIE_NAME = 'layout_variant'
-const LAYOUT_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
-
-// Default values
-const DEFAULT_VARIANT = 'inset'
-const DEFAULT_COLLAPSIBLE = 'icon'
-
-type LayoutContextType = {
-  resetLayout: () => void
-
-  defaultCollapsible: Collapsible
+type LayoutConfig = {
   collapsible: Collapsible
-  setCollapsible: (collapsible: Collapsible) => void
-
-  defaultVariant: Variant
   variant: Variant
-  setVariant: (variant: Variant) => void
 }
 
-const LayoutContext = createContext<LayoutContextType | null>(null)
+// The console ships a single shell layout: the sidebar collapses to an icon rail.
+const LAYOUT: LayoutConfig = {
+  collapsible: 'icon',
+  variant: 'sidebar',
+}
+
+// Cookies were written by the retired theme-config drawer. A leftover
+// `offcanvas` value would otherwise keep the sidebar fully hidden when
+// collapsed, and `floating` would change the shell padding.
+const LEGACY_LAYOUT_COOKIES = ['layout_collapsible', 'layout_variant']
+
+const LayoutContext = createContext<LayoutConfig | null>(null)
 
 type LayoutProviderProps = {
   children: React.ReactNode
 }
 
 export function LayoutProvider({ children }: LayoutProviderProps) {
-  const [collapsible, _setCollapsible] = useState<Collapsible>(() => {
-    const saved = getCookie(LAYOUT_COLLAPSIBLE_COOKIE_NAME)
-    return (saved as Collapsible) || DEFAULT_COLLAPSIBLE
-  })
+  useEffect(() => {
+    for (const name of LEGACY_LAYOUT_COOKIES) {
+      removeCookie(name)
+    }
+  }, [])
 
-  const [variant, _setVariant] = useState<Variant>(() => {
-    const saved = getCookie(LAYOUT_VARIANT_COOKIE_NAME)
-    return (saved as Variant) || DEFAULT_VARIANT
-  })
-
-  const setCollapsible = (newCollapsible: Collapsible) => {
-    _setCollapsible(newCollapsible)
-    setCookie(
-      LAYOUT_COLLAPSIBLE_COOKIE_NAME,
-      newCollapsible,
-      LAYOUT_COOKIE_MAX_AGE
-    )
-  }
-
-  const setVariant = (newVariant: Variant) => {
-    _setVariant(newVariant)
-    setCookie(LAYOUT_VARIANT_COOKIE_NAME, newVariant, LAYOUT_COOKIE_MAX_AGE)
-  }
-
-  const resetLayout = () => {
-    setCollapsible(DEFAULT_COLLAPSIBLE)
-    setVariant(DEFAULT_VARIANT)
-  }
-
-  const contextValue: LayoutContextType = {
-    resetLayout,
-    defaultCollapsible: DEFAULT_COLLAPSIBLE,
-    collapsible,
-    setCollapsible,
-    defaultVariant: DEFAULT_VARIANT,
-    variant,
-    setVariant,
-  }
-
-  return <LayoutContext value={contextValue}>{children}</LayoutContext>
+  return <LayoutContext value={LAYOUT}>{children}</LayoutContext>
 }
 
 // Define the hook for the provider

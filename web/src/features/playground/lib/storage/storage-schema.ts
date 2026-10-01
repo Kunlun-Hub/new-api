@@ -34,6 +34,9 @@ export const playgroundConfigSchema = z.object({
   presence_penalty: z.number().optional(),
   seed: z.number().nullable().optional(),
   stream: z.boolean().optional(),
+  reasoning_effort: z.string().optional(),
+  max_context: z.number().optional(),
+  system: z.string().optional(),
 })
 
 export const parameterEnabledSchema = z.object({
@@ -71,9 +74,18 @@ const reasoningSchema = z.object({
   durationMs: z.number().optional(),
 })
 
+const messageAttachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  url: z.string(),
+  isImage: z.boolean(),
+})
+
 const messageSchema = z.object({
   key: z.string(),
   from: messageRoleSchema,
+  attachments: z.array(messageAttachmentSchema).optional(),
+  contextBoundary: z.boolean().optional(),
   versions: z.array(messageVersionSchema).min(1),
   createdAt: z.number().optional(),
   startedAt: z.number().optional(),

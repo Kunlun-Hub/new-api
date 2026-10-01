@@ -509,6 +509,7 @@ func (m *MediaContent) GetFile() *MessageFile {
 			out := &MessageFile{
 				FileName: kitutil.Interface2String(itemMap["file_name"]),
 				FileData: kitutil.Interface2String(itemMap["file_data"]),
+				FileUrl:  kitutil.Interface2String(itemMap["file_url"]),
 				FileId:   kitutil.Interface2String(itemMap["file_id"]),
 			}
 			return out
@@ -552,7 +553,13 @@ func (m *MediaContent) ToFileSource() types.FileSource {
 		return types.NewFileSourceFromData(audio.Data, mimeType)
 	case ContentTypeFile:
 		file := m.GetFile()
-		if file == nil || file.FileData == "" {
+		if file == nil {
+			return nil
+		}
+		if file.FileData == "" && file.FileUrl != "" {
+			return types.NewFileSourceFromData(file.FileUrl, "")
+		}
+		if file.FileData == "" {
 			return nil
 		}
 		return types.NewFileSourceFromData(file.FileData, "")
@@ -569,7 +576,7 @@ func (m *MediaContent) ToFileSource() types.FileSource {
 type MessageImageUrl struct {
 	Url      string `json:"url"`
 	Detail   string `json:"detail,omitempty"`
-	MimeType string
+	MimeType string `json:"mime_type,omitempty"`
 }
 
 func (m *MessageImageUrl) IsRemoteImage() bool {
@@ -584,6 +591,7 @@ type MessageInputAudio struct {
 type MessageFile struct {
 	FileName string `json:"filename,omitempty"`
 	FileData string `json:"file_data,omitempty"`
+	FileUrl  string `json:"file_url,omitempty"`
 	FileId   string `json:"file_id,omitempty"`
 }
 
@@ -790,14 +798,23 @@ func (m *Message) ParseContent() []MediaContent {
 						},
 					})
 				} else {
-					fileName, ok1 := fileData["filename"].(string)
-					fileDataStr, ok2 := fileData["file_data"].(string)
-					if ok1 && ok2 {
+					fileName, _ := fileData["filename"].(string)
+					fileDataStr, _ := fileData["file_data"].(string)
+					fileUrl, _ := fileData["file_url"].(string)
+					if fileDataStr != "" {
 						contentList = append(contentList, MediaContent{
 							Type: ContentTypeFile,
 							File: &MessageFile{
 								FileName: fileName,
 								FileData: fileDataStr,
+							},
+						})
+					} else if fileUrl != "" {
+						contentList = append(contentList, MediaContent{
+							Type: ContentTypeFile,
+							File: &MessageFile{
+								FileName: fileName,
+								FileUrl:  fileUrl,
 							},
 						})
 					}
@@ -963,14 +980,23 @@ func (m *Message) ParseContent() []MediaContent {
 							},
 						})
 					} else {
-						fileName, ok1 := fileData["filename"].(string)
-						fileDataStr, ok2 := fileData["file_data"].(string)
-						if ok1 && ok2 {
+						fileName, _ := fileData["filename"].(string)
+						fileDataStr, _ := fileData["file_data"].(string)
+						fileUrl, _ := fileData["file_url"].(string)
+						if fileDataStr != "" {
 							contentList = append(contentList, MediaContent{
 								Type: ContentTypeFile,
 								File: &MessageFile{
 									FileName: fileName,
 									FileData: fileDataStr,
+								},
+							})
+						} else if fileUrl != "" {
+							contentList = append(contentList, MediaContent{
+								Type: ContentTypeFile,
+								File: &MessageFile{
+									FileName: fileName,
+									FileUrl:  fileUrl,
 								},
 							})
 						}

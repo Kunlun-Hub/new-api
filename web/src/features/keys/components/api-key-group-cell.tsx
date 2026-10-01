@@ -18,85 +18,80 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { BadgeCell, TruncatedCell } from '@/components/data-table'
-import { GroupBadge } from '@/components/group-badge'
-import { StatusBadge } from '@/components/status-badge'
+import { Badge } from '@/components/ui/badge'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useMediaQuery } from '@/hooks'
-import { cn } from '@/lib/utils'
-
-import { GroupRatioBadge, type GroupRatio } from './auto-group-visuals'
 
 type ApiKeyGroupCellProps = {
   crossGroupRetry: boolean
   group: string
-  ratio?: GroupRatio
-  shouldReduceMotion: boolean
+  groupDescription?: string
+  modelLimits?: string
+  modelLimitsEnabled?: boolean
 }
 
 export function ApiKeyGroupCell(props: ApiKeyGroupCellProps) {
   const { t } = useTranslation()
-  const isMobile = useMediaQuery('(max-width: 640px)')
-
   const group = props.group?.trim() || ''
-  if (group !== 'auto') {
-    const ratio =
-      group && typeof props.ratio === 'number' ? props.ratio : undefined
-    return (
-      <TruncatedCell
-        className={isMobile ? 'w-full' : 'max-w-50'}
-        tabIndex={0}
-        tooltipContent={group || t('Follow user group')}
-        tooltipClassName='break-all'
-      >
-        <GroupBadge
-          group={group}
-          ratio={ratio}
-          ratioLabel={group ? undefined : t('Inherited')}
-          className='px-0'
-          containerClassName={cn('gap-3', isMobile && 'w-full justify-between')}
-        />
-      </TruncatedCell>
-    )
-  }
+  const groupLabel = group || t('Follow user group')
+  const models =
+    props.modelLimitsEnabled && props.modelLimits
+      ? props.modelLimits
+          .split(',')
+          .map((model) => model.trim())
+          .filter(Boolean)
+      : []
 
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <BadgeCell
-            data-api-key-group-cell='auto'
-            tabIndex={0}
-            className={cn(
-              'ml-0 gap-3 overflow-visible text-xs',
-              isMobile ? 'w-full justify-between' : 'max-w-50'
-            )}
-          />
-        }
-      >
-        <StatusBadge
-          label={t('Cross-group')}
-          variant='info'
-          copyable={false}
-          className='px-0'
-        />
-        <GroupRatioBadge
-          ratio={props.ratio}
-          isAuto
-          shouldReduceMotion={props.shouldReduceMotion}
-        />
-      </TooltipTrigger>
-      <TooltipContent>
-        <span className='text-xs'>
-          {t(
-            'Automatically selects the best available group with circuit breaker mechanism'
-          )}
-        </span>
-      </TooltipContent>
-    </Tooltip>
+    <div className='flex items-center'>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              className='inline-flex items-center gap-1.5'
+              tabIndex={0}
+              data-api-key-group-cell=''
+            />
+          }
+        >
+          <span className='bg-primary size-2 rounded-full' aria-hidden='true' />
+          <span className='max-w-30 truncate'>{groupLabel}</span>
+        </TooltipTrigger>
+        <TooltipContent>{props.groupDescription || groupLabel}</TooltipContent>
+      </Tooltip>
+      {props.crossGroupRetry && (
+        <Badge className='ml-2 font-normal'>{t('Auto')}</Badge>
+      )}
+      {models.length > 0 && (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Badge
+                variant='outline'
+                className='ml-2 cursor-help'
+                render={<button type='button' />}
+              />
+            }
+          >
+            {t('Model restriction')}
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className='flex min-w-0 flex-col gap-1.5'>
+              <p>{t('Authorized models')}</p>
+              <ul className='flex max-h-60 flex-col gap-1 overflow-y-auto'>
+                {models.map((model) => (
+                  <li key={model} className='break-all'>
+                    {model}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   )
 }

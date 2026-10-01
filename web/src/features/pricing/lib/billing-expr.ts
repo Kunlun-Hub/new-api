@@ -70,7 +70,7 @@ export const BILLING_VARS: BillingVar[] = [
     key: 'c',
     field: 'outputPrice',
     tierField: 'output_unit_cost',
-    label: 'Completion price',
+    label: 'Output price',
     shortLabel: 'Output',
     side: 'output',
     isBase: true,

@@ -18,26 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useSearch } from '@tanstack/react-router'
 
-import { useStatus } from '@/hooks/use-status'
-
 import { AuthLayout } from '../auth-layout'
-import { TermsFooter } from '../components/terms-footer'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
-  const { status } = useStatus()
 
   return (
     <AuthLayout>
-      <div className='w-full max-w-[460px] space-y-6'>
+      <div className='w-full max-w-lg'>
         <UserAuthForm redirectTo={redirect} />
-
-        <TermsFooter
-          variant='sign-in'
-          status={status}
-          className='text-center'
-        />
       </div>
     </AuthLayout>
   )

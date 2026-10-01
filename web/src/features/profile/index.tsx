@@ -17,47 +17,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { getRouteApi } from '@tanstack/react-router'
-import {
-  Bell,
-  Link2,
-  ShieldCheck,
-  SlidersHorizontal,
-  UserRoundPen,
-} from 'lucide-react'
+import { Bell, HardDrive, Link2, ShieldCheck, UserRoundPen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Main } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import {
   CardStaggerContainer,
   CardStaggerItem,
 } from '@/components/page-transition'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TitledCard } from '@/components/ui/titled-card'
+import { AccessTokenCard } from '@/features/security/components/access-token-card'
 import { AccountActionCard } from '@/features/security/components/account-action-card'
 import { AccountBindings } from '@/features/security/components/account-bindings'
-import { LoginSessionsCard } from '@/features/security/components/login-sessions-card'
-import { PasskeyCard } from '@/features/security/components/passkey-card'
-import { PrivacyCard } from '@/features/security/components/privacy-card'
 import { TwoFACard } from '@/features/security/components/two-fa-card'
-import { useStatus } from '@/hooks/use-status'
-import { useAuthStore } from '@/stores/auth-store'
 
-import { CheckinCalendarCard } from './components/checkin-calendar-card'
-import { LanguagePreferencesCard } from './components/language-preferences-card'
 import { ProfileBanner } from './components/profile-banner'
 import { ProfileEditCard } from './components/profile-edit-card'
-import { SidebarModulesCard } from './components/sidebar-modules-card'
+import { StorageBucketCard } from './components/storage-bucket-card'
 import { NotificationTab } from './components/tabs/notification-tab'
 import { useProfile } from './hooks'
 
 const routeApi = getRouteApi('/_authenticated/profile/')
 
 const TABS = [
-  { value: 'overview', icon: UserRoundPen },
   { value: 'bindings', icon: Link2 },
   { value: 'notifications', icon: Bell },
+  { value: 'overview', icon: UserRoundPen },
   { value: 'security', icon: ShieldCheck },
-  { value: 'storage', icon: SlidersHorizontal },
+  { value: 'storage', icon: HardDrive },
 ] as const
 
 export type ProfileTab = (typeof TABS)[number]['value']
@@ -67,12 +54,10 @@ export function Profile() {
   const { tab } = routeApi.useSearch()
   const navigate = routeApi.useNavigate()
   const { profile, loading, refreshProfile } = useProfile()
-  const { status } = useStatus()
-  const permissions = useAuthStore((s) => s.auth.user?.permissions)
 
   const activeTab: ProfileTab = TABS.some((item) => item.value === tab)
     ? (tab as ProfileTab)
-    : 'overview'
+    : 'bindings'
 
   const tabLabels: Record<ProfileTab, string> = {
     overview: t('Edit Profile'),
@@ -82,16 +67,18 @@ export function Profile() {
     storage: t('Storage Settings'),
   }
 
-  const checkinEnabled = status?.checkin_enabled === true
-  const turnstileEnabled = !!(
-    status?.turnstile_check && status?.turnstile_site_key
-  )
-  const turnstileSiteKey = status?.turnstile_site_key || ''
-  const canConfigureSidebar = permissions?.sidebar_settings !== false
-
   return (
-    <Main>
-      <div className='min-h-0 flex-1 overflow-auto px-3 py-3 sm:px-4 sm:py-6'>
+    <SectionPageLayout>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb
+          items={[
+            { label: t('Dashboard'), href: '/dashboard/overview' },
+            { label: t('Profile') },
+          ]}
+        />
+      </SectionPageLayout.Breadcrumb>
+      <SectionPageLayout.Title>{t('Profile')}</SectionPageLayout.Title>
+      <SectionPageLayout.Content>
         <CardStaggerContainer className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6'>
           <CardStaggerItem>
             <ProfileBanner profile={profile} loading={loading} />
@@ -105,92 +92,95 @@ export function Profile() {
               }
               className='w-full'
             >
-              <TabsList className='h-auto w-full flex-wrap justify-start gap-1 p-1'>
+              <TabsList className='border-border/40 bg-background/40 h-9! w-fit max-w-full flex-wrap justify-start gap-1 rounded-full border p-1'>
                 {TABS.map((item) => (
                   <TabsTrigger
                     key={item.value}
                     value={item.value}
-                    className='flex items-center gap-1.5'
+                    className='text-foreground data-active:bg-foreground data-active:text-background h-7 flex-none rounded-full border-0 px-3 py-1 shadow-none'
                   >
-                    <item.icon className='h-3.5 w-3.5' />
+                    <item.icon className='max-md:hidden' />
                     {tabLabels[item.value]}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <TabsContent
-                value='overview'
-                className='mt-4 space-y-4 sm:mt-6 sm:space-y-6'
-              >
-                <ProfileEditCard
-                  profile={profile}
-                  loading={loading}
-                  onProfileUpdate={refreshProfile}
-                />
-                <LanguagePreferencesCard
-                  profile={profile}
-                  onProfileUpdate={refreshProfile}
-                />
-                {checkinEnabled && (
-                  <CheckinCalendarCard
-                    checkinEnabled={checkinEnabled}
-                    turnstileEnabled={turnstileEnabled}
-                    turnstileSiteKey={turnstileSiteKey}
+              <TabsContent value='bindings' className='mt-5'>
+                <div className='space-y-4'>
+                  <p className='text-muted-foreground px-1 text-sm'>
+                    {t(
+                      'Link third-party accounts for quick sign-in and recovery'
+                    )}
+                  </p>
+                  <AccountBindings
+                    profile={profile}
+                    onUpdate={refreshProfile}
                   />
-                )}
-                {canConfigureSidebar && <SidebarModulesCard />}
+                </div>
               </TabsContent>
 
-              <TabsContent value='bindings' className='mt-4 sm:mt-6'>
-                <AccountBindings profile={profile} onUpdate={refreshProfile} />
-              </TabsContent>
-
-              <TabsContent value='notifications' className='mt-4 sm:mt-6'>
-                <TitledCard
-                  title={t('Notification Subscriptions')}
-                  description={t(
-                    'Choose how you want to receive quota and system alerts'
-                  )}
-                  icon={<Bell className='h-4 w-4' />}
-                  iconTone='info'
-                  disableHoverEffect
-                >
+              <TabsContent value='notifications' className='mt-5'>
+                <div className='space-y-4'>
+                  <p className='text-muted-foreground px-1 text-sm'>
+                    {t(
+                      'Subscribe to events and you will be notified when they trigger'
+                    )}
+                  </p>
                   <NotificationTab
                     profile={profile}
                     onUpdate={refreshProfile}
                   />
-                </TitledCard>
+                </div>
               </TabsContent>
 
-              <TabsContent
-                value='security'
-                className='mt-4 space-y-4 sm:mt-6 sm:space-y-6'
-              >
-                <PasskeyCard loading={loading} />
-                <TwoFACard loading={loading} />
-                {profile && (
-                  <AccountActionCard
-                    action='password'
-                    username={profile.username}
-                    hasPassword={profile.has_password}
-                    onUpdate={refreshProfile}
+              <TabsContent value='overview' className='mt-5'>
+                <div className='space-y-4'>
+                  <p className='text-muted-foreground px-1 text-sm'>
+                    {t(
+                      'The username is used to sign in and cannot be edited; it changes automatically after you rebind the email!'
+                    )}
+                  </p>
+                  <ProfileEditCard
+                    profile={profile}
+                    loading={loading}
+                    onProfileUpdate={refreshProfile}
                   />
-                )}
-                <LoginSessionsCard />
+                </div>
               </TabsContent>
 
-              <TabsContent
-                value='storage'
-                className='mt-4 space-y-4 sm:mt-6 sm:space-y-6'
-              >
-                {profile && (
-                  <PrivacyCard profile={profile} onUpdate={refreshProfile} />
-                )}
+              <TabsContent value='security' className='mt-5'>
+                <div className='space-y-4'>
+                  <p className='text-muted-foreground px-1 text-sm'>
+                    {t('Manage access tokens and account security carefully')}
+                  </p>
+                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                    <TwoFACard loading={loading} />
+                    <AccessTokenCard />
+                    {profile && (
+                      <AccountActionCard
+                        action='delete'
+                        username={profile.username}
+                        onUpdate={refreshProfile}
+                      />
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value='storage' className='mt-5'>
+                <div className='space-y-4'>
+                  <p className='text-muted-foreground px-1 text-sm'>
+                    {t(
+                      'Configure an S3-compatible bucket (Cloudflare R2, Alibaba Cloud OSS, Tencent Cloud COS, AWS S3, MinIO and more). Images and videos from the API and this site will be stored in your bucket for long-term retention; if you do not know what this is, ask an AI.'
+                    )}
+                  </p>
+                  <StorageBucketCard />
+                </div>
               </TabsContent>
             </Tabs>
           </CardStaggerItem>
         </CardStaggerContainer>
-      </div>
-    </Main>
+      </SectionPageLayout.Content>
+    </SectionPageLayout>
   )
 }

@@ -1,0 +1,148 @@
+# High performance local deployment of the locally built image:
+#   docker build -t new-api:local .
+#   docker compose -f docker-compose.local.yml up -d
+# Secrets live in the gitignored .env file next to this compose file.
+name: new-api-local
+
+services:
+  new-api:
+    image: new-api:local
+    container_name: new-api
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SQL_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_CONN_STRING: redis://:${REDIS_PASSWORD}@redis:6379
+      TZ: ${TZ:-Asia/Shanghai}
+      GIN_MODE: release
+      NODE_NAME: new-api-node-1
+      ERROR_LOG_ENABLED: "true"
+      BATCH_UPDATE_ENABLED: "true"
+      MEMORY_CACHE_ENABLED: "true"
+      SYNC_FREQUENCY: "60"
+      SQL_MAX_OPEN_CONNS: "200"
+      SQL_MAX_IDLE_CONNS: "50"
+      SQL_MAX_LIFETIME: "60"
+      RELAY_IDLE_CONN_TIMEOUT: "90"
+      STREAMING_TIMEOUT: "300"
+      # No reverse proxy in front of the container. Set this to the proxy's
+      # IP/CIDR once one is added, otherwise forwarding headers are ignored.
+      TRUSTED_PROXIES: "none"
+    volumes:
+      - new-api-logs:/data/logs
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/status >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  postgres:
+    image: postgres:15
+    container_name: new-api-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: ${TZ:-Asia/Shanghai}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - postgres
+      - -c
+      - max_connections=400
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=3GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - log_min_duration_statement=1000
+    shm_size: 1gb
+    volumes:
+      - new-api-postgres:/var/lib/postgresql/data
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  redis:
+    image: redis:7
+    container_name: new-api-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 1gb
+      - --maxmemory-policy
+      - noeviction
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --tcp-keepalive
+      - "60"
+    volumes:
+      - new-api-redis:/data
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+volumes:
+  new-api-logs:
+  new-api-postgres:
+  new-api-redis:

@@ -24,18 +24,18 @@ import { Dialog } from '@/components/dialog'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { ThemeQuickSwitcher } from '@/components/theme-quick-switcher'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
-import type { TopNavLink } from '../types'
+import type { TopNavChildLink, TopNavLink } from '../types'
 import { HeaderLogo } from './header-logo'
+import { TopNavMenu } from './top-nav-menu'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -88,7 +88,6 @@ export function PublicHeader(props: PublicHeaderProps) {
     logoLoaded,
   } = useSystemConfig()
   const dynamicLinks = useTopNavLinks()
-  const notifications = useNotifications()
   const routerState = useRouterState()
   const pathname = routerState.location.pathname
 
@@ -160,7 +159,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   const handleNavLinkClick = useCallback(
     (
       event: React.MouseEvent<HTMLAnchorElement>,
-      link: TopNavLink,
+      link: TopNavChildLink,
       closeMobile = false
     ) => {
       if (link.disabled) {
@@ -190,180 +189,133 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   return (
     <>
-      <header className='bg-background/50 pointer-events-none fixed inset-x-0 top-0 z-50 backdrop-blur-2xl'>
-        <div className='pointer-events-auto px-4 md:px-6'>
-          <nav className='relative flex h-16 items-center justify-between gap-4'>
-            {/* Logo */}
-            <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-2 lg:min-w-36'>
-              {/* Mobile hamburger — left of logo, like gpt.ge */}
-              <Button
-                type='button'
-                variant='outline'
-                size='icon'
-                className='size-8 shrink-0 rounded-xl lg:hidden'
-                onClick={() => setMobileOpen((v) => !v)}
-                aria-label={t('Toggle navigation menu')}
-              >
-                <div className='relative size-4'>
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'top-[7px] rotate-45' : 'top-[3px]'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 top-[7px] block h-[1.5px] rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'scale-x-0 opacity-0' : 'opacity-100'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'top-[7px] -rotate-45' : 'top-[11px]'
-                    )}
-                  />
-                </div>
-              </Button>
-              <Link
-                to={homeUrl}
-                className='group flex min-w-0 items-center gap-2'
-              >
-                <div className='flex size-10 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
-                  {logoContent}
-                </div>
-                <span
-                  className='hidden max-w-64 truncate text-2xl font-bold tracking-tight md:inline'
-                  title={displaySiteName}
-                >
-                  {loading ? (
-                    <Skeleton className='h-7 w-24' />
-                  ) : (
-                    displaySiteName
+      <div className='sticky top-0 z-50'>
+        <header className='bg-background/50 relative w-full backdrop-blur-2xl'>
+          <div className='px-4 md:px-6'>
+            <nav className='relative flex h-16 items-center justify-between gap-4'>
+              {/* Logo */}
+              <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-2 lg:min-w-36'>
+                {/* Mobile hamburger — left of logo, like gpt.ge */}
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='icon'
+                  className={cn(
+                    'size-8 shrink-0 rounded-xl lg:hidden',
+                    props.navContent && 'hidden'
                   )}
-                </span>
-              </Link>
-            </div>
-
-            {/* Desktop nav — centered in the bar */}
-            <div className='hidden items-center gap-2 lg:flex xl:absolute xl:inset-y-0 xl:left-1/2 xl:-translate-x-1/2'>
-              {links.map((link) => {
-                const isActive = pathname === link.href
-                if (link.external) {
-                  return (
-                    <a
-                      key={`${link.title}:${link.href}`}
-                      href={link.href}
-                      title={t(link.title)}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      aria-disabled={link.disabled}
-                      tabIndex={link.disabled ? -1 : undefined}
-                      onClick={(event) => handleNavLinkClick(event, link)}
+                  onClick={() => setMobileOpen((v) => !v)}
+                  aria-label={t('Toggle navigation menu')}
+                >
+                  <div className='relative size-4'>
+                    <span
                       className={cn(
-                        'text-muted-foreground hover:bg-muted hover:text-foreground min-w-0 truncate rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-200',
-                        link.disabled && 'pointer-events-none opacity-50'
+                        'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
+                        mobileOpen ? 'top-[7px] rotate-45' : 'top-[3px]'
                       )}
-                    >
-                      {t(link.title)}
-                    </a>
-                  )
-                }
-                return (
-                  <Link
-                    key={`${link.title}:${link.href}`}
-                    to={link.href}
-                    title={t(link.title)}
-                    disabled={link.disabled}
-                    onClick={(event) => handleNavLinkClick(event, link)}
-                    className={cn(
-                      'hover:bg-muted min-w-0 truncate rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-200',
-                      isActive
-                        ? 'bg-muted text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                      link.disabled && 'pointer-events-none opacity-50'
-                    )}
+                    />
+                    <span
+                      className={cn(
+                        'absolute inset-x-0 top-[7px] block h-[1.5px] rounded-full bg-current transition-all duration-300',
+                        mobileOpen ? 'scale-x-0 opacity-0' : 'opacity-100'
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
+                        mobileOpen ? 'top-[7px] -rotate-45' : 'top-[11px]'
+                      )}
+                    />
+                  </div>
+                </Button>
+                <Link
+                  to={homeUrl}
+                  className='group flex min-w-0 items-center gap-2'
+                >
+                  <div className='flex size-10 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+                    {logoContent}
+                  </div>
+                  <span
+                    className='hidden max-w-64 truncate text-2xl font-bold tracking-tight md:inline'
+                    title={displaySiteName}
                   >
-                    {t(link.title)}
-                  </Link>
-                )
-              })}
-            </div>
+                    {loading ? (
+                      <Skeleton className='h-7 w-24' />
+                    ) : (
+                      displaySiteName
+                    )}
+                  </span>
+                </Link>
+              </div>
 
-            {/* Desktop actions */}
-            <div className='hidden min-w-0 items-center gap-2 lg:flex'>
-              {(showLanguageSwitcher ||
-                showThemeSwitch ||
-                showNotifications) && (
-                <div className='bg-border/40 mx-2 h-4 w-px' />
+              {/* Desktop nav — centered in the bar (or a page-specific nav) */}
+              {props.navContent ? (
+                <div className='hidden items-center justify-center md:flex'>
+                  {props.navContent}
+                </div>
+              ) : (
+                <div className='hidden items-center gap-2 lg:flex xl:absolute xl:inset-y-0 xl:left-1/2 xl:-translate-x-1/2'>
+                  <TopNavMenu
+                    links={links}
+                    isLinkActive={(link) => pathname === link.href}
+                    onLinkClick={handleNavLinkClick}
+                  />
+                </div>
               )}
 
-              {showLanguageSwitcher && <LanguageSwitcher />}
-              {showThemeSwitch && <ThemeSwitch />}
-              {showNotifications && (
-                <NotificationPopover
-                  open={notifications.popoverOpen}
-                  onOpenChange={notifications.setPopoverOpen}
-                  unreadCount={notifications.unreadCount}
-                  activeTab={notifications.activeTab}
-                  onTabChange={notifications.setActiveTab}
-                  notice={notifications.notice}
-                  announcements={notifications.announcements}
-                  loading={notifications.loading}
-                />
-              )}
+              {/* Desktop actions */}
+              <div className='hidden min-w-0 items-center gap-2 lg:flex'>
+                {(showLanguageSwitcher ||
+                  showThemeSwitch ||
+                  showNotifications) && (
+                  <div className='bg-border/40 mx-2 h-4 w-px' />
+                )}
 
-              {showAuthButtons && (
-                <>
-                  <div className='bg-border/40 mx-1 h-4 w-px' />
-                  {authContent}
-                </>
-              )}
-            </div>
+                {showLanguageSwitcher && <LanguageSwitcher />}
+                {showThemeSwitch && <ThemeQuickSwitcher />}
+                {showNotifications && <NotificationPopover />}
 
-            {/* Mobile: icons + auth actions (hamburger is left of logo) */}
-            <div className='flex shrink-0 items-center gap-1 lg:hidden'>
-              {showNotifications && (
-                <NotificationPopover
-                  open={notifications.popoverOpen}
-                  onOpenChange={notifications.setPopoverOpen}
-                  unreadCount={notifications.unreadCount}
-                  activeTab={notifications.activeTab}
-                  onTabChange={notifications.setActiveTab}
-                  notice={notifications.notice}
-                  announcements={notifications.announcements}
-                  loading={notifications.loading}
-                />
-              )}
-              {showLanguageSwitcher && <LanguageSwitcher />}
-              {showThemeSwitch && <ThemeSwitch />}
-              {showAuthButtons &&
-                !loading &&
-                (isAuthenticated ? (
-                  <ProfileDropdown />
-                ) : (
+                {showAuthButtons && (
                   <>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='h-8 rounded-xl px-2.5 text-sm font-medium'
-                      render={<Link to='/sign-in' />}
-                    >
-                      {t('Sign in')}
-                    </Button>
-                    <Button
-                      size='sm'
-                      className='h-8 rounded-xl px-2.5 text-sm font-medium'
-                      render={<Link to='/sign-up' />}
-                    >
-                      {t('Sign up')}
-                    </Button>
+                    <div className='bg-border/40 mx-1 h-4 w-px' />
+                    {authContent}
                   </>
-                ))}
-            </div>
-          </nav>
-        </div>
-      </header>
+                )}
+              </div>
+
+              {/* Mobile: icons + auth actions (hamburger is left of logo) */}
+              <div className='flex shrink-0 items-center gap-1 lg:hidden'>
+                {showNotifications && <NotificationPopover />}
+                {showLanguageSwitcher && <LanguageSwitcher />}
+                {showThemeSwitch && <ThemeQuickSwitcher />}
+                {showAuthButtons &&
+                  !loading &&
+                  (isAuthenticated ? (
+                    <ProfileDropdown />
+                  ) : (
+                    <>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='h-8 rounded-xl px-2.5 text-sm font-medium'
+                        render={<Link to='/sign-in' />}
+                      >
+                        {t('Sign in')}
+                      </Button>
+                      <Button
+                        size='sm'
+                        className='h-8 rounded-xl px-2.5 text-sm font-medium'
+                        render={<Link to='/sign-up' />}
+                      >
+                        {t('Sign up')}
+                      </Button>
+                    </>
+                  ))}
+              </div>
+            </nav>
+          </div>
+        </header>
+      </div>
 
       {/* Mobile full-screen overlay */}
       <div
@@ -376,7 +328,8 @@ export function PublicHeader(props: PublicHeaderProps) {
       >
         <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
           <nav className='flex flex-col gap-1'>
-            {links.map((link, i) => {
+            {props.navContent ? props.navContent : null}
+            {(props.navContent ? [] : links).map((link, i) => {
               const isActive = pathname === link.href
               const linkClassName = cn(
                 'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
@@ -389,6 +342,49 @@ export function PublicHeader(props: PublicHeaderProps) {
               const transitionStyle = {
                 transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
               }
+              if (link.items?.length) {
+                return (
+                  <div
+                    key={`${link.title}:${link.href}`}
+                    className={cn(
+                      'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                      mobileOpen
+                        ? 'translate-y-0 opacity-100'
+                        : 'translate-y-4 opacity-0'
+                    )}
+                    style={transitionStyle}
+                  >
+                    <div className='text-muted-foreground py-2 text-xs font-medium tracking-wide'>
+                      {t(link.title)}
+                    </div>
+                    <div className='flex flex-col gap-1'>
+                      {link.items.map((item) => (
+                        <Link
+                          key={`${item.title}:${item.href}`}
+                          to={item.href}
+                          onClick={(event) =>
+                            handleNavLinkClick(event, item, true)
+                          }
+                          className='flex items-center gap-3 py-2 text-base font-medium tracking-tight'
+                        >
+                          <span
+                            className={cn(
+                              'flex size-6 shrink-0 items-center justify-center rounded-lg bg-linear-to-br text-white',
+                              item.gradient
+                            )}
+                          >
+                            {item.icon ? (
+                              <item.icon className='size-3.5' />
+                            ) : null}
+                          </span>
+                          {t(item.title)}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
+
               if (link.external) {
                 return (
                   <a

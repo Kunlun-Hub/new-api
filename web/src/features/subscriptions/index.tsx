@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { SubscriptionsDialogs } from './components/subscriptions-dialogs'
@@ -36,7 +36,15 @@ function SubscriptionsContent() {
 
   return (
     <>
-      <SectionPageLayout fixedContent>
+      <SectionPageLayout>
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Dashboard'), href: '/dashboard/overview' },
+              { label: t('Subscription Management') },
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>
           {t('Subscription Management')}
         </SectionPageLayout.Title>

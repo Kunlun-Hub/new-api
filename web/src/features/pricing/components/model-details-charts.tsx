@@ -316,6 +316,136 @@ export function UptimeTrendChart(props: {
 }
 
 // ---------------------------------------------------------------------------
+// Uptime trend by group (24h, multi-series point-line chart)
+// ---------------------------------------------------------------------------
+
+export type GroupUptimeSeries = {
+  group: string
+  color: string
+  points: { ts: number; successRate: number }[]
+}
+
+function formatRelativeHourLabel(ts: number): string {
+  const hours = Math.max(0, Math.round((Date.now() / 1000 - ts) / 3600))
+  if (hours === 0) return 'now'
+  return `${hours}h`
+}
+
+export function GroupUptimeTrendChart(props: {
+  groups: GroupUptimeSeries[]
+  className?: string
+}) {
+  const { t } = useTranslation()
+  const { resolvedTheme, themeReady } = useChartTheme()
+  const { textColor, gridColor } = getChartThemeTokens(resolvedTheme)
+
+  const data = useMemo(
+    () =>
+      props.groups.flatMap((group) =>
+        group.points.map((point) => ({
+          time: formatRelativeHourLabel(point.ts),
+          ts: point.ts,
+          group: group.group,
+          uptime: toUptimeChartValue(point.successRate),
+        }))
+      ),
+    [props.groups]
+  )
+
+  const axisMin = useMemo(
+    () => getUptimeAxisMin(data.map((point) => point.uptime)),
+    [data]
+  )
+
+  const spec = useMemo(() => {
+    if (data.length === 0) return null
+    return {
+      type: 'line' as const,
+      data: [{ id: 'group-uptime', values: data }],
+      xField: 'time',
+      yField: 'uptime',
+      seriesField: 'group',
+      smooth: true,
+      point: {
+        visible: true,
+        style: { size: 4, stroke: '#ffffff', lineWidth: 1.5 },
+      },
+      line: {
+        style: {
+          lineWidth: 2,
+          stroke: (datum: { group?: string }) =>
+            props.groups.find((group) => group.group === datum?.group)?.color,
+        },
+      },
+      legends: { visible: false },
+      tooltip: {
+        mark: {
+          title: { value: (d: { time: string }) => d.time },
+          content: [
+            {
+              key: t('Uptime'),
+              value: (d: { uptime: number }) => `${d.uptime.toFixed(2)}%`,
+            },
+          ],
+        },
+      },
+      axes: [
+        {
+          orient: 'bottom',
+          label: {
+            style: { fill: textColor, fontSize: 10 },
+            autoLimit: true,
+          },
+          tick: { visible: false },
+        },
+        {
+          orient: 'left',
+          min: axisMin,
+          max: UPTIME_AXIS_MAX,
+          label: {
+            formatMethod: (val: number | string) => `${val}%`,
+            style: { fill: textColor, fontSize: 10 },
+          },
+          grid: {
+            visible: true,
+            style: { lineDash: [3, 3], stroke: gridColor },
+          },
+        },
+      ],
+    }
+  }, [axisMin, data, gridColor, props.groups, t, textColor])
+
+  if (data.length === 0) {
+    return (
+      <div
+        className={cn(
+          'text-muted-foreground flex h-48 items-center justify-center rounded-lg border text-xs',
+          props.className
+        )}
+      >
+        {t('No uptime data available')}
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn('h-64', props.className)}>
+      {themeReady && spec && (
+        <VChart
+          key={`group-uptime-${resolvedTheme}`}
+          spec={{
+            ...spec,
+            theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+            background: 'transparent',
+          }}
+          option={VCHART_OPTION}
+        />
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Throughput by group (horizontal bar)
 // ---------------------------------------------------------------------------
 

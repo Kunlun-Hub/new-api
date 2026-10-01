@@ -16,173 +16,78 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ArrowUpDown, Check, Filter } from 'lucide-react'
-import { useState } from 'react'
+import { Download } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DataTableViewModeToggle } from '@/components/data-table'
-import {
-  sideDrawerContentClassName,
-  sideDrawerFormClassName,
-  sideDrawerHeaderClassName,
-} from '@/components/drawer-layout'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { cn } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 
-import { getSortLabels, type SortOption, type ViewMode } from '../constants'
-import type { PricingModel, PricingVendor, TokenUnit } from '../types'
-import { PricingSidebar } from './pricing-sidebar'
+import type { ViewMode } from '../constants'
 
 export interface PricingToolbarProps {
   filteredCount: number
   totalCount?: number
-  sortBy: string
-  onSortChange: (value: string) => void
-  tokenUnit: TokenUnit
-  onTokenUnitChange: (value: TokenUnit) => void
+  vendorLabel: string
   showRechargePrice: boolean
   onRechargePriceChange: (value: boolean) => void
   viewMode: ViewMode
   onViewModeChange: (value: ViewMode) => void
-  quotaTypeFilter: string
-  endpointTypeFilter: string
-  vendorFilter: string
-  groupFilter: string
-  tagFilter: string
-  onQuotaTypeChange: (value: string) => void
-  onEndpointTypeChange: (value: string) => void
-  onVendorChange: (value: string) => void
-  onGroupChange: (value: string) => void
-  onTagChange: (value: string) => void
-  vendors: PricingVendor[]
-  groups: string[]
-  groupRatios?: Record<string, number>
-  tags: string[]
-  models: PricingModel[]
-  hasActiveFilters: boolean
-  activeFilterCount: number
-  onClearFilters: () => void
+  onDownload: () => void
+  children?: ReactNode
 }
 
 export function PricingToolbar(props: PricingToolbarProps) {
   const { t } = useTranslation()
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const sortLabels = getSortLabels(t)
 
   return (
-    <div className='bg-card rounded-xl border p-3'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={() => setMobileFiltersOpen(true)}
-            className='gap-1.5 xl:hidden'
-          >
-            <Filter className='size-4' />
-            {t('Filter')}
-            {props.activeFilterCount > 0 && (
-              <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
-                {props.activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-
-          <div className='text-muted-foreground flex items-baseline gap-1 text-sm'>
-            <span className='text-foreground font-semibold tabular-nums'>
-              {props.filteredCount.toLocaleString()}
+    <div className='border-border/40 bg-card/20 mb-6 flex flex-col gap-3 rounded-xl border p-3'>
+      <div className='flex min-h-10 items-center gap-3 max-md:flex-col max-md:items-stretch'>
+        <div className='flex min-w-0 flex-1 items-center gap-3'>
+          <span className='bg-muted flex size-11 shrink-0 items-center justify-center rounded-xl'>
+            <span
+              className='bg-foreground/90 text-background inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[0.75em] font-semibold uppercase'
+              aria-hidden='true'
+            >
+              {props.vendorLabel.slice(0, 1)}
             </span>
-            <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
-            {props.totalCount != null &&
-              props.filteredCount !== props.totalCount && (
-                <span className='text-muted-foreground/60 text-xs'>
-                  / {props.totalCount.toLocaleString()}
-                </span>
-              )}
+          </span>
+          <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+            <h2 className='text-foreground min-w-0 truncate text-base font-semibold'>
+              {props.vendorLabel}
+            </h2>
+            <span className='text-muted-foreground text-xs'>
+              {t('{{count}} models in total', { count: props.filteredCount })}
+            </span>
           </div>
         </div>
 
-        <div className='flex min-w-0 flex-wrap items-center gap-2'>
-          <ToggleGroup
-            value={[props.showRechargePrice ? 'recharge' : 'standard']}
-            onValueChange={(values) => {
-              if (values.length > 0) {
-                props.onRechargePriceChange(values[0] === 'recharge')
-              }
-            }}
-            variant='outline'
-            size='sm'
-            aria-label={t('Price display mode')}
+        <div className='flex items-center gap-3 max-md:justify-end'>
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon-sm'
+            aria-label={t('Download')}
+            onClick={props.onDownload}
           >
-            <ToggleGroupItem value='standard'>{t('Standard')}</ToggleGroupItem>
-            <ToggleGroupItem value='recharge'>{t('Recharge')}</ToggleGroupItem>
-          </ToggleGroup>
-          <ToggleGroup
-            value={[props.tokenUnit]}
-            onValueChange={(values) => {
-              if (values[0] === 'M' || values[0] === 'K') {
-                props.onTokenUnitChange(values[0])
-              }
-            }}
-            variant='outline'
-            size='sm'
-            aria-label={t('Token unit')}
-          >
-            <ToggleGroupItem value='M'>/1M</ToggleGroupItem>
-            <ToggleGroupItem value='K'>/1K</ToggleGroupItem>
-          </ToggleGroup>
+            <Download className='size-4' />
+          </Button>
 
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='h-8 gap-1.5 px-3 text-xs'
-                />
-              }
+          <div className='border-border/60 flex items-center gap-2 rounded-lg border px-2 py-1.5'>
+            <Switch
+              id='pricing-recharge-price'
+              checked={props.showRechargePrice}
+              onCheckedChange={props.onRechargePriceChange}
+            />
+            <Label
+              htmlFor='pricing-recharge-price'
+              className='text-sm leading-none'
             >
-              <ArrowUpDown className='size-3.5' />
-              <span>{sortLabels[props.sortBy as SortOption] || t('Sort')}</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-44'>
-              <DropdownMenuGroup>
-                {Object.entries(sortLabels).map(([value, label]) => (
-                  <DropdownMenuItem
-                    key={value}
-                    onClick={() => props.onSortChange(value)}
-                    className='gap-2'
-                  >
-                    <Check
-                      className={cn(
-                        'size-4 shrink-0',
-                        props.sortBy === value ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    {label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              {t('Multiplier')}
+            </Label>
+          </div>
 
           <DataTableViewModeToggle
             value={props.viewMode}
@@ -191,41 +96,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
         </div>
       </div>
 
-      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-        <SheetContent
-          side='left'
-          className={sideDrawerContentClassName('sm:max-w-md')}
-        >
-          <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle>{t('Filter')}</SheetTitle>
-            <SheetDescription>
-              {t('Filter models by provider, group, type, endpoint, and tags.')}
-            </SheetDescription>
-          </SheetHeader>
-          <div className={sideDrawerFormClassName('gap-0')}>
-            <PricingSidebar
-              quotaTypeFilter={props.quotaTypeFilter}
-              endpointTypeFilter={props.endpointTypeFilter}
-              vendorFilter={props.vendorFilter}
-              groupFilter={props.groupFilter}
-              tagFilter={props.tagFilter}
-              onQuotaTypeChange={props.onQuotaTypeChange}
-              onEndpointTypeChange={props.onEndpointTypeChange}
-              onVendorChange={props.onVendorChange}
-              onGroupChange={props.onGroupChange}
-              onTagChange={props.onTagChange}
-              vendors={props.vendors}
-              groups={props.groups}
-              groupRatios={props.groupRatios}
-              tags={props.tags}
-              models={props.models}
-              hasActiveFilters={props.hasActiveFilters}
-              onClearFilters={props.onClearFilters}
-              className='border-0 bg-transparent p-0 shadow-none'
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {props.children}
     </div>
   )
 }

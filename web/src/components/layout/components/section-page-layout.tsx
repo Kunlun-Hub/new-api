@@ -24,7 +24,8 @@ import {
   type ReactNode,
 } from 'react'
 
-import { SidebarTrigger } from '@/components/ui/sidebar'
+import { Separator } from '@/components/ui/separator'
+import { SidebarTrigger, useOptionalSidebar } from '@/components/ui/sidebar'
 
 import { Main } from './main'
 import { PageFooterProvider } from './page-footer'
@@ -53,7 +54,6 @@ SectionPageLayoutBreadcrumb.displayName = 'SectionPageLayout.Breadcrumb'
 
 export type SectionPageLayoutProps = {
   children: ReactNode
-  fixedContent?: boolean
   stackActionsOnMobile?: boolean
 }
 
@@ -61,6 +61,7 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
   const [footerContainer, setFooterContainer] = useState<HTMLDivElement | null>(
     null
   )
+  const sidebar = useOptionalSidebar()
 
   let title: ReactNode = null
   let actions: ReactNode = null
@@ -83,13 +84,25 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
   return (
     <PageFooterProvider container={footerContainer}>
       <Main>
-        <div className='shrink-0 px-3 pt-3 pb-2.5 sm:px-4 sm:pt-5 sm:pb-3'>
-          {breadcrumb != null && (
-            <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
+        <header className='flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 lg:px-8'>
+          {sidebar != null && (
+            <>
+              <SidebarTrigger
+                variant='ghost'
+                className='-ml-1 size-8 shrink-0'
+              />
+              <Separator
+                orientation='vertical'
+                className='mr-2 h-4 self-center bg-border/60'
+              />
+            </>
           )}
-          <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4'>
-            <div className='flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2'>
-              <SidebarTrigger variant='ghost' className='size-8 shrink-0' />
+          <div className='min-w-0 flex-1'>{breadcrumb}</div>
+        </header>
+
+        <div className='flex flex-1 flex-col gap-5 p-4 lg:px-20 lg:py-8'>
+          {(title != null || actions != null) && (
+            <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4'>
               <div
                 className={
                   props.stackActionsOnMobile
@@ -97,32 +110,25 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
                     : 'min-w-0 flex-1'
                 }
               >
-                <h2 className='truncate text-base font-bold tracking-tight sm:text-lg'>
-                  {title}
-                </h2>
+                {title != null && (
+                  <h2 className='truncate text-2xl font-semibold tracking-tight'>
+                    {title}
+                  </h2>
+                )}
               </div>
+              {actions != null && (
+                <div className='flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4'>
+                  {actions}
+                </div>
+              )}
             </div>
-            {actions != null && (
-              <div className='flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4'>
-                {actions}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div
-          className={
-            props.fixedContent
-              ? 'min-h-0 flex-1 overflow-hidden px-3 pt-1 pb-3 sm:px-4 sm:pt-1.5 sm:pb-4'
-              : 'min-h-0 flex-1 overflow-auto px-3 pt-1 pb-3 sm:px-4 sm:pt-1.5 sm:pb-4'
-          }
-        >
+          )}
           {content}
         </div>
 
         <div
           ref={setFooterContainer}
-          className='bg-background shrink-0 border-t px-3 py-2.5 empty:hidden sm:px-4 sm:py-3'
+          className='bg-background sticky bottom-0 z-20 shrink-0 border-t px-4 py-2.5 empty:hidden sm:py-3 lg:px-20'
         />
       </Main>
     </PageFooterProvider>

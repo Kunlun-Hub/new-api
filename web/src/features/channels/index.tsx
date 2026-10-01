@@ -21,7 +21,7 @@ import { Link } from '@tanstack/react-router'
 import { Settings2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { Badge } from '@/components/ui/badge'
 import {
   Tooltip,
@@ -87,7 +87,15 @@ export function Channels() {
 
   return (
     <ChannelsProvider>
-      <SectionPageLayout fixedContent>
+      <SectionPageLayout>
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Dashboard'), href: '/dashboard/overview' },
+              { label: t('Channels') },
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>
           <span className='flex min-w-0 items-center gap-2'>
             <span className='truncate'>{t('Channels')}</span>

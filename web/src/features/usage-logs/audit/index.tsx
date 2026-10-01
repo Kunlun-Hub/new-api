@@ -20,7 +20,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getUserProfile } from '@/features/profile/api'
 import {
@@ -88,7 +88,15 @@ export function AuditLogs() {
     }
   }, [queryClient, userId])
   return (
-    <SectionPageLayout fixedContent>
+    <SectionPageLayout>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb
+          items={[
+            { label: t('Dashboard'), href: '/dashboard/overview' },
+            { label: t('Audit Logs') },
+          ]}
+        />
+      </SectionPageLayout.Breadcrumb>
       <SectionPageLayout.Title>{t('Audit Logs')}</SectionPageLayout.Title>
       <SectionPageLayout.Actions>
         {canReadAll && !accessRevoked && (

@@ -16,17 +16,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { AdminTicketDetail } from '@/features/tickets/admin/admin-ticket-detail'
+import { AdminTickets } from '@/features/tickets/admin/admin-tickets'
+import { getConsoleFeatureForGuard } from '@/lib/console-features'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute(
-  '/_authenticated/admin/tickets/$ticketId',
+  '/_authenticated/admin/tickets/$ticketId'
 )({
+  beforeLoad: async ({ context }) => {
+    const { auth } = useAuthStore.getState()
+    if (!auth.user || auth.user.role < ROLE.ADMIN) {
+      throw redirect({ to: '/403' })
+    }
+    const enabled = await getConsoleFeatureForGuard(context.queryClient, 'tickets')
+    if (!enabled) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const { ticketId } = Route.useParams()
-  return <AdminTicketDetail ticketId={ticketId} />
+  return <AdminTickets initialTicketId={Number(ticketId)} />
 }

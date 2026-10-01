@@ -74,7 +74,7 @@ function sidebarFor(admin?: object, user?: object, canConfigure = true) {
 }
 
 describe('security sidebar visibility', () => {
-  it('old configurations show Security & Access immediately after Profile and keep API Keys', () => {
+  it('old configurations keep the personal group and API Keys', () => {
     const { result } = sidebarFor(
       { personal: { enabled: true, personal: true, topup: true } },
       { personal: { enabled: true, personal: true } }
@@ -83,7 +83,7 @@ describe('security sidebar visibility', () => {
       result.current
         .find((group) => group.id === 'personal')
         ?.items.map((item) => item.title)
-    ).toEqual(['Wallet', 'Profile', 'Security & Access'])
+    ).toEqual(['Personal Center', 'Tickets'])
     expect(
       result.current
         .flatMap((group) => group.items)
@@ -109,13 +109,13 @@ describe('security sidebar visibility', () => {
   it('users without sidebar configuration permission retain the admin view', () => {
     const { result } = sidebarFor(
       undefined,
-      { personal: { security: false } },
+      { personal: { ticket: false } },
       false
     )
     expect(
       result.current
         .flatMap((group) => group.items)
-        .some((item) => item.title === 'Security & Access')
+        .some((item) => item.title === 'Tickets')
     ).toBe(true)
   })
 })
@@ -133,18 +133,23 @@ describe('audit log sidebar entry', () => {
       .flatMap((group) => group.items)
       .map((item) => item.title)
     expect(titles).not.toContain('Audit Logs')
-    expect(titles).toContain('Usage Logs')
+    expect(titles).toContain('Logs')
   })
 
-  it('legacy configurations show a separate Audit Logs link immediately after Usage Logs', () => {
+  it('legacy configurations show a separate Audit Logs link immediately after the Logs group', () => {
     const { result } = sidebarFor(
       { console: { enabled: true, log: true } },
       { console: { enabled: true, log: true } }
     )
     const items =
       result.current.find((group) => group.id === 'general')?.items ?? []
-    const usageIndex = items.findIndex((item) => item.title === 'Usage Logs')
-    expect(items[usageIndex + 1]).toMatchObject({
+    const logsIndex = items.findIndex((item) => item.title === 'Logs')
+    expect(items[logsIndex]).toMatchObject({
+      items: expect.arrayContaining([
+        expect.objectContaining({ title: 'Usage Logs' }),
+      ]),
+    })
+    expect(items[logsIndex + 1]).toMatchObject({
       title: 'Audit Logs',
       url: '/usage-logs/audit',
     })

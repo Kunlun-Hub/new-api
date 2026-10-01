@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -96,6 +98,41 @@ func GetTopUpInfo(c *gin.Context) {
 		}
 	}
 
+	paymentSetting := operation_setting.GetPaymentSetting()
+
+	// 具有充值折扣的分组，用于充值页展示额外折扣信息
+	type topupGroupDiscount struct {
+		Group       string  `json:"group"`
+		Description string  `json:"description"`
+		Ratio       float64 `json:"ratio"`
+	}
+	topupGroupDiscounts := make([]topupGroupDiscount, 0)
+	for group, ratio := range common.GetTopupGroupRatiosCopy() {
+		if ratio <= 0 || ratio >= 1 {
+			continue
+		}
+		topupGroupDiscounts = append(topupGroupDiscounts, topupGroupDiscount{
+			Group:       group,
+			Description: setting.GetUsableGroupDescription(group),
+			Ratio:       ratio,
+		})
+	}
+	slices.SortFunc(topupGroupDiscounts, func(a, b topupGroupDiscount) int {
+		if a.Ratio != b.Ratio {
+			if a.Ratio > b.Ratio {
+				return -1
+			}
+			return 1
+		}
+		return strings.Compare(a.Group, b.Group)
+	})
+
+	totalTopUpQuota, err := model.GetUserTotalTopUpQuota(c.GetInt("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
 	data := gin.H{
 		"enable_online_topup":              isEpayTopUpEnabled(),
 		"enable_stripe_topup":              isStripeTopUpEnabled(),
@@ -117,9 +154,16 @@ func GetTopUpInfo(c *gin.Context) {
 		"stripe_min_topup":        setting.StripeMinTopUp,
 		"waffo_min_topup":         setting.WaffoMinTopUp,
 		"waffo_pancake_min_topup": setting.WaffoPancakeMinTopUp,
-		"amount_options":          operation_setting.GetPaymentSetting().AmountOptions,
-		"discount":                operation_setting.GetPaymentSetting().AmountDiscount,
+		"amount_options":          paymentSetting.AmountOptions,
+		"discount":                paymentSetting.AmountDiscount,
 		"topup_link":              common.TopUpLink,
+		"epay_tip":                paymentSetting.EpayTip,
+		"promo_title":             paymentSetting.PromoTitle,
+		"promo_end_time":          paymentSetting.PromoEndTime,
+		"promo_banner_url":        paymentSetting.PromoBannerURL,
+		"promo_link":              paymentSetting.PromoLink,
+		"topup_group_discounts":   topupGroupDiscounts,
+		"total_topup":             totalTopUpQuota,
 	}
 	common.ApiSuccess(c, data)
 }
@@ -338,6 +382,7 @@ func RequestEpay(c *gin.Context) {
 		PaymentProvider: model.PaymentProviderEpay,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
+		Type:            model.TopUpTypeOnline,
 	}
 	err = topUp.Insert()
 	if err != nil {
@@ -531,6 +576,7 @@ func GetUserTopUps(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	attachInvoiceStatus(topups)
 
 	pageInfo.SetTotal(int(total))
 	pageInfo.SetItems(topups)
@@ -583,4 +629,70 @@ func AdminCompleteTopUp(c *gin.Context) {
 		return
 	}
 	common.ApiSuccess(c, nil)
+}
+
+type markTopUpInvoicedRequest struct {
+	Id         int   `json:"id"`
+	Ids        []int `json:"ids"`
+	IsInvoiced *bool `json:"is_invoiced"`
+}
+
+// AdminMarkTopUpInvoiced 标记单笔充值订单是否已开票
+func AdminMarkTopUpInvoiced(c *gin.Context) {
+	req := markTopUpInvoicedRequest{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if req.Id <= 0 {
+		common.ApiErrorMsg(c, "invalid order id")
+		return
+	}
+	isInvoiced := true
+	if req.IsInvoiced != nil {
+		isInvoiced = *req.IsInvoiced
+	}
+	if err := model.UpdateTopUpInvoiced(req.Id, isInvoiced); err != nil {
+		if errors.Is(err, model.ErrTopUpNotFound) {
+			common.ApiErrorMsg(c, "topup not found")
+			return
+		}
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, nil)
+}
+
+// AdminBatchMarkTopUpInvoiced 批量标记充值订单是否已开票
+func AdminBatchMarkTopUpInvoiced(c *gin.Context) {
+	req := markTopUpInvoicedRequest{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if len(req.Ids) == 0 {
+		common.ApiErrorMsg(c, "no orders selected")
+		return
+	}
+	isInvoiced := true
+	if req.IsInvoiced != nil {
+		isInvoiced = *req.IsInvoiced
+	}
+	updated, err := model.BatchUpdateTopUpInvoiced(req.Ids, isInvoiced)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"updated": updated})
+}
+
+// AdminClearInvalidTopUps 清除指定小时数之前未支付的订单
+func AdminClearInvalidTopUps(c *gin.Context) {
+	hour, _ := strconv.Atoi(c.DefaultQuery("hour", "48"))
+	deleted, err := model.ClearInvalidTopUps(hour)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"deleted": deleted})
 }

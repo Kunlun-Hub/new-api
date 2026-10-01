@@ -92,10 +92,8 @@ export function SignUpForm({
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      username: '',
       email: '',
       password: '',
-      confirmPassword: '',
     },
   })
 
@@ -111,12 +109,12 @@ export function SignUpForm({
   const hasWeChatLogin = Boolean(status?.wechat_login)
   const hasOAuthLogin = Boolean(
     hasWeChatLogin ||
-      status?.github_oauth ||
-      status?.discord_oauth ||
-      status?.oidc_enabled ||
-      status?.linuxdo_oauth ||
-      status?.telegram_oauth ||
-      (status?.custom_oauth_providers?.length ?? 0) > 0
+    status?.github_oauth ||
+    status?.discord_oauth ||
+    status?.oidc_enabled ||
+    status?.linuxdo_oauth ||
+    status?.telegram_oauth ||
+    (status?.custom_oauth_providers?.length ?? 0) > 0
   )
   const showTopDivider = oauthRegisterEnabled && hasOAuthLogin
   const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
@@ -158,10 +156,6 @@ export function SignUpForm({
 
     // Validate email verification if required
     if (emailVerificationRequired) {
-      if (!data.email) {
-        toast.error(t('Please enter your email'))
-        return
-      }
       if (!verificationCode) {
         toast.error(t('Please enter the verification code'))
         return
@@ -173,9 +167,9 @@ export function SignUpForm({
     setIsLoading(true)
     try {
       const res = await register({
-        username: data.username,
+        username: data.username?.trim() || undefined,
         password: data.password,
-        email: data.email || undefined,
+        email: data.email,
         verification_code: verificationCode || undefined,
         aff_code: getAffiliateCode(),
         turnstile: turnstileToken,
@@ -260,62 +254,64 @@ export function SignUpForm({
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(
-          'w-full rounded-[28px] border bg-card px-6 py-8 shadow-sm sm:px-10',
+          'group bg-card/85 border-border/60 from-transparent via-transparent hover:from-foreground/4 relative w-full overflow-hidden rounded-3xl border bg-linear-to-br to-transparent p-6 backdrop-blur-xl transition duration-300 sm:p-10',
           className
         )}
         {...props}
       >
-        <div className='flex flex-col items-center text-center'>
-          <span className='rounded-full border px-3 py-1 text-xs text-muted-foreground'>
+        <div className='mb-8 space-y-2 text-center'>
+          <div className='border-border/60 text-muted-foreground mx-auto mb-2 inline-flex items-center rounded-full border bg-white/5 px-3 py-1 text-xs tracking-[0.28em] uppercase'>
             {t('Register account')}
-          </span>
-          <h1 className='mt-4 text-[28px] font-bold tracking-tight'>
+          </div>
+          <h1 className='text-2xl font-semibold sm:text-3xl'>
             {t('Create your account')}
           </h1>
-          <p className='mt-2 text-sm text-muted-foreground'>
+          <p className='text-muted-foreground text-sm'>
             {t('Choose a social account, or sign up with email.')}
           </p>
         </div>
 
         {showTopDivider && (
-          <div className='mt-6'>
+          <div className='mb-8'>
             <OAuthProviders
               status={status}
               disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-              onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+              onWeChatLogin={
+                hasWeChatLogin ? handleOpenWeChatDialog : undefined
+              }
               isWeChatLoading={isWeChatSubmitting}
               showDivider={false}
               buttonLayout='grid'
-              buttonClassName='h-12 rounded-full'
+              compactLabels
+              buttonClassName='border-border/60 bg-card/70 h-9 gap-2 rounded-full transition-transform duration-300 hover:-translate-y-0.5 hover:text-primary'
             />
           </div>
         )}
 
         {showTopDivider && (
-          <div className='relative my-6'>
-            <div className='absolute inset-0 flex items-center'>
-              <span className='w-full border-t' />
-            </div>
-            <div className='relative flex justify-center text-sm'>
-              <span className='bg-card text-muted-foreground px-4'>
-                {t('Or')}
-              </span>
-            </div>
+          <div className='mb-6 flex items-center gap-3'>
+            <div className='bg-border/70 h-px flex-1' />
+            <span className='text-muted-foreground text-xs tracking-[0.34em] uppercase'>
+              {t('Or')}
+            </span>
+            <div className='bg-border/70 h-px flex-1' />
           </div>
         )}
 
-        <div className='grid gap-4'>
-          {/* Username Field */}
+        <div className='grid gap-5'>
+          {/* Email Field */}
           <FormField
             control={form.control}
-            name='username'
+            name='email'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('Username')}</FormLabel>
+                <FormLabel>{t('Email address')}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t('Enter your username')}
-                    className='h-12 rounded-full px-5'
+                    placeholder={t('Please enter a valid email address')}
+                    type='email'
+                    autoComplete='email'
+                    className='rounded-full px-4'
                     {...field}
                   />
                 </FormControl>
@@ -330,11 +326,12 @@ export function SignUpForm({
             name='password'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('Password')}</FormLabel>
+                <FormLabel>{t('Login password')}</FormLabel>
                 <FormControl>
                   <PasswordInput
-                    placeholder={t('Enter password (8–128 characters)')}
-                    className='[&_input]:h-12 [&_input]:rounded-full [&_input]:px-5 [&_input]:pr-12'
+                    placeholder={t('Please enter a password, 8-128 characters')}
+                    autoComplete='new-password'
+                    className='[&_input]:rounded-full [&_input]:px-4 [&_input]:pr-11'
                     {...field}
                   />
                 </FormControl>
@@ -343,64 +340,21 @@ export function SignUpForm({
             )}
           />
 
-          {/* Confirm Password Field */}
-          <FormField
-            control={form.control}
-            name='confirmPassword'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Confirm password')}</FormLabel>
-                <FormControl>
-                  <PasswordInput
-                    placeholder={t('Confirm password')}
-                    className='[&_input]:h-12 [&_input]:rounded-full [&_input]:px-5 [&_input]:pr-12'
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-        {/* Email Verification Section */}
-        {emailVerificationRequired && (
-          <>
-            {/* Email Field */}
-            <FormField
-              control={form.control}
-              name='email'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('Email (required for verification)')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('name@example.com')}
-                      type='email'
-                      className='h-12 rounded-full px-5'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Verification Code Field */}
+          {/* Email Verification Section */}
+          {emailVerificationRequired && (
             <div className='flex items-end gap-2'>
               <div className='flex-1'>
                 <Input
                   placeholder={t('Verification code')}
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className='h-12 rounded-full px-5'
+                  className='rounded-full px-4'
                 />
               </div>
               <Button
                 variant='outline'
                 type='button'
-                className='h-12 rounded-full px-5'
+                className='rounded-full px-5'
                 disabled={
                   isLoading ||
                   isSendingCode ||
@@ -413,51 +367,45 @@ export function SignUpForm({
                 {verificationCodeAction}
               </Button>
             </div>
-          </>
-        )}
+          )}
 
-        {/* Turnstile */}
-        {isTurnstileEnabled && (
-          <div className='mt-2'>
+          {/* Turnstile */}
+          {isTurnstileEnabled && (
             <Turnstile
               key={turnstileWidgetKey}
               siteKey={turnstileSiteKey}
               onVerify={setTurnstileToken}
             />
-          </div>
-        )}
+          )}
+
+          <LegalConsent
+            status={status}
+            checked={agreedToLegal}
+            onCheckedChange={setAgreedToLegal}
+          />
+
+          {/* Submit Button */}
+          <Button
+            type='submit'
+            className='bg-foreground text-background hover:bg-foreground/90 w-full rounded-full'
+            disabled={isLoading || !turnstileReady}
+          >
+            {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+            {t('Create account')}
+          </Button>
         </div>
 
-        <LegalConsent
-          status={status}
-          checked={agreedToLegal}
-          onCheckedChange={setAgreedToLegal}
-          className='mt-6'
-        />
-
-        {/* Submit Button */}
-        <Button
-          type='submit'
-          className='bg-foreground text-background hover:bg-foreground/90 mt-6 h-12 w-full rounded-full text-[15px] font-medium'
-          disabled={
-            isLoading ||
-            (requiresLegalConsent && !agreedToLegal) ||
-            !turnstileReady
-          }
-        >
-          {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
-          {t('Create account')}
-        </Button>
-
-        <p className='mt-6 text-center text-sm text-muted-foreground'>
-          {t('Already have an account?')}{' '}
-          <Link
-            to='/sign-in'
-            className='text-foreground font-medium underline underline-offset-4'
-          >
-            {t('Sign in')}
-          </Link>
-        </p>
+        <div className='mt-4 text-center text-sm'>
+          <span className='text-muted-foreground'>
+            {t('Already have an account?')}{' '}
+            <Link
+              to='/sign-in'
+              className='text-primary underline decoration-dotted underline-offset-3'
+            >
+              {t('Sign in to your account')}
+            </Link>
+          </span>
+        </div>
       </form>
 
       {hasWeChatLogin && (

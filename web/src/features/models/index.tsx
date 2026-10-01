@@ -22,7 +22,7 @@ import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { requireServerSuccess } from '@/lib/server-error-message'
@@ -121,9 +121,16 @@ function ModelsContent() {
   return (
     <>
       <SectionPageLayout
-        fixedContent
         stackActionsOnMobile={activeSection === 'metadata'}
       >
+        <SectionPageLayout.Breadcrumb>
+          <ConsoleBreadcrumb
+            items={[
+              { label: t('Model Square'), href: '/models' },
+              { label: t(meta.titleKey) },
+            ]}
+          />
+        </SectionPageLayout.Breadcrumb>
         <SectionPageLayout.Title>{t(meta.titleKey)}</SectionPageLayout.Title>
         <SectionPageLayout.Actions>{actions}</SectionPageLayout.Actions>
         <SectionPageLayout.Content>

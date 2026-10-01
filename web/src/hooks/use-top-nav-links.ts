@@ -16,20 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Clapperboard, Compass, ImagePlay, MessageCircle } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { TopNavLink } from '@/components/layout/types'
 import { useStatus } from '@/hooks/use-status'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
 import { useAuthStore } from '@/stores/auth-store'
-
-export type TopNavLink = {
-  title: string
-  href: string
-  disabled?: boolean
-  requiresAuth?: boolean
-  external?: boolean
-}
 
 /**
  * Generate top navigation links based on HeaderNavModules configuration from backend /api/status
@@ -80,11 +74,66 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
   }
 
+  // Studio - creation hub with hover dropdown (discover / chat / image / video)
+  if (modules?.studio !== false) {
+    links.push({
+      title: t('Studio'),
+      href: '/studio',
+      items: [
+        {
+          title: t('Discover'),
+          href: '/studio',
+          description: t('Explore images and videos shared by the community'),
+          icon: Compass,
+          gradient: 'from-emerald-400 to-cyan-300',
+        },
+        {
+          title: t('studio.menu.chat'),
+          href: '/studio/chat',
+          description: t('More than chat — your personal think tank'),
+          icon: MessageCircle,
+          gradient: 'from-sky-400 to-cyan-300',
+          requiresAuth: !isAuthed,
+        },
+        {
+          title: t('Image Generation'),
+          href: '/studio/image',
+          description: t('Infinite imagination lives between the pixels'),
+          icon: ImagePlay,
+          gradient: 'from-violet-400 to-fuchsia-300',
+          requiresAuth: !isAuthed,
+        },
+        {
+          title: t('Video Generation'),
+          href: '/studio/video',
+          description: t('Every frame with intent — you are the director'),
+          icon: Clapperboard,
+          gradient: 'from-amber-400 to-orange-300',
+          requiresAuth: !isAuthed,
+        },
+      ],
+    })
+  }
+
+  // Blog
+  if (modules?.blog !== false) {
+    links.push({ title: t('Blog'), href: '/blog' })
+  }
+
+  // Help center (tutorials, docs and FAQs)
+  if (modules?.help !== false) {
+    links.push({ title: t('Help Center'), href: '/help' })
+  }
+
   // Model monitoring (public by default, mirrors the /monitoring page)
   const monitoring = modules?.monitoring
   if (monitoring && typeof monitoring === 'object' && monitoring.enabled) {
     const requiresAuth = monitoring.requireAuth && !isAuthed
-    links.push({ title: t('Model Monitoring'), href: '/monitoring', requiresAuth })
+    links.push({
+      title: t('Model Monitoring'),
+      href: '/monitoring',
+      requiresAuth,
+    })
   }
 
   // Rankings
@@ -99,7 +148,7 @@ export function useTopNavLinks(): TopNavLink[] {
     if (docsLink) {
       links.push({ title: t('Docs'), href: docsLink, external: true })
     } else {
-      links.push({ title: t('Docs'), href: '/docs' })
+      links.push({ title: t('Docs'), href: '/doc' })
     }
   }
 

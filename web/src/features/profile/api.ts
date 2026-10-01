@@ -31,6 +31,9 @@ import type {
   CheckinResponse,
   AccountSecurityResult,
   EmailBindingFlow,
+  TestNotificationRequest,
+  UserStorageRequest,
+  UserStorageState,
 } from './types'
 
 // ============================================================================
@@ -74,6 +77,17 @@ export function changeAccountPassword(
 }
 
 /**
+ * Send a test message through a notification channel, using the values the
+ * profile form currently holds so users can verify before saving.
+ */
+export async function sendTestNotification(
+  data: TestNotificationRequest
+): Promise<ApiResponse> {
+  const res = await api.post('/api/user/notify/test', data)
+  return res.data
+}
+
+/**
  * Update user settings
  */
 export async function updateUserSettings(
@@ -85,6 +99,32 @@ export async function updateUserSettings(
   }
   const settings = normalizeUserSettings(profile.data.setting)
   const res = await api.put('/api/user/setting', { ...settings, ...data })
+  return res.data
+}
+
+/**
+ * Read the caller's personal S3-compatible bucket settings.
+ */
+export async function getUserStorage(): Promise<ApiResponse<UserStorageState>> {
+  const res = await api.get('/api/user/storage')
+  return res.data
+}
+
+/**
+ * Verify the personal bucket with a test write and save it on success.
+ */
+export async function verifyUserStorage(
+  data: UserStorageRequest
+): Promise<ApiResponse<UserStorageState>> {
+  const res = await api.post('/api/user/storage/verify', data)
+  return res.data
+}
+
+/**
+ * Remove the personal bucket configuration.
+ */
+export async function deleteUserStorage(): Promise<ApiResponse> {
+  const res = await api.delete('/api/user/storage')
   return res.data
 }
 

@@ -23,9 +23,21 @@ type TopUp struct {
 	CreateTime      int64   `json:"create_time"`
 	CompleteTime    int64   `json:"complete_time"`
 	Status          string  `json:"status"`
+	// Type 见 TopUpType*，1 在线充值 / 2 兑换码
+	Type       int  `json:"type" gorm:"not null;default:1"`
+	IsInvoiced bool `json:"is_invoiced" gorm:"not null;default:false"`
+	// 开票状态由 invoices / invoice_orders 推导，不落库
+	InvoiceStatus string `json:"invoice_status" gorm:"-"`
 }
 
+// 充值订单来源
 const (
+	TopUpTypeOnline     = 1
+	TopUpTypeRedemption = 2
+)
+
+const (
+	PaymentMethodRedemption   = "redemption"
 	PaymentMethodStripe       = "stripe"
 	PaymentMethodCreem        = "creem"
 	PaymentMethodWaffo        = "waffo"
@@ -83,6 +95,29 @@ func ValidateTopUpQuotaCapacity(userId int, creditedQuota int) error {
 	return nil
 }
 
+// HasSuccessfulTopUp 报告用户是否至少完成过一次有效充值。
+// 仅统计在线充值订单，兑换码不计入。
+func HasSuccessfulTopUp(userId int) (bool, error) {
+	var count int64
+	if err := DB.Model(&TopUp{}).
+		Where("user_id = ? AND status = ? AND type = ?", userId, common.TopUpStatusSuccess, TopUpTypeOnline).
+		Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// GetUserTotalTopUpQuota 返回用户历史成功充值的额度总和（额度单位）。
+// 仅统计在线充值订单，兑换码不计入。
+func GetUserTotalTopUpQuota(userId int) (int64, error) {
+	var total int64
+	err := DB.Model(&TopUp{}).
+		Where("user_id = ? AND status = ? AND type = ?", userId, common.TopUpStatusSuccess, TopUpTypeOnline).
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&total).Error
+	return total, err
+}
+
 // creditTopUpQuota atomically enforces the wallet ceiling while adding quota.
 // Keeping the predicate and increment in one UPDATE prevents two
 // concurrent callbacks from both passing a separate read/check.
@@ -103,7 +138,8 @@ func creditTopUpQuota(tx *gorm.DB, userId int, creditedQuota int, updates map[st
 		return result.Error
 	}
 	if result.RowsAffected == 1 {
-		return nil
+		// 邀请充值返佣与充值同事务，失败则整体回滚，由支付回调重试。
+		return ApplyAffiliateTopupReward(tx, userId, creditedQuota)
 	}
 
 	var count int64

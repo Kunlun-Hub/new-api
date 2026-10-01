@@ -31,6 +31,7 @@ import type {
   PresetAmount,
   CreemProduct,
   PaymentMethod,
+  TopupGroupDiscount,
   WaffoPayMethod,
 } from '../types'
 
@@ -165,6 +166,26 @@ function parseDiscountMap(data: unknown): Record<number, number> {
   )
 }
 
+function parseTopupGroupDiscounts(data: unknown): TopupGroupDiscount[] {
+  return parseJsonArray(data)
+    .filter(
+      (item): item is Record<string, unknown> =>
+        !!item && typeof item === 'object'
+    )
+    .map((item) => ({
+      group: typeof item.group === 'string' ? item.group : '',
+      description: typeof item.description === 'string' ? item.description : '',
+      ratio: Number(item.ratio),
+    }))
+    .filter(
+      (item) =>
+        item.group &&
+        Number.isFinite(item.ratio) &&
+        item.ratio > 0 &&
+        item.ratio < 1
+    )
+}
+
 export function useTopupInfo() {
   const [topupInfo, setTopupInfo] = useState<TopupInfo | null>(null)
   const [presetAmounts, setPresetAmounts] = useState<PresetAmount[]>([])
@@ -190,6 +211,10 @@ export function useTopupInfo() {
         amount_options: parseAmountOptions(response.data.amount_options),
         discount: parseDiscountMap(response.data.discount),
         creem_products: parseCreemProducts(response.data.creem_products),
+        promo_end_time: Number(response.data.promo_end_time) || 0,
+        topup_group_discounts: parseTopupGroupDiscounts(
+          response.data.topup_group_discounts
+        ),
         waffo_pay_methods: parseWaffoPayMethods(
           response.data.waffo_pay_methods
         ),

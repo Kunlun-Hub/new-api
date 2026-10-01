@@ -263,6 +263,14 @@ export interface AnnouncementItem {
   extra?: string
 }
 
+export interface PriceNoticeItem {
+  id?: number
+  content: string
+  publishDate?: string
+  type?: 'price_up' | 'price_cut' | 'update'
+  extra?: string
+}
+
 // ============================================================================
 // FAQ Types
 // ============================================================================

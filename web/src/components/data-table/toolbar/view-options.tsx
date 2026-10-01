@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { type Table } from '@tanstack/react-table'
+import { Funnel } from 'lucide-react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -56,16 +57,17 @@ export function DataTableViewOptions<TData>({
         render={
           <Button
             variant='outline'
+            size='icon'
             className='shrink-0'
             aria-label={t('View')}
           />
         }
       >
-        {t('View')}
+        <Funnel className='size-4' aria-hidden='true' />
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[150px]'>
         <DropdownMenuGroup>
-          <DropdownMenuLabel>{t('Toggle columns')}</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('Show Columns')}</DropdownMenuLabel>
           {hideableColumns.map((column) => {
             return (
               <DropdownMenuCheckboxItem

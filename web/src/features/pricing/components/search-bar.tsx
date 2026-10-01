@@ -16,33 +16,42 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Search, X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from '@/components/ui/command'
+import { Kbd } from '@/components/ui/kbd'
+import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
+import type { PricingModel } from '../types'
+
 export interface SearchBarProps {
-  value: string
-  onChange: (value: string) => void
-  onClear: () => void
-  placeholder?: string
+  models: PricingModel[]
+  onSelect: (modelName: string) => void
   className?: string
 }
 
 export function SearchBar(props: SearchBarProps) {
   const { t } = useTranslation()
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        inputRef.current?.focus()
-      }
-      if (e.key === 'Escape' && document.activeElement === inputRef.current) {
-        inputRef.current?.blur()
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setOpen((previous) => !previous)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -50,39 +59,73 @@ export function SearchBar(props: SearchBarProps) {
   }, [])
 
   return (
-    <div className={cn('relative', props.className)}>
-      <Search className='text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2' />
-      <input
-        ref={inputRef}
-        type='text'
-        placeholder={props.placeholder || t('Search models...')}
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
+    <>
+      <div
         className={cn(
-          'border-border/60 bg-background placeholder:text-muted-foreground/50',
-          'hover:border-border',
-          'focus:border-primary/50 focus:ring-primary/20 focus:ring-2',
-          'h-10 w-full rounded-lg border pr-16 pl-10 text-sm transition-all outline-none'
+          'group ml-auto flex min-w-0 flex-1 items-center justify-start gap-2 rounded-md border border-border/40 bg-background pr-2 pl-1 hover:bg-muted sm:max-w-80 lg:w-72 lg:flex-none lg:rounded-lg',
+          props.className
         )}
-        aria-label={t('Search models')}
-      />
-      <div className='absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-1'>
-        {props.value ? (
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={props.onClear}
-            className='text-muted-foreground/60 hover:text-foreground size-7'
-            aria-label={t('Clear search')}
-          >
-            <X className='size-4' />
-          </Button>
-        ) : (
-          <kbd className='bg-muted text-muted-foreground pointer-events-none hidden rounded border px-1.5 py-0.5 font-mono text-[10px] sm:inline-block'>
-            ⌘K
-          </kbd>
-        )}
+      >
+        <Button
+          type='button'
+          variant='ghost'
+          size='sm'
+          className='h-8 min-w-0 flex-1 justify-start gap-1 rounded-[min(var(--radius-md),12px)] bg-transparent! px-2.5 text-[0.8rem]'
+          onClick={() => setOpen(true)}
+        >
+          <Search data-icon='inline-start' className='text-muted-foreground' />
+          <span className='text-muted-foreground truncate'>
+            {t('Search models...')}
+          </span>
+        </Button>
+        <Kbd className='hidden sm:inline-flex'>⌘K</Kbd>
       </div>
-    </div>
+
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t('Search models')}
+        description={t('Search models...')}
+        className='sm:max-w-lg'
+      >
+        <Command>
+          <CommandInput placeholder={t('Search models...')} />
+          <CommandList className='max-h-80'>
+            <CommandEmpty>{t('No models found.')}</CommandEmpty>
+            <CommandGroup heading={t('Model Square')}>
+              {props.models.map((model) => {
+                const iconName = model.icon || model.vendor_icon
+                return (
+                  <CommandItem
+                    key={model.model_name}
+                    value={`${model.model_name} ${model.vendor_name ?? ''}`}
+                    onSelect={() => {
+                      setOpen(false)
+                      props.onSelect(model.model_name || '')
+                    }}
+                  >
+                    <span className='border-border/60 flex size-6 shrink-0 items-center justify-center rounded-md border'>
+                      {iconName ? (
+                        getLobeIcon(iconName, 14)
+                      ) : (
+                        <span className='text-[10px] font-semibold'>
+                          {model.model_name?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      )}
+                    </span>
+                    <span className='min-w-0 flex-1 truncate'>
+                      {model.model_name}
+                    </span>
+                    {model.vendor_name && (
+                      <CommandShortcut>{model.vendor_name}</CommandShortcut>
+                    )}
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </CommandDialog>
+    </>
   )
 }

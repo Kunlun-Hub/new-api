@@ -17,254 +17,386 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { Gift, Lock, LockOpen, Users } from 'lucide-react'
-import { useState } from 'react'
+import {
+  Banknote,
+  CircleCheck,
+  Circle,
+  Gift,
+  LockKeyhole,
+  HandCoins,
+  Hash,
+  Megaphone,
+  RefreshCw,
+  TrendingUp,
+  type LucideIcon,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { CopyButton } from '@/components/copy-button'
-import { SectionPageLayout } from '@/components/layout'
+import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import { transferAffiliateQuota } from '@/features/wallet/api'
-import { TransferDialog } from '@/features/wallet/components/dialogs/transfer-dialog'
+import { Card, CardContent } from '@/components/ui/card'
 import { generateAffiliateLink } from '@/features/wallet/lib/affiliate'
-import { handleServerError } from '@/lib/handle-server-error'
-import { formatNumber, formatQuota } from '@/lib/format'
+import { useIsAdmin } from '@/hooks/use-admin'
+import { formatNumber, formatQuotaFixed } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { getInvitationInfo } from './api'
+import { getInviteStatus } from './api'
+import { AffiliateRecords } from './components/affiliate-records'
+import {
+  InviteActionDialog,
+  type InviteActionMode,
+} from './components/invite-action-dialog'
 
-function UnlockProgress({
-  label,
-  current,
-  target,
-  displayCurrent,
-  displayTarget,
-}: {
+interface InviteStatProps {
+  icon: LucideIcon
+  iconClassName: string
   label: string
-  current: number
-  target: number
-  displayCurrent: string
-  displayTarget: string
-}) {
-  const done = current >= target
-  const percent = target > 0 ? Math.min(100, (current / target) * 100) : 100
+  value: string
+}
+
+function InviteStat(props: InviteStatProps) {
+  const Icon = props.icon
   return (
-    <div>
-      <div className='flex items-center justify-between text-sm'>
-        <span className='font-medium'>{label}</span>
-        <span className='text-muted-foreground tabular-nums'>
-          {displayCurrent} / {displayTarget}
-        </span>
+    <div className='border-border/40 flex items-center gap-3 rounded-xl border p-4'>
+      <div
+        className={cn(
+          'flex size-10 shrink-0 items-center justify-center rounded-full',
+          props.iconClassName
+        )}
+      >
+        <Icon className='size-5 text-white' aria-hidden='true' />
       </div>
-      <div className='bg-muted mt-2 h-2 overflow-hidden rounded-full'>
-        <div
-          className={cn(
-            'h-full rounded-full transition-all',
-            done ? 'bg-success' : 'bg-primary'
-          )}
-          style={{ width: `${percent}%` }}
-        />
+      <div className='min-w-0'>
+        <div className='text-muted-foreground text-xs'>{props.label}</div>
+        <div className='truncate text-xl font-bold tracking-tight tabular-nums'>
+          {props.value}
+        </div>
       </div>
+    </div>
+  )
+}
+
+function UnlockCondition({ done, label }: { done: boolean; label: string }) {
+  return (
+    <div className='flex items-center gap-2'>
+      {done ? (
+        <CircleCheck className='size-3.5 text-green-500' aria-hidden='true' />
+      ) : (
+        <Circle className='size-3.5' aria-hidden='true' />
+      )}
+      <span>{label}</span>
     </div>
   )
 }
 
 export function Invitation() {
   const { t } = useTranslation()
-  const [transferOpen, setTransferOpen] = useState(false)
-  const [transferring, setTransferring] = useState(false)
+  const isAdmin = useIsAdmin()
+  const [actionMode, setActionMode] = useState<InviteActionMode | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
+  const [promoIndex, setPromoIndex] = useState(0)
 
-  const infoQuery = useQuery({
-    queryKey: ['invitation', 'info'],
-    queryFn: async () => {
-      const res = await getInvitationInfo()
-      if (!res.success) throw new Error(res.message || 'Failed to load')
-      return res.data
-    },
+  const statusQuery = useQuery({
+    queryKey: ['invite', 'status'],
+    queryFn: getInviteStatus,
     staleTime: 60 * 1000,
   })
 
-  const info = infoQuery.data
-  const inviteLink = info?.aff_code ? generateAffiliateLink(info.aff_code) : ''
+  const status = statusQuery.data
+  const eligibility = status?.eligibility
+  const locked = Boolean(status && !eligibility?.eligible)
+  const invitationLink =
+    typeof window !== 'undefined' && status?.aff_code
+      ? generateAffiliateLink(status.aff_code)
+      : ''
+  const shareTarget =
+    invitationLink ||
+    t('Complete the invitation requirements to reveal your link')
 
-  const handleTransfer = async (amount: number): Promise<boolean> => {
-    try {
-      setTransferring(true)
-      const res = await transferAffiliateQuota({ quota: amount })
-      if (res.success) {
-        toast.success(t('Transfer successful'))
-        await infoQuery.refetch()
-        return true
-      }
-      handleServerError(res, t('Transfer failed'))
-      return false
-    } catch (error) {
-      handleServerError(error, t('Transfer failed'))
-      return false
-    } finally {
-      setTransferring(false)
+  const promoCopy = useMemo(() => {
+    const templates = [
+      t(
+        '🚀 The AI API gateway I keep using — all major models in one place, affordable and stable, free credits on sign-up. Try it: {{link}}',
+        { link: shareTarget }
+      ),
+      t(
+        '💡 Highly recommend this API platform! One key for every major LLM, pay-as-you-go, bonus for new sign-ups: {{link}}',
+        { link: shareTarget }
+      ),
+      t(
+        '🔥 Tired of pricey, clunky APIs? This platform aggregates the major models — stable, cheap, free credits on sign-up: {{link}}',
+        { link: shareTarget }
+      ),
+      t(
+        '✨ Sharing a gem of an AI API site: fast, full model lineup, great prices, plus a perk when you sign up via my link: {{link}}',
+        { link: shareTarget }
+      ),
+    ]
+    if (templates.length === 0) return ''
+    return templates[promoIndex % templates.length]
+  }, [promoIndex, shareTarget, t])
+
+  const topupRewardEnabled =
+    (status?.rewards.topup_reward_times ?? 0) > 0 &&
+    (status?.rewards.topup_reward_percentage ?? 0) > 0
+
+  const rewardRules = useMemo(() => {
+    const rules: string[] = []
+    if ((status?.rewards.invitee_reward_quota ?? 0) > 0) {
+      rules.push(
+        t(
+          'Friends who register via your invite get a {{amount}} balance bonus',
+          {
+            amount: formatQuotaFixed(status?.rewards.invitee_reward_quota ?? 0),
+          }
+        )
+      )
     }
-  }
+    if ((status?.rewards.inviter_reward_quota ?? 0) > 0) {
+      rules.push(
+        t('You receive {{amount}} for each invited registration', {
+          amount: formatQuotaFixed(status?.rewards.inviter_reward_quota ?? 0),
+        })
+      )
+    }
+    if (topupRewardEnabled) {
+      rules.push(
+        t('You earn {{percent}} of their first {{times}} top-ups', {
+          percent: `${(status?.rewards.topup_reward_percentage ?? 0) * 100}%`,
+          times: status?.rewards.topup_reward_times ?? 0,
+        })
+      )
+    }
+    rules.push(
+      t(
+        'Do not invite yourself with alt accounts. Violations forfeit rewards and may lead to a ban.'
+      )
+    )
+    return rules
+  }, [status, t, topupRewardEnabled])
 
-  const stats = [
-    {
-      icon: Users,
-      label: t('Invited users'),
-      value: info ? formatNumber(info.aff_count) : '—',
-    },
-    {
-      icon: Gift,
-      label: t('Pending rewards'),
-      value: info ? formatQuota(info.aff_quota) : '—',
-    },
-    {
-      icon: Gift,
-      label: t('Total earned'),
-      value: info ? formatQuota(info.aff_history_quota) : '—',
-    },
-  ]
+  const reload = () => {
+    void statusQuery.refetch()
+    setReloadToken((token) => token + 1)
+  }
 
   return (
     <SectionPageLayout>
-      <SectionPageLayout.Title>{t('Invitation Plan')}</SectionPageLayout.Title>
+      <SectionPageLayout.Breadcrumb>
+        <ConsoleBreadcrumb
+          items={[
+            { label: t('Dashboard'), href: '/dashboard/overview' },
+            { label: t('Invite Rewards') },
+          ]}
+        />
+      </SectionPageLayout.Breadcrumb>
       <SectionPageLayout.Content>
-        <div className='flex flex-col gap-4'>
-          <div className='relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs sm:p-8'>
-            <div
-              className='pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_120%_at_80%_0%,color-mix(in_oklch,var(--primary)_12%,transparent)_0%,transparent_60%)]'
-              aria-hidden='true'
-            />
-            <div className='relative'>
-              <h2 className='text-xl font-bold tracking-tight sm:text-2xl'>
-                {t('Invite friends, both get rewarded')}
-              </h2>
-              <p className='text-muted-foreground mt-2 max-w-xl text-sm leading-relaxed'>
-                {t(
-                  'Share your exclusive link, and you will earn reward credits when friends sign up through it.'
-                )}
-              </p>
-              <div className='mt-5 flex max-w-xl items-center gap-2'>
-                {infoQuery.isLoading ? (
-                  <Skeleton className='h-10 flex-1' />
-                ) : (
-                  <>
-                    <Input
-                      value={inviteLink}
-                      readOnly
-                      className='h-10 flex-1 font-mono text-sm'
-                    />
-                    <CopyButton
-                      value={inviteLink}
-                      tooltip={t('Copy invite link')}
-                      aria-label={t('Copy invite link')}
-                    />
-                  </>
-                )}
-              </div>
+        <div className='space-y-6'>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <h2 className='flex items-center gap-2 text-lg font-semibold'>
+              <Gift className='text-primary size-5' aria-hidden='true' />
+              {t('Invite Rewards')}
+            </h2>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Button
+                variant='outline'
+                onClick={() => setActionMode('transfer')}
+                disabled={!status}
+              >
+                <HandCoins className='size-4' aria-hidden='true' />
+                {t('Transfer to Balance')}
+              </Button>
+              {status?.withdrawal.enabled && (
+                <Button
+                  className='shadow-primary/20 shadow-lg'
+                  onClick={() => setActionMode('withdraw')}
+                  disabled={!status}
+                >
+                  <Banknote className='size-4' aria-hidden='true' />
+                  {t('Cash Out')}
+                </Button>
+              )}
             </div>
           </div>
 
-          <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className='rounded-2xl border bg-card p-5 shadow-xs'
-              >
-                <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase'>
-                  <stat.icon className='size-3.5' aria-hidden='true' />
-                  {stat.label}
-                </div>
-                <div className='mt-2 text-2xl font-bold tracking-tight tabular-nums'>
-                  {infoQuery.isLoading ? (
-                    <Skeleton className='h-8 w-24' />
-                  ) : (
-                    stat.value
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className='grid gap-4 sm:grid-cols-3'>
+            <InviteStat
+              icon={HandCoins}
+              iconClassName='bg-pink-500'
+              label={t('Pending Earnings')}
+              value={status ? formatQuotaFixed(status.aff_quota) : '-'}
+            />
+            <InviteStat
+              icon={TrendingUp}
+              iconClassName='bg-emerald-500'
+              label={t('Total Earnings')}
+              value={status ? formatQuotaFixed(status.aff_history_quota) : '-'}
+            />
+            <InviteStat
+              icon={Hash}
+              iconClassName='bg-amber-500'
+              label={t('Rewards')}
+              value={status ? formatNumber(status.aff_count) : '-'}
+            />
           </div>
 
-          {info?.unlock_enabled && (
-            <div className='rounded-2xl border bg-card p-6 shadow-xs'>
-              <div className='flex items-center justify-between'>
-                <h3 className='text-sm font-semibold tracking-tight'>
-                  {t('Unlock conditions')}
-                </h3>
-                <span
+          <Card className='border-border/40 bg-background'>
+            <CardContent className='space-y-6'>
+              {locked && eligibility && (
+                <Alert className='border-border/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'>
+                  <LockKeyhole className='size-4' aria-hidden='true' />
+                  <AlertTitle>
+                    {t('Complete the requirements to unlock invitations')}
+                  </AlertTitle>
+                  <AlertDescription className='text-amber-900/80 dark:text-amber-200/70'>
+                    <div className='mt-1 flex flex-col gap-1'>
+                      {status?.rewards.unlock_requires_topup && (
+                        <UnlockCondition
+                          done={eligibility.has_valid_topup}
+                          label={t(
+                            'You need to complete at least one valid top-up'
+                          )}
+                        />
+                      )}
+                      {eligibility.min_invites > 0 && (
+                        <UnlockCondition
+                          done={
+                            (status?.aff_count ?? 0) >= eligibility.min_invites
+                          }
+                          label={t(
+                            'Invite at least {{count}} users: {{current}} / {{count}}',
+                            {
+                              count: eligibility.min_invites,
+                              current: status?.aff_count ?? 0,
+                            }
+                          )}
+                        />
+                      )}
+                      {eligibility.min_used_quota > 0 && (
+                        <UnlockCondition
+                          done={eligibility.used_quota_met}
+                          label={t(
+                            'Cumulative actual usage: {{current}} / {{minimum}}',
+                            {
+                              current: formatQuotaFixed(
+                                eligibility.current_used_quota
+                              ),
+                              minimum: formatQuotaFixed(
+                                eligibility.min_used_quota
+                              ),
+                            }
+                          )}
+                        />
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className='space-y-2'>
+                <h3 className='text-sm font-medium'>{t('Invite Link')}</h3>
+                <div
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
-                    info.unlocked
-                      ? 'bg-success/10 text-success'
-                      : 'bg-muted text-muted-foreground'
+                    'border-border/40 bg-muted/40 flex items-center justify-between gap-2 rounded-lg border py-0.5 pr-1 pl-3',
+                    locked && 'pointer-events-none blur-sm select-none'
                   )}
                 >
-                  {info.unlocked ? (
-                    <LockOpen className='size-3.5' aria-hidden='true' />
-                  ) : (
-                    <Lock className='size-3.5' aria-hidden='true' />
+                  <span className='text-muted-foreground truncate text-sm'>
+                    {invitationLink ||
+                      t(
+                        'Complete the invitation requirements to reveal your link'
+                      )}
+                  </span>
+                  {invitationLink && (
+                    <CopyButton
+                      value={invitationLink}
+                      tooltip={t('Copy invite link')}
+                      successTooltip={t('Copied!')}
+                      aria-label={t('Copy invite link')}
+                    />
                   )}
-                  {info.unlocked ? t('Unlocked') : t('Not unlocked yet')}
-                </span>
+                </div>
               </div>
-              <p className='text-muted-foreground mt-2 text-sm'>
-                {info.unlocked
-                  ? t(
-                      'Reward transfers are unlocked. You can move rewards to your balance anytime.'
-                    )
-                  : t(
-                      'Complete the conditions below to unlock reward transfers.'
-                    )}
-              </p>
-              <div className='mt-4 grid gap-4 sm:grid-cols-2'>
-                {info.unlock_min_invites > 0 && (
-                  <UnlockProgress
-                    label={t('Invited users')}
-                    current={info.aff_count}
-                    target={info.unlock_min_invites}
-                    displayCurrent={formatNumber(info.aff_count)}
-                    displayTarget={formatNumber(info.unlock_min_invites)}
-                  />
-                )}
-                {info.unlock_min_consumed > 0 && (
-                  <UnlockProgress
-                    label={t('Consumed quota')}
-                    current={info.used_quota}
-                    target={info.unlock_min_consumed}
-                    displayCurrent={formatQuota(info.used_quota)}
-                    displayTarget={formatQuota(info.unlock_min_consumed)}
-                  />
-                )}
-              </div>
-            </div>
-          )}
 
-          <div className='flex items-center gap-3'>
-            <Button
-              disabled={
-                !info || !info.unlocked || info.aff_quota <= 0 || transferring
-              }
-              onClick={() => setTransferOpen(true)}
-            >
-              {t('Transfer to Balance')}
-            </Button>
-            {info && !info.unlocked && (
-              <p className='text-muted-foreground text-sm'>
-                {t('Complete the conditions below to unlock reward transfers.')}
-              </p>
-            )}
-          </div>
+              <div className='grid gap-6 md:grid-cols-2'>
+                <div className='space-y-2'>
+                  <div className='flex items-center justify-between'>
+                    <h3 className='flex items-center gap-2 text-sm font-medium'>
+                      <Megaphone
+                        className='text-primary size-4'
+                        aria-hidden='true'
+                      />
+                      {t('Promo Copy')}
+                    </h3>
+                    <div className='flex items-center gap-1'>
+                      <Button
+                        variant='ghost'
+                        size='icon-sm'
+                        title={t('Refresh')}
+                        aria-label={t('Refresh')}
+                        disabled={locked}
+                        onClick={() =>
+                          setPromoIndex((index) => {
+                            if (promoCopy.length <= 1) return index
+                            let next = index
+                            while (next === index) {
+                              next = Math.floor(Math.random() * 4)
+                            }
+                            return next
+                          })
+                        }
+                      >
+                        <RefreshCw className='size-4' aria-hidden='true' />
+                      </Button>
+                      {!locked && (
+                        <CopyButton
+                          value={promoCopy}
+                          tooltip={t('Copy')}
+                          successTooltip={t('Copied!')}
+                          aria-label={t('Copy')}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      'border-border/40 bg-muted/40 text-muted-foreground rounded-lg border p-3 text-sm leading-relaxed',
+                      locked && 'pointer-events-none blur-sm select-none'
+                    )}
+                  >
+                    {promoCopy}
+                  </div>
+                </div>
+
+                <div className='space-y-1.5 text-sm leading-relaxed'>
+                  <h3 className='font-medium'>{t('Reward Rules')}</h3>
+                  {rewardRules.map((rule, index) => (
+                    <p key={rule} className='text-muted-foreground'>
+                      {index + 1}. {rule}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <AffiliateRecords
+            isAdmin={isAdmin}
+            withdrawalEnabled={Boolean(status?.withdrawal.enabled)}
+            reloadToken={reloadToken}
+            onQuotaChanged={reload}
+          />
         </div>
 
-        <TransferDialog
-          open={transferOpen}
-          onOpenChange={setTransferOpen}
-          onConfirm={handleTransfer}
-          availableQuota={info?.aff_quota ?? 0}
-          transferring={transferring}
+        <InviteActionDialog
+          mode={actionMode}
+          open={actionMode !== null}
+          onOpenChange={(open) => !open && setActionMode(null)}
+          status={status}
+          onSuccess={reload}
         />
       </SectionPageLayout.Content>
     </SectionPageLayout>

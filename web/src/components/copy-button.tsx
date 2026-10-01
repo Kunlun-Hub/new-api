@@ -16,8 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Check, Copy } from 'lucide-react'
-import { type ReactNode } from 'react'
+import { Check, Copy, Loader2 } from 'lucide-react'
+import { useState, type ReactElement, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -29,15 +29,19 @@ import {
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
+type CopyButtonValue = string | (() => string | null | Promise<string | null>)
+
 interface CopyButtonProps {
-  value: string
+  value: CopyButtonValue
   children?: ReactNode
   className?: string
   iconClassName?: string
   variant?: 'ghost' | 'outline' | 'default' | 'secondary' | 'destructive'
-  size?: 'default' | 'sm' | 'lg' | 'icon'
+  size?: 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-sm'
   tooltip?: string
   successTooltip?: string
+  position?: 'left' | 'right'
+  disabled?: boolean
   'aria-label'?: string
 }
 
@@ -50,37 +54,64 @@ export function CopyButton({
   size = 'icon',
   tooltip,
   successTooltip,
+  position = 'left',
+  disabled = false,
   'aria-label': ariaLabel,
 }: CopyButtonProps) {
   const { t } = useTranslation()
   const { copiedText, copyToClipboard } = useCopyToClipboard({ notify: false })
-  const isCopied = copiedText === value
+  const [isResolving, setIsResolving] = useState(false)
+  const [resolvedValue, setResolvedValue] = useState<string | null>(null)
+  const clickedValue = typeof value === 'string' ? value : resolvedValue
+  const isCopied = clickedValue !== null && copiedText === clickedValue
   const resolvedTooltip = tooltip ?? t('Copy to clipboard')
   const resolvedSuccessTooltip = successTooltip ?? t('Copied!')
   const resolvedAriaLabel = ariaLabel ?? resolvedTooltip
   const copiedAriaLabel = t('Copied')
 
+  const handleClick = async () => {
+    if (typeof value === 'string') {
+      await copyToClipboard(value)
+      return
+    }
+
+    setIsResolving(true)
+    try {
+      const resolved = await value()
+      if (!resolved) return
+      setResolvedValue(resolved)
+      await copyToClipboard(resolved)
+    } finally {
+      setIsResolving(false)
+    }
+  }
+
+  let icon: ReactElement = <Copy className={cn(iconClassName)} />
+  if (isResolving) {
+    icon = <Loader2 className={cn('animate-spin', iconClassName)} />
+  } else if (isCopied) {
+    icon = <Check className={cn('text-success', iconClassName)} />
+  }
+
   const button = (
     <Button
       variant={variant}
       size={size}
-      className={cn('shrink-0', className)}
-      onClick={() => copyToClipboard(value)}
+      className={cn('shrink-0', position === 'right' && 'gap-x-2', className)}
+      onClick={() => void handleClick()}
+      disabled={disabled}
       aria-label={isCopied ? copiedAriaLabel : resolvedAriaLabel}
     >
-      {isCopied ? (
-        <Check className={cn('text-success', iconClassName)} />
-      ) : (
-        <Copy className={cn(iconClassName)} />
-      )}
-      {children}
+      {position === 'right' && children}
+      {icon}
+      {position === 'left' && children}
     </Button>
   )
 
   if (tooltip || successTooltip) {
     return (
       <Tooltip>
-        <TooltipTrigger render={button}></TooltipTrigger>
+        <TooltipTrigger render={button} />
         <TooltipContent>
           <p>{isCopied ? resolvedSuccessTooltip : resolvedTooltip}</p>
         </TooltipContent>

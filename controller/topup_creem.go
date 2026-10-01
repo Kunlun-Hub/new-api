@@ -123,6 +123,7 @@ func (*CreemAdaptor) RequestPay(c *gin.Context, req *CreemPayRequest) {
 		PaymentProvider: model.PaymentProviderCreem,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
+		Type:            model.TopUpTypeOnline,
 	}
 	err = topUp.Insert()
 	if err != nil {

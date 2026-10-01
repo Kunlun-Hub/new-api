@@ -17,10 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import {
-  BadgeDollarSign,
-  ChartColumn,
-  Layers,
-  Plug,
+  BadgePercent,
+  Book,
+  CloudBackup,
+  MessageCircleCheck,
   Rocket,
   ShieldCheck,
 } from 'lucide-react'
@@ -28,92 +28,109 @@ import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
 
+import { useHomeStats } from '../../hooks'
+
 interface FeaturesProps {
   className?: string
 }
 
 export function Features(_props: FeaturesProps) {
   const { t } = useTranslation()
+  const { data: homeStats } = useHomeStats()
+  const modelCountLabel = `${homeStats?.model_count ?? 0}+`
 
   const features = [
     {
-      icon: <Rocket className='size-5' strokeWidth={1.5} />,
-      title: t('Get started in minutes'),
+      icon: <Book className='text-primary size-4 md:size-6' />,
+      title: t('Tutorial'),
       desc: t(
-        'Sign up, top up, and create a token — three steps and your first API call is ready to go.'
+        'Register an account, recharge or exchange balance, then go to token management to bind chat or copy API address + KEY.'
       ),
     },
     {
-      icon: <BadgeDollarSign className='size-5' strokeWidth={1.5} />,
-      title: t('Transparent pricing'),
+      icon: <BadgePercent className='text-primary size-4 md:size-6' />,
+      title: t('Pricing Multiplier'),
       desc: t(
-        'Pure pay-as-you-go billing with itemized usage records. No hidden fees, no surprises.'
+        '$1 USD equals approximately 1.5-2.5 CNY. Transparent pricing, advance notice for adjustments, no hidden traps.'
       ),
     },
     {
-      icon: <Layers className='size-5' strokeWidth={1.5} />,
-      title: t('Hundreds of models'),
+      icon: <MessageCircleCheck className='text-primary size-4 md:size-6' />,
+      title: t('Model Support'),
       desc: t(
-        'GPT, Claude, Gemini, DeepSeek, Grok and more — switch models by name without changing code.'
+        'Supports ChatGPT, Claude, Gemini, DeepSeek, Grok... and domestic vendors, {{models}} models in total.',
+        { models: modelCountLabel }
       ),
     },
     {
-      icon: <ShieldCheck className='size-5' strokeWidth={1.5} />,
-      title: t('Stable and reliable'),
+      icon: <Rocket className='text-primary size-4 md:size-6' />,
+      title: t('Free Access'),
       desc: t(
-        'Multi-channel load balancing with automatic failover keeps your calls flowing around the clock.'
+        'Multi-node global deployment, no regional restrictions, fast and free access anytime, anywhere.'
       ),
     },
     {
-      icon: <Plug className='size-5' strokeWidth={1.5} />,
-      title: t('OpenAI-compatible'),
+      icon: <CloudBackup className='text-primary size-4 md:size-6' />,
+      title: t('Seamless Integration'),
       desc: t(
-        'Standard API format that plugs straight into your existing apps, SDKs, and tools.'
+        'Universal API interface. No code changes needed. Just change the model name to seamlessly integrate with multiple vendors.'
       ),
     },
     {
-      icon: <ChartColumn className='size-5' strokeWidth={1.5} />,
-      title: t('Usage insights'),
+      icon: <ShieldCheck className='text-primary size-4 md:size-6' />,
+      title: t('Experienced'),
       desc: t(
-        'Real-time dashboards for spend, request volume, and model performance — all in one place.'
+        'Operating stably for over 3 years with rich experience, serving tens of thousands of users. Trustworthy.'
       ),
     },
   ]
 
   return (
-    <section className='relative z-10 px-6 py-20 md:py-28'>
-      <div className='mx-auto max-w-6xl'>
-        <AnimateInView className='mx-auto mb-14 max-w-2xl text-center'>
-          <p className='mb-3 text-xs font-medium tracking-widest text-blue-600 uppercase dark:text-blue-400'>
-            {t('Full service')}
-          </p>
-          <h2 className='text-2xl leading-tight font-bold tracking-tight md:text-4xl'>
-            {t('Everything handled, so you can focus on building')}
+    <section className='relative w-full overflow-hidden px-4 py-12 sm:px-6 md:px-8 md:py-16 lg:py-20'>
+      <div className='mx-auto flex w-full max-w-6xl flex-col items-center'>
+        <AnimateInView className='mb-8 space-y-3 text-center md:mb-12 md:space-y-4 lg:mb-14'>
+          <span className='border-border/50 bg-card/30 text-foreground/70 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] tracking-[0.2em] uppercase backdrop-blur sm:px-4 sm:py-1.5 sm:text-xs sm:tracking-[0.32em]'>
+            {t('WORRY-FREE')}
+            <span
+              className='h-1.5 w-1.5 rounded-full bg-emerald-500 sm:h-2 sm:w-2'
+              aria-hidden='true'
+            />
+          </span>
+          <h2 className='text-foreground text-2xl font-semibold tracking-tight text-balance sm:text-3xl md:text-4xl'>
+            {t('Complete Service System')}
           </h2>
-          <p className='text-muted-foreground mt-4 text-sm leading-relaxed md:text-base'>
+          <p className='text-foreground/70 mx-auto max-w-2xl px-8 text-sm sm:text-base md:text-lg'>
             {t(
-              'We take care of model integrations, billing, and reliability — you just call the API.'
+              'Let us handle complex model integration. Just register, recharge, and bind your application.'
             )}
           </p>
         </AnimateInView>
 
-        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-          {features.map((f, i) => (
-            <AnimateInView
-              key={f.title}
-              delay={(i % 3) * 100}
-              animation='fade-up'
-              className='group border-border/50 bg-card hover:border-blue-500/30 rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5'
-            >
-              <div className='mb-4 flex size-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400'>
-                {f.icon}
-              </div>
-              <h3 className='mb-2 text-base font-semibold'>{f.title}</h3>
-              <p className='text-muted-foreground text-sm leading-relaxed'>
-                {f.desc}
-              </p>
-            </AnimateInView>
-          ))}
+        <div className='w-full'>
+          <ul className='grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 lg:gap-6'>
+            {features.map((feature, index) => (
+              <AnimateInView
+                as='li'
+                key={feature.title}
+                delay={(index % 3) * 100}
+                animation='fade-up'
+                className='group border-border/60 bg-card/50 relative overflow-hidden rounded-xl border p-4 text-left backdrop-blur transition-all hover:scale-102 hover:shadow-md md:rounded-2xl md:p-6'
+              >
+                <div className='from-foreground/4 absolute inset-0 -z-10 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100' />
+                <div className='bg-card/50 border-border/70 relative mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-xl md:mb-5 md:size-14'>
+                  {feature.icon}
+                </div>
+                <div className='relative space-y-1.5 md:space-y-2'>
+                  <h3 className='text-foreground text-sm font-semibold tracking-widest uppercase sm:text-base sm:tracking-[0.15em] md:text-lg md:tracking-tight md:normal-case'>
+                    {feature.title}
+                  </h3>
+                  <div className='text-foreground/60 text-xs leading-relaxed sm:text-sm'>
+                    {feature.desc}
+                  </div>
+                </div>
+              </AnimateInView>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

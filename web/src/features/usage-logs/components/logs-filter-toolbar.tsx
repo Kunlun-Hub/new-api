@@ -17,7 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { Table } from '@tanstack/react-table'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import {
+  ChevronDown,
+  Download,
+  ListFilter,
+  Loader2,
+  RefreshCw,
+  Search,
+} from 'lucide-react'
 import { useState, type ComponentProps, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -37,12 +44,18 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useMediaQuery } from '@/hooks'
 import { cn } from '@/lib/utils'
 
 interface LogsFilterToolbarProps<TData> {
   table: Table<TData>
   primaryFilters: ReactNode
+  secondaryFilters?: ReactNode
   advancedFilters?: ReactNode
   compactMobile?: boolean
   mobilePinnedFilters?: ReactNode
@@ -56,6 +69,8 @@ interface LogsFilterToolbarProps<TData> {
   searchLoading?: boolean
   onReset: () => void
   onSearch: () => void
+  onExport?: () => void
+  exporting?: boolean
   className?: string
 }
 
@@ -113,25 +128,27 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
   const advancedToggle = hasAdvancedFilters ? (
     <Button
       type='button'
-      variant='ghost'
-      onClick={() => setAdvancedOpen((open) => !open)}
+      variant='outline'
+      size='icon'
+      aria-label={t('More filters')}
       aria-expanded={advancedOpen}
+      onClick={() => setAdvancedOpen((open) => !open)}
       className={cn(
-        'text-muted-foreground hover:text-foreground gap-1 px-2',
+        'text-muted-foreground hover:text-foreground relative',
         props.hasAdvancedActiveFilters &&
           !advancedOpen &&
           'text-primary hover:text-primary'
       )}
     >
-      {advancedOpen ? t('Collapse') : t('Expand')}
+      <ListFilter className='size-4' aria-hidden='true' />
       {activeAdvancedCount > 0 && (
-        <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
+        <Badge className='absolute -top-1.5 -right-1.5 size-4 justify-center p-0 text-[10px]'>
           {activeAdvancedCount}
         </Badge>
       )}
       <ChevronDown
         className={cn(
-          'size-3.5 transition-transform duration-200',
+          'size-3 transition-transform duration-200',
           advancedOpen && 'rotate-180'
         )}
       />
@@ -179,7 +196,7 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
                 aria-busy={props.searchLoading}
               >
                 {props.searchLoading && <Loader2 className='animate-spin' />}
-                {t('Search')}
+                {t('Query')}
               </Button>
               <DataTableViewOptions table={props.table} />
             </>
@@ -231,7 +248,7 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
                 disabled={props.searchLoading}
               >
                 {props.searchLoading && <Loader2 className='animate-spin' />}
-                {t('Search')}
+                {t('Query')}
               </Button>
             </DrawerFooter>
           </div>
@@ -243,50 +260,85 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
   return (
     <div
       className={cn(
-        'bg-card/50 rounded-lg border p-2.5 sm:p-3',
+        'bg-background sticky top-[calc(var(--app-header-height,4rem)+var(--banner-h,0px))] z-10 flex flex-col gap-2 pt-1',
         props.className
       )}
     >
-      <div className='flex flex-wrap items-start gap-2'>
-        <div className='grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]'>
+      <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
+        <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
           {props.primaryFilters}
-        </div>
-        {advancedToggle && (
-          <div className='flex shrink-0 items-center justify-end'>
-            {advancedToggle}
-          </div>
-        )}
-      </div>
-
-      {advancedOpen && props.advancedFilters && (
-        <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]'>
-          {props.advancedFilters}
-        </div>
-      )}
-
-      <div className='mt-2 flex flex-wrap items-center gap-2'>
-        {props.stats}
-        <div className='ms-auto flex flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
-          {props.actionStart}
           <Button
             type='button'
             variant='outline'
-            onClick={props.onReset}
-            disabled={!props.hasActiveFilters}
-          >
-            {t('Reset')}
-          </Button>
-          <Button
-            type='button'
             onClick={props.onSearch}
             disabled={props.searchLoading}
+            aria-busy={props.searchLoading}
+            className='max-lg:w-full'
           >
-            {props.searchLoading && <Loader2 className='animate-spin' />}
-            {t('Search')}
+            {props.searchLoading ? (
+              <Loader2 className='animate-spin' />
+            ) : (
+              <Search className='size-4' aria-hidden='true' />
+            )}
+            {t('Query')}
           </Button>
-          <DataTableViewOptions table={props.table} />
+        </div>
+
+        <div className='flex flex-wrap items-center justify-between gap-2 lg:justify-end'>
+          {props.secondaryFilters}
+          <div className='flex flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
+            {props.stats}
+            {props.actionStart}
+            {props.onExport != null && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='icon'
+                      aria-label={t('Export')}
+                      onClick={props.onExport}
+                      disabled={props.exporting}
+                    />
+                  }
+                >
+                  {props.exporting ? (
+                    <Loader2 className='animate-spin' aria-hidden='true' />
+                  ) : (
+                    <Download className='size-4' aria-hidden='true' />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>{t('Export')}</TooltipContent>
+              </Tooltip>
+            )}
+            <Button
+              type='button'
+              variant='outline'
+              size='icon'
+              aria-label={t('Reset')}
+              onClick={props.onReset}
+            >
+              {props.searchLoading ? (
+                <Loader2 className='animate-spin' aria-hidden='true' />
+              ) : (
+                <RefreshCw
+                  className='text-foreground/70 size-4'
+                  aria-hidden='true'
+                />
+              )}
+            </Button>
+            {advancedToggle}
+            <DataTableViewOptions table={props.table} />
+          </div>
         </div>
       </div>
+
+      {advancedOpen && props.advancedFilters && (
+        <div className='flex flex-wrap items-center gap-2'>
+          {props.advancedFilters}
+        </div>
+      )}
     </div>
   )
 }

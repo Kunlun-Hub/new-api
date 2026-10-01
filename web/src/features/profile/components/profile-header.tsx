@@ -25,7 +25,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
-import { formatCompactNumber, formatQuota } from '@/lib/format'
+import { formatCompactNumber, formatQuotaFixed } from '@/lib/format'
 import { getRoleLabel } from '@/lib/roles'
 
 import { getDisplayName } from '../lib'
@@ -93,14 +93,14 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
   }[] = [
     {
       label: t('Current Balance'),
-      value: formatQuota(profile.quota),
+      value: formatQuotaFixed(profile.quota),
       description: t('Remaining quota'),
       icon: WalletCards,
       tone: 'success',
     },
     {
       label: t('Total Usage'),
-      value: formatQuota(profile.used_quota),
+      value: formatQuotaFixed(profile.used_quota),
       description: t('Total consumed quota'),
       icon: BarChart3,
       tone: 'info',

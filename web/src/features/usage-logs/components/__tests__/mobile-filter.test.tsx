@@ -146,17 +146,17 @@ it('applies the selected mobile date range directly and resets pagination while 
   )
 })
 
-it('applies mobile drawer filters only when Search is pressed', async () => {
+it('applies mobile drawer filters only when Query is pressed', async () => {
   const router = await renderMobileFilter()
   const user = userEvent.setup()
   await user.click(screen.getByRole('button', { name: 'Filter' }))
   const dialog = await screen.findByRole('dialog', { name: 'Filter' })
   await user.type(
-    within(dialog).getByPlaceholderText('Model Name'),
+    within(dialog).getByPlaceholderText('Model'),
     'gemini-3.7-flash'
   )
   expect(router.state.location.search).not.toHaveProperty('model')
-  await user.click(within(dialog).getByRole('button', { name: 'Search' }))
+  await user.click(within(dialog).getByRole('button', { name: 'Query' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({
       page: 1,
@@ -173,14 +173,14 @@ it('applies mobile drawer filters only when Search is pressed', async () => {
 it('keeps all quick actions visible without opening a menu', async () => {
   await renderMobileFilter()
   const user = userEvent.setup()
-  for (const name of ['Hide', 'Filter', 'Search', 'View']) {
+  for (const name of ['Hide', 'Filter', 'Query', 'View']) {
     expect(screen.getByRole('button', { name })).toBeVisible()
   }
   expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Hide' }))
   expect(screen.getByRole('button', { name: 'Show' })).toBeVisible()
   screen.getByRole('button', { name: 'Show' }).focus()
-  for (const name of ['Filter', 'Search', 'View']) {
+  for (const name of ['Filter', 'Query', 'View']) {
     await user.tab()
     expect(screen.getByRole('button', { name })).toHaveFocus()
   }
@@ -206,7 +206,7 @@ function LoadingFixture(props: { loading: boolean; onSearch: () => void }) {
   )
 }
 
-it('keeps Search visible while loading and prevents repeated searches', async () => {
+it('keeps Query visible while loading and prevents repeated searches', async () => {
   const original = window.matchMedia
   vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
     ...original(query),
@@ -215,7 +215,7 @@ it('keeps Search visible while loading and prevents repeated searches', async ()
   const onSearch = vi.fn()
   const user = userEvent.setup()
   const view = render(<LoadingFixture loading onSearch={onSearch} />)
-  const search = screen.getByRole('button', { name: 'Search' })
+  const search = screen.getByRole('button', { name: 'Query' })
   expect(search).toBeVisible()
   expect(search).toBeDisabled()
   expect(search).toHaveAttribute('aria-busy', 'true')
@@ -227,23 +227,21 @@ it('keeps Search visible while loading and prevents repeated searches', async ()
   expect(onSearch).toHaveBeenCalledTimes(1)
 })
 
-it('collapses only date and statistics while keeping the right-hand quick actions visible', async () => {
+it('collapses the date filter while keeping the right-hand quick actions visible', async () => {
   await renderMobileFilter()
   const user = userEvent.setup()
   const date =
     screen
       .getByRole('button', { name: /^\d{4}-\d{2}/ })
       .getAttribute('aria-label') ?? ''
-  expect(await screen.findByText('Usage')).toBeVisible()
   await user.click(screen.getByRole('button', { name: 'Collapse' }))
   expect(screen.getByRole('button', { name: 'Expand' })).toHaveAttribute(
     'aria-expanded',
     'false'
   )
   expect(screen.queryByRole('button', { name: date })).not.toBeInTheDocument()
-  expect(screen.queryByText('Usage')).not.toBeInTheDocument()
   const actions = screen.getByRole('group', { name: 'Actions' })
-  for (const name of ['Hide', 'Filter', 'Search', 'View']) {
+  for (const name of ['Hide', 'Filter', 'Query', 'View']) {
     expect(within(actions).getByRole('button', { name })).toBeVisible()
   }
   expect(
@@ -255,7 +253,6 @@ it('collapses only date and statistics while keeping the right-hand quick action
     'true'
   )
   expect(screen.getByRole('button', { name: date })).toBeVisible()
-  expect(await screen.findByText('Usage')).toBeVisible()
 })
 
 it.each([

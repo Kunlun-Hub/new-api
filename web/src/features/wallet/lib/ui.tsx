@@ -66,7 +66,8 @@ export function getPaymentIcon(
   paymentType: string | undefined,
   className: string = 'h-4 w-4',
   icon?: string,
-  altName?: string
+  altName?: string,
+  color?: string
 ): ReactNode {
   const iconValue = icon?.trim()
   const safeIconUrl = normalizeHttpIconUrl(iconValue)
@@ -102,35 +103,35 @@ export function getPaymentIcon(
       return (
         <SiAlipay
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.ALIPAY] }}
+          style={{ color: color ?? PAYMENT_ICON_COLORS[PAYMENT_TYPES.ALIPAY] }}
         />
       )
     case PAYMENT_TYPES.WECHAT:
       return (
         <SiWechat
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WECHAT] }}
+          style={{ color: color ?? PAYMENT_ICON_COLORS[PAYMENT_TYPES.WECHAT] }}
         />
       )
     case PAYMENT_TYPES.STRIPE:
       return (
         <SiStripe
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.STRIPE] }}
+          style={{ color: color ?? PAYMENT_ICON_COLORS[PAYMENT_TYPES.STRIPE] }}
         />
       )
     case PAYMENT_TYPES.CREEM:
       return (
         <Landmark
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.CREEM] }}
+          style={{ color: color ?? PAYMENT_ICON_COLORS[PAYMENT_TYPES.CREEM] }}
         />
       )
     case PAYMENT_TYPES.WAFFO:
       return (
         <CreditCard
           className={className}
-          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO] }}
+          style={{ color: color ?? PAYMENT_ICON_COLORS[PAYMENT_TYPES.WAFFO] }}
         />
       )
     case PAYMENT_TYPES.WAFFO_PANCAKE:

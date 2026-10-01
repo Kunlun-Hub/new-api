@@ -17,11 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { memo, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
@@ -33,6 +31,7 @@ import type { ModelPerfBadgeData } from './model-perf-badge'
 export interface ModelCardGridProps {
   models: PricingModel[]
   onModelClick: (modelName: string) => void
+  onModelTry?: (modelName: string) => void
   priceRate?: number
   usdExchangeRate?: number
   tokenUnit?: TokenUnit
@@ -44,11 +43,10 @@ export const ModelCardGrid = memo(function ModelCardGrid(
   props: ModelCardGridProps
 ) {
   const { t } = useTranslation()
-  const [page, setPage] = useState(1)
   const pageSize = DEFAULT_PRICING_PAGE_SIZE
   const tokenUnit = props.tokenUnit ?? DEFAULT_TOKEN_UNIT
-  const totalPages = Math.max(1, Math.ceil(props.models.length / pageSize))
-  const currentPage = Math.min(page, totalPages)
+  const [visibleCount, setVisibleCount] = useState(pageSize)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const perfQuery = useQuery({
     queryKey: ['perf-metrics-summary', 24],
@@ -57,10 +55,28 @@ export const ModelCardGrid = memo(function ModelCardGrid(
     retry: false,
   })
 
-  const pagedModels = useMemo(() => {
-    const start = (currentPage - 1) * pageSize
-    return props.models.slice(start, start + pageSize)
-  }, [currentPage, pageSize, props.models])
+  useEffect(() => {
+    setVisibleCount(pageSize)
+  }, [props.models, pageSize])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisibleCount((count) =>
+          Math.min(count + pageSize, props.models.length)
+        )
+      }
+    })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [pageSize, props.models.length])
+
+  const visibleModels = useMemo(
+    () => props.models.slice(0, visibleCount),
+    [props.models, visibleCount]
+  )
 
   const perfMap = useMemo(() => {
     const map = new Map<string, ModelPerfBadgeData>()
@@ -80,8 +96,8 @@ export const ModelCardGrid = memo(function ModelCardGrid(
 
   return (
     <div className='flex flex-col gap-4 sm:gap-5'>
-      <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3'>
-        {pagedModels.map((model) => (
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+        {visibleModels.map((model) => (
           <ModelCard
             key={model.id ?? model.model_name}
             model={model}
@@ -92,44 +108,29 @@ export const ModelCardGrid = memo(function ModelCardGrid(
             selectedGroup={props.selectedGroup}
             perf={perfMap.get(model.model_name || '')}
             onClick={props.onModelClick}
+            onTry={props.onModelTry ?? props.onModelClick}
           />
         ))}
       </div>
 
-      {totalPages > 1 && (
-        <div className='text-muted-foreground flex flex-col items-center justify-between gap-3 border-t px-4 py-3 text-sm sm:flex-row'>
-          <p className='text-muted-foreground'>
-            {t('Page {{current}} of {{total}}', {
-              current: currentPage,
-              total: totalPages,
-            })}
-          </p>
-          <div className='flex items-center gap-2'>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
-              disabled={currentPage <= 1}
-              className='gap-1.5'
-            >
-              <ChevronLeft className='size-4' />
-              {t('Previous page')}
-            </Button>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={() =>
-                setPage((current) => Math.min(totalPages, current + 1))
-              }
-              disabled={currentPage >= totalPages}
-              className='gap-1.5'
-            >
-              {t('Next page')}
-              <ChevronRight className='size-4' />
-            </Button>
-          </div>
+      {visibleCount < props.models.length && (
+        <div
+          ref={sentinelRef}
+          role='button'
+          tabIndex={0}
+          aria-label={t('Load more...')}
+          className='flex items-center justify-center py-8'
+          onClick={() => setVisibleCount((count) => count + pageSize)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setVisibleCount((count) => count + pageSize)
+            }
+          }}
+        >
+          <span className='text-muted-foreground text-sm'>
+            {t('Load more...')}
+          </span>
         </div>
       )}
     </div>

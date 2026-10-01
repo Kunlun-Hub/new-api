@@ -664,3 +664,52 @@ it('shows provider count, price range and missing-price status in both list and 
   expect(screen.getByText('0.4 – 0.8/s')).toBeVisible()
   expect(screen.getByText('$0.4 – $0.8')).toBeVisible()
 })
+
+it('renders reference-style tier rows on the model detail card without the base tier', () => {
+  vi.spyOn(api, 'get').mockResolvedValue({ data: { data: { groups: [] } } })
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  clients.push(client)
+  const tieredModel: PricingModel = {
+    ...model,
+    model_name: 'tiered_detail_model',
+    billing_expr:
+      'len <= 200000 ? tier("standard", p * 3 + c * 15 + cr * 0.3 + cc * 3.75 + cc1h * 6) : tier("long_context", p * 6 + c * 22.5 + cr * 0.6 + cc * 7.5 + cc1h * 12)',
+    billing_usage_schema: undefined,
+  }
+  render(
+    <QueryClientProvider client={client}>
+      <ModelDetailsContent
+        model={tieredModel}
+        groupRatio={{ default: 1 }}
+        usableGroup={{ default: { desc: '', ratio: 1 } }}
+        endpointMap={{}}
+        autoGroups={[]}
+        priceRate={1}
+        usdExchangeRate={1}
+        tokenUnit='M'
+      />
+    </QueryClientProvider>
+  )
+  expect(screen.getByText('Input Token > 200K')).toBeVisible()
+  expect(screen.queryByText('Input Token ≤ 200K')).not.toBeInTheDocument()
+  expect(screen.getAllByText('$6/M').length).toBeGreaterThan(0)
+  expect(screen.getByText('$22.5/M')).toBeVisible()
+  expect(screen.getAllByText('Cache Write (5m)').length).toBeGreaterThan(0)
+  expect(screen.getAllByText('Cache Write (1h)').length).toBeGreaterThan(0)
+  expect(screen.getByText('$12/M')).toBeVisible()
+  expect(screen.queryByText('Tiered price table')).not.toBeInTheDocument()
+})
+
+it('derives tier lower bounds from the previous tier upper bound', () => {
+  render(
+    <DynamicPricingBreakdown
+      detailTierTable
+      billingExpr='len <= 32000 ? tier("small", p * 0.3) : len <= 256000 ? tier("medium", p * 0.6) : tier("large", p * 1.2)'
+    />
+  )
+  expect(screen.getByText('Input Token > 32K, ≤ 256K')).toBeVisible()
+  expect(screen.getByText('Input Token > 256K')).toBeVisible()
+  expect(screen.queryByText(/≤ 32K/)).not.toBeInTheDocument()
+})

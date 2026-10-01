@@ -239,3 +239,100 @@ export function CompactDateTimeRangePicker({
     </Popover>
   )
 }
+
+interface CompactDateTimeFieldProps {
+  label: string
+  value?: Date
+  onChange: (value?: Date) => void
+  className?: string
+}
+
+/**
+ * Single date-time field used by list filter rows that show the start and end
+ * bounds as two separate inputs instead of one combined range trigger.
+ */
+export function CompactDateTimeField({
+  label,
+  value,
+  onChange,
+  className,
+}: CompactDateTimeFieldProps) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(toInputValue(value))
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setDraft(toInputValue(value))
+    }
+    setOpen(nextOpen)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger
+        render={
+          <Button
+            type='button'
+            variant='outline'
+            aria-label={label}
+            className={cn(
+              'w-full justify-between gap-2 px-2.5 text-sm leading-5 font-normal tabular-nums',
+              className
+            )}
+          />
+        }
+      >
+        <span className='text-muted-foreground shrink-0 text-[11px]'>
+          {label}
+        </span>
+        <span
+          className={cn(
+            'min-w-0 flex-1 truncate text-left text-xs tabular-nums',
+            !value && 'text-muted-foreground'
+          )}
+        >
+          {value ? dayjs(value).format('YYYY-MM-DD HH:mm') : t('Select date')}
+        </span>
+        <CalendarDays className='text-muted-foreground size-3.5 shrink-0' />
+      </PopoverTrigger>
+      <PopoverContent align='start' className='w-72 p-3'>
+        <div className='space-y-3'>
+          <Input
+            type='datetime-local'
+            step={1}
+            value={draft}
+            aria-label={label}
+            onChange={(e) => setDraft(e.target.value)}
+            className='h-8 text-sm leading-5 tabular-nums'
+          />
+          <div className='flex justify-end gap-2'>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='h-7'
+              onClick={() => {
+                onChange(undefined)
+                setOpen(false)
+              }}
+            >
+              {t('Clear')}
+            </Button>
+            <Button
+              type='button'
+              size='sm'
+              className='h-7'
+              onClick={() => {
+                onChange(fromInputValue(draft))
+                setOpen(false)
+              }}
+            >
+              {t('Confirm')}
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}

@@ -16,10 +16,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { AdminTickets } from '@/features/tickets/admin/admin-tickets'
+import { getConsoleFeatureForGuard } from '@/lib/console-features'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/_authenticated/admin/tickets/')({
+  beforeLoad: async ({ context }) => {
+    const { auth } = useAuthStore.getState()
+    if (!auth.user || auth.user.role < ROLE.ADMIN) {
+      throw redirect({ to: '/403' })
+    }
+    const enabled = await getConsoleFeatureForGuard(context.queryClient, 'tickets')
+    if (!enabled) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: AdminTickets,
 })

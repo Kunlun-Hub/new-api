@@ -30,6 +30,35 @@ func CovertMjpActionToModelName(mjAction string) string {
 	return modelName
 }
 
+// Midjourney speed modes shown in the drawing logs.
+const (
+	MjModeFast  = "Fast"
+	MjModeRelax = "Relax"
+	MjModeTurbo = "Turbo"
+)
+
+// ResolveMidjourneyMode keeps the speed mode of a task. An explicit request
+// mode wins; otherwise the Midjourney prompt flags decide, and tasks without
+// flags keep Midjourney's Fast default.
+func ResolveMidjourneyMode(requestMode string, prompt string) string {
+	switch strings.ToLower(strings.TrimSpace(requestMode)) {
+	case "relax":
+		return MjModeRelax
+	case "turbo":
+		return MjModeTurbo
+	case "fast":
+		return MjModeFast
+	}
+	lowerPrompt := strings.ToLower(prompt)
+	switch {
+	case strings.Contains(lowerPrompt, "--relax"):
+		return MjModeRelax
+	case strings.Contains(lowerPrompt, "--turbo"):
+		return MjModeTurbo
+	}
+	return MjModeFast
+}
+
 // PrepareMidjourneyTaskBilling sets the durable refund marker before the task is inserted.
 func PrepareMidjourneyTaskBilling(relayInfo *relaycommon.RelayInfo, task *model.Midjourney, quota int, shouldBill bool) (bool, error) {
 	if task == nil {

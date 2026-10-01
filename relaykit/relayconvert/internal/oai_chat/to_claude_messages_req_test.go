@@ -79,3 +79,55 @@ func TestOpenAIChatRequestToClaudeMessagesNormalizesToolInputSchema(t *testing.T
 		})
 	}
 }
+
+func TestOpenAIChatRequestToClaudeMessagesForwardsFileURLsAsURLSources(t *testing.T) {
+	tests := []struct {
+		name      string
+		fileName  string
+		wantType  string
+		urlInData bool
+	}{
+		{name: "document", fileName: "report.pdf", wantType: "document"},
+		{name: "plain text", fileName: "notes.txt", wantType: "document"},
+		{name: "image", fileName: "shot.png", wantType: "image"},
+		{name: "studio file_data url", fileName: "notes.txt", wantType: "document", urlInData: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			maxTokens := uint(1024)
+			file := map[string]any{"filename": tt.fileName}
+			if tt.urlInData {
+				file["file_data"] = "https://files.example.com/a/b"
+			} else {
+				file["file_url"] = "https://files.example.com/a/b"
+			}
+			got, err := OpenAIChatRequestToClaudeMessages(context.Background(), nil, dto.GeneralOpenAIRequest{
+				Model:     "claude-test",
+				MaxTokens: &maxTokens,
+				Messages: []dto.Message{
+					{
+						Role: "user",
+						Content: []any{
+							map[string]any{"type": "text", "text": "read this"},
+							map[string]any{
+								"type": "file",
+								"file": file,
+							},
+						},
+					},
+				},
+			})
+
+			require.NoError(t, err)
+			require.Len(t, got.Messages, 1)
+			blocks, ok := got.Messages[0].Content.([]dto.ClaudeMediaMessage)
+			require.True(t, ok)
+			require.Len(t, blocks, 2)
+			assert.Equal(t, tt.wantType, blocks[1].Type)
+			require.NotNil(t, blocks[1].Source)
+			assert.Equal(t, "url", blocks[1].Source.Type)
+			assert.Equal(t, "https://files.example.com/a/b", blocks[1].Source.Url)
+		})
+	}
+}

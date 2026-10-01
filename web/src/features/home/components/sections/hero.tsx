@@ -17,11 +17,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import { useStatus } from '@/hooks/use-status'
+
+import { useHomeStats } from '../../hooks'
+
+const MODEL_SWAP_INTERVAL_MS = 2600
+const ROTATING_MODEL_LIMIT = 5
 
 interface HeroProps {
   className?: string
@@ -31,107 +38,150 @@ interface HeroProps {
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
-  const siteName = status?.systemName || 'New API'
+  const { models } = usePricingData()
+  const { data: homeStats } = useHomeStats()
+
+  const modelNames = useMemo(
+    () =>
+      models
+        .map((model) => model.model_name)
+        .filter((name) => typeof name === 'string' && name.length > 0)
+        .slice(0, ROTATING_MODEL_LIMIT),
+    [models]
+  )
+
+  const [swap, setSwap] = useState({ index: 0, previous: -1 })
+
+  useEffect(() => {
+    if (modelNames.length <= 1) return
+    const timer = window.setInterval(() => {
+      setSwap((state) => ({
+        index: (state.index + 1) % modelNames.length,
+        previous: state.index,
+      }))
+    }, MODEL_SWAP_INTERVAL_MS)
+    return () => window.clearInterval(timer)
+  }, [modelNames.length])
+
+  const activeIndex =
+    modelNames.length > 0 ? swap.index % modelNames.length : -1
+  const activeModel = modelNames[activeIndex]
+  const previousModel =
+    swap.previous >= 0 ? modelNames[swap.previous % modelNames.length] : ''
+  const widestModel = modelNames.reduce(
+    (widest, name) => (name.length > widest.length ? name : widest),
+    ''
+  )
+
+  const modelCount = homeStats?.model_count ?? 0
+  const countLabel = `${modelCount}+`
+  const docsLink = (status?.docs_link as string | undefined) ?? ''
+  const [subtitleBefore, subtitleAfter = ''] = t(
+    'Instantly access {{models}} models with pay-as-you-go pricing, unlimited time, ultra-fast responses, and transparent billing. No hidden costs. Start using all models after recharge. Serving tens of thousands of users.'
+  ).split('{{models}}')
 
   return (
-    <section className='relative z-10 overflow-hidden px-6 pt-24 pb-16 md:pt-32 md:pb-20'>
-      {/* Grid pattern (matches gpt.ge hero) */}
+    <section className='relative isolate flex w-full items-center justify-center overflow-hidden px-6 py-10 md:py-20 lg:py-32'>
       <div
         aria-hidden
-        className='absolute inset-0 -z-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:100px_100px]'
+        className='absolute inset-0 -z-11 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[100px_100px]'
       />
-      {/* Radial gradient background */}
-      <div
-        aria-hidden
-        className='pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-[0.12]'
-        style={{
-          background: [
-            'radial-gradient(ellipse 60% 50% at 50% 0%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 35% at 15% 30%, oklch(0.65 0.15 200 / 50%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 35% at 85% 30%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-          ].join(', '),
-        }}
-      />
+      <div aria-hidden className='absolute inset-0 -z-10'>
+        <div className='bg-foreground/3 absolute top-0 left-1/4 h-150 w-150 rounded-full blur-3xl' />
+        <div className='bg-foreground/3 absolute right-1/4 bottom-1/4 h-150 w-150 rounded-full blur-3xl' />
+      </div>
 
-      <div className='mx-auto flex max-w-4xl flex-col items-center text-center'>
-        {/* Badge */}
-        <div
-          className='landing-animate-fade-up mb-6 inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/5 px-3 py-1.5 text-[11px] font-medium text-blue-600 opacity-0 shadow-xs dark:border-blue-400/20 dark:bg-blue-400/5 dark:text-blue-400'
-          style={{ animationDelay: '0ms' }}
-        >
-          <span className='relative flex size-1.5'>
-            <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75' />
-            <span className='relative inline-flex size-1.5 rounded-full bg-blue-500 dark:bg-blue-400' />
-          </span>
-          <span>{t('Ready to use, pay as you go')}</span>
-        </div>
+      <div className='mx-auto max-w-7xl space-y-10 text-center'>
+        <div className='relative z-10 text-center'>
+          {activeModel ? (
+            <div className='landing-animate-fade-up mb-6'>
+              <div className='group border-border/50 bg-background/50 text-foreground/70 hover:border-border inline-flex items-center gap-2 rounded-full border py-1.5 pr-4 pl-2 text-sm font-medium backdrop-blur-xl transition-all duration-300'>
+                <span className='bg-primary text-primary-foreground inline-flex items-center gap-x-1 rounded-full px-2 py-0.5 text-xs'>
+                  <Sparkles className='size-3' aria-hidden='true' />
+                  {t('New Model')}
+                </span>
+                <span className='relative inline-grid h-5 items-center overflow-hidden whitespace-nowrap'>
+                  <span
+                    aria-hidden='true'
+                    className='invisible col-start-1 row-start-1 flex h-5 items-center'
+                  >
+                    {widestModel}
+                  </span>
+                  {previousModel ? (
+                    <span
+                      key={`out-${swap.previous}`}
+                      className='landing-animate-model-out col-start-1 row-start-1 flex h-5 items-center'
+                    >
+                      <Link
+                        to='/pricing/$modelId'
+                        params={{ modelId: previousModel }}
+                      >
+                        {previousModel}
+                      </Link>
+                    </span>
+                  ) : null}
+                  <span
+                    key={`in-${activeIndex}`}
+                    className='landing-animate-model-in col-start-1 row-start-1 flex h-5 items-center'
+                  >
+                    <Link
+                      to='/pricing/$modelId'
+                      params={{ modelId: activeModel }}
+                    >
+                      {activeModel}
+                    </Link>
+                  </span>
+                </span>
+                <ArrowRight
+                  className='ml-2 size-4 transition-transform duration-300 group-hover:translate-x-1'
+                  aria-hidden='true'
+                />
+              </div>
+            </div>
+          ) : null}
 
-        <h1
-          className='landing-animate-fade-up text-[clamp(2.5rem,5.5vw,4rem)] leading-[1.12] font-bold tracking-tight opacity-0'
-          style={{ animationDelay: '60ms' }}
-        >
-          {t('One API for every')}
-          <br />
-          <span className='bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500 bg-clip-text text-transparent'>
-            {t('leading AI model')}
-          </span>
-        </h1>
+          <h1 className='mb-5 leading-[0.9] font-bold'>
+            <span className='block text-5xl tracking-tight md:text-6xl lg:text-7xl'>
+              {t('Just One Interface')}
+            </span>
+            <span className='mt-4 block text-4xl tracking-normal md:text-5xl lg:text-6xl'>
+              {t("Connect to the World's Most Popular Models")}
+            </span>
+          </h1>
 
-        <p
-          className='landing-animate-fade-up text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed opacity-0 md:text-lg'
-          style={{ animationDelay: '120ms' }}
-        >
-          {t(
-            '{{siteName}} brings hundreds of models — GPT, Claude, Gemini, DeepSeek and more — behind a single OpenAI-compatible endpoint. Top up your balance and start calling right away, with transparent per-token billing.',
-            { siteName }
-          )}
-        </p>
+          <p className='text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed'>
+            {subtitleBefore}
+            <b className='text-primary'>{countLabel}</b>
+            {subtitleAfter}
+          </p>
 
-        <div
-          className='landing-animate-fade-up mt-9 flex w-full flex-col items-stretch justify-center gap-3 opacity-0 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center'
-          style={{ animationDelay: '180ms' }}
-        >
-          {props.isAuthenticated ? (
+          <div className='flex flex-col justify-center gap-4 pt-8 sm:flex-row'>
             <Button
-              className='group h-12 w-full rounded-full px-7 text-sm font-medium sm:w-auto'
-              render={<Link to='/dashboard' />}
+              className='group h-14 rounded-full px-8 text-base'
+              render={
+                <Link to={props.isAuthenticated ? '/dashboard' : '/sign-up'} />
+              }
             >
-              {t('Go to Dashboard')}
-              <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
+              {t('Get Started')}
+              <ArrowRight
+                className='ml-2 size-4 transition-transform duration-300 group-hover:translate-x-1'
+                aria-hidden='true'
+              />
             </Button>
-          ) : (
             <Button
-              className='group h-12 w-full rounded-full px-7 text-sm font-medium sm:w-auto'
-              render={<Link to='/sign-up' />}
+              variant='outline'
+              className='border-border/80 dark:border-border/40 dark:bg-card/50 h-14 rounded-full px-8 text-base'
+              render={
+                docsLink.startsWith('http') ? (
+                  <a href={docsLink} target='_blank' rel='noreferrer' />
+                ) : (
+                  <Link to={docsLink || '/doc'} />
+                )
+              }
             >
-              {t('Start for free')}
-              <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
+              {t('Help Docs')}
             </Button>
-          )}
-          <Button
-            variant='outline'
-            className='h-12 w-full rounded-full px-7 text-sm font-medium sm:w-auto'
-            render={<Link to='/pricing' />}
-          >
-            {t('View Pricing')}
-          </Button>
-        </div>
-
-        {/* Model vendor strip */}
-        <div
-          className='landing-animate-fade-up mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 opacity-0'
-          style={{ animationDelay: '240ms' }}
-        >
-          {['OpenAI', 'Claude', 'Gemini', 'DeepSeek', 'Grok', 'Qwen'].map(
-            (vendor) => (
-              <span
-                key={vendor}
-                className='text-muted-foreground/50 text-sm font-semibold tracking-wide'
-              >
-                {vendor}
-              </span>
-            )
-          )}
+          </div>
         </div>
       </div>
     </section>

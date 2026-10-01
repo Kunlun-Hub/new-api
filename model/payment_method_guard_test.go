@@ -353,3 +353,26 @@ func TestRechargeEpayEnforcesFinalWalletQuotaLimit(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUserTotalTopUpQuotaSumsSuccessfulTopUps(t *testing.T) {
+	truncateTables(t)
+
+	const userId = 515
+	topUps := []TopUp{
+		{UserId: userId, Amount: 300000, Money: 60, TradeNo: "TOTALTOPUPSUCCESS1", Status: common.TopUpStatusSuccess, CreateTime: time.Now().Unix()},
+		{UserId: userId, Amount: 250000, Money: 50, TradeNo: "TOTALTOPUPSUCCESS2", Status: common.TopUpStatusSuccess, CreateTime: time.Now().Unix()},
+		{UserId: userId, Amount: 999999, Money: 100, TradeNo: "TOTALTOPUPPENDING", Status: common.TopUpStatusPending, CreateTime: time.Now().Unix()},
+		{UserId: userId + 1, Amount: 700000, Money: 70, TradeNo: "TOTALTOPUPOTHERUSER", Status: common.TopUpStatusSuccess, CreateTime: time.Now().Unix()},
+	}
+	for i := range topUps {
+		require.NoError(t, DB.Create(&topUps[i]).Error)
+	}
+
+	total, err := GetUserTotalTopUpQuota(userId)
+	require.NoError(t, err)
+	assert.Equal(t, int64(550000), total)
+
+	empty, err := GetUserTotalTopUpQuota(userId + 2)
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), empty)
+}

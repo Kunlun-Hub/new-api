@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -16,16 +18,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ConfigDrawer } from '@/components/config-drawer'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
-import { useNotifications } from '@/hooks/use-notifications'
+import { ThemeQuickSwitcher } from '@/components/theme-quick-switcher'
 import { useStatus } from '@/hooks/use-status'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
-import { useMemo } from 'react'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
@@ -86,10 +86,10 @@ type AppHeaderProps = {
    */
   showNotifications?: boolean
   /**
-   * Whether to show config drawer
+   * Whether to show the theme switch
    * @default true
    */
-  showConfigDrawer?: boolean
+  showThemeSwitch?: boolean
   /**
    * Whether to show profile dropdown
    * @default true
@@ -104,7 +104,7 @@ export function AppHeader({
   showSearch: showSearchProp,
   rightContent,
   showNotifications = true,
-  showConfigDrawer = true,
+  showThemeSwitch = true,
   showProfileDropdown = true,
 }: AppHeaderProps) {
   // Prioritize dynamically generated links from backend
@@ -114,7 +114,8 @@ export function AppHeader({
   // "Show search box" toggle from Settings -> Header navigation
   const { status } = useStatus()
   const headerNavModules = useMemo(
-    () => parseHeaderNavModulesFromStatus(status as Record<string, unknown> | null),
+    () =>
+      parseHeaderNavModulesFromStatus(status as Record<string, unknown> | null),
     [status]
   )
   const showSearchSetting =
@@ -122,9 +123,6 @@ export function AppHeader({
       ? headerNavModules.showSearch
       : true
   const showSearch = showSearchProp ?? showSearchSetting
-
-  // Notifications hook
-  const notifications = useNotifications()
 
   return (
     <Header>
@@ -152,20 +150,9 @@ export function AppHeader({
           {showSearch && (
             <Search className='w-8 flex-none [&>span]:hidden sm:[&>span]:inline' />
           )}
-          {showNotifications && (
-            <NotificationPopover
-              open={notifications.popoverOpen}
-              onOpenChange={notifications.setPopoverOpen}
-              unreadCount={notifications.unreadCount}
-              activeTab={notifications.activeTab}
-              onTabChange={notifications.setActiveTab}
-              notice={notifications.notice}
-              announcements={notifications.announcements}
-              loading={notifications.loading}
-            />
-          )}
+          {showNotifications && <NotificationPopover />}
           <LanguageSwitcher />
-          {showConfigDrawer && <ConfigDrawer />}
+          {showThemeSwitch && <ThemeQuickSwitcher />}
           {showProfileDropdown && <ProfileDropdown />}
         </div>
       )}

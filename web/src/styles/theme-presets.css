@@ -729,14 +729,7 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 /* ── Content layout ───────────────────────────────────────────────────── */
-/* `centered` clamps inset content to a comfortable reading width on large screens.
- * Targets every direct child of <SidebarInset> so router outlet wrappers and
- * page content alike are centered. Only kicks in once the viewport exceeds the
- * clamp value. */
-@media (min-width: 1280px) {
-  [data-theme-content-layout='centered'] [data-slot='sidebar-inset'] > * {
-    max-width: var(--max-content-width, 1280px);
-    margin-inline: auto;
-    width: 100%;
-  }
-}
+/* Console pages stay full-bleed: the sidebar rail and the page content must be
+ * adjacent at every viewport width, so collapsing the sidebar simply hands the
+ * extra room to the content. Marketing pages center themselves with their own
+ * `mx-auto max-w-*` containers. */

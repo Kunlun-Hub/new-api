@@ -123,20 +123,20 @@ describe('landing sections', () => {
   it('hero shows the headline and signup call-to-action for visitors', async () => {
     await renderWithRouter(<Hero isAuthenticated={false} />)
     expect(
-      screen.getByRole('heading', { name: /One API for every/ })
+      screen.getByRole('heading', { name: /Just One Interface/ })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /Start for free/ })
+      screen.getByRole('button', { name: /Get Started/ })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /View Pricing/ })
+      screen.getByRole('button', { name: /Help Docs/ })
     ).toBeInTheDocument()
   })
 
   it('hero links to the dashboard for signed-in users', async () => {
     await renderWithRouter(<Hero isAuthenticated />)
     expect(
-      screen.getByRole('button', { name: /Go to Dashboard/ })
+      screen.getByRole('button', { name: /Get Started/ })
     ).toBeInTheDocument()
   })
 
@@ -159,27 +159,26 @@ describe('landing sections', () => {
     await renderWithRouter(<Features />)
     const headings = screen.getAllByRole('heading', { level: 3 })
     expect(headings).toHaveLength(6)
-    expect(screen.getByText('Transparent pricing')).toBeInTheDocument()
-    expect(screen.getByText('OpenAI-compatible')).toBeInTheDocument()
+    expect(screen.getByText('Tutorial')).toBeInTheDocument()
+    expect(screen.getByText('Seamless Integration')).toBeInTheDocument()
   })
 
   it('how-it-works lists three steps and a curl example', async () => {
     await renderWithRouter(<HowItWorks />)
     expect(screen.getByText('Sign up and top up')).toBeInTheDocument()
     expect(screen.getByText('Create an API token')).toBeInTheDocument()
-    expect(screen.getByText('Point and call')).toBeInTheDocument()
-    expect(
-      screen.getByText(/curl .*\/v1\/chat\/completions/)
-    ).toBeInTheDocument()
+    expect(screen.getByText('Swap the endpoint and call')).toBeInTheDocument()
+    expect(screen.getByText('REQUEST')).toBeInTheDocument()
+    expect(screen.getByText('/v1/chat/completions')).toBeInTheDocument()
   })
 
-  it('use-cases renders all six scenario cards', async () => {
+  it('use-cases renders all five scenario cards', async () => {
     await renderWithRouter(<UseCases />)
     const headings = screen.getAllByRole('heading', { level: 3 })
-    expect(headings).toHaveLength(6)
+    expect(headings).toHaveLength(5)
     expect(screen.getByText('Conversational apps')).toBeInTheDocument()
-    expect(screen.getByText('Data processing')).toBeInTheDocument()
-    expect(screen.getByText('Knowledge Q&A')).toBeInTheDocument()
+    expect(screen.getByText('Data processing & analysis')).toBeInTheDocument()
+    expect(screen.getByText('Image & multimodal')).toBeInTheDocument()
   })
 
   it('cta shows the signup banner for visitors', async () => {

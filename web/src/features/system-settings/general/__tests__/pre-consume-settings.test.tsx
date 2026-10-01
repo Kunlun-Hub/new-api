@@ -47,6 +47,11 @@ function Fixture() {
             InvitationUnlockEnabled: false,
             InvitationUnlockMinInvites: 0,
             InvitationUnlockMinConsumedQuota: 0,
+            AffiliateTopupRewardPercent: 0,
+            AffiliateTopupRewardTimes: 0,
+            WithdrawalEnabled: false,
+            WithdrawalMinQuota: 0,
+            WithdrawalRatio: 0,
             TopUpLink: '',
             quota_setting: {
               enable_free_model_pre_consume: true,

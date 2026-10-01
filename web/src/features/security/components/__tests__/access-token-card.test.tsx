@@ -127,7 +127,7 @@ describe('system access token management', () => {
     const post = vi.mocked(api.post)
     renderCard()
     const user = userEvent.setup()
-    await user.dblClick(await screen.findByRole('button', { name: 'Generate' }))
+    await user.dblClick(await screen.findByRole('button', { name: 'Generate Token' }))
     await screen.findByLabelText('Password', { selector: 'input' })
     expect(post).not.toHaveBeenCalled()
     expect(
@@ -151,7 +151,7 @@ describe('system access token management', () => {
     })
     renderCard()
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: 'Generate' }))
+    await user.click(await screen.findByRole('button', { name: 'Generate Token' }))
     await verifyPassword(user)
     await waitFor(() =>
       expect(post).toHaveBeenCalledWith(
@@ -169,7 +169,7 @@ describe('system access token management', () => {
       post.mock.calls.filter(([url]) => url === '/api/user/token')
     ).toHaveLength(0)
     expect(screen.queryByLabelText('Token')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Generate' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Generate Token' })).toBeEnabled()
   })
 
   it('aborts and ignores a token response for an account that is no longer active', async () => {
@@ -193,7 +193,7 @@ describe('system access token management', () => {
     })
     const client = renderCard()
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: 'Generate' }))
+    await user.click(await screen.findByRole('button', { name: 'Generate Token' }))
     await verifyPassword(user)
     await waitFor(() => expect(signal).toBeDefined())
     await act(async () => {
@@ -208,7 +208,7 @@ describe('system access token management', () => {
     })
     expect(screen.queryByDisplayValue(token)).not.toBeInTheDocument()
     expect(
-      await screen.findByRole('button', { name: 'Generate' })
+      await screen.findByRole('button', { name: 'Generate Token' })
     ).toBeEnabled()
     expect(
       JSON.stringify(
@@ -236,7 +236,7 @@ describe('system access token management', () => {
     })
     const client = renderCard()
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: 'Generate' }))
+    await user.click(await screen.findByRole('button', { name: 'Generate Token' }))
     await verifyPassword(user)
     const dialog = await screen.findByRole('dialog', { name: 'Access Token' })
     expect(within(dialog).getByLabelText('Token')).toHaveValue(token)
@@ -280,7 +280,7 @@ describe('system access token management', () => {
     expect(await screen.findAllByText('Unknown')).toHaveLength(2)
     expect(screen.queryByText('Not used yet')).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Generate' })
+      screen.queryByRole('button', { name: 'Generate Token' })
     ).not.toBeInTheDocument()
   })
 
@@ -293,10 +293,12 @@ describe('system access token management', () => {
     expect(screen.queryByText('Not generated')).not.toBeInTheDocument()
     expect(screen.queryByText('Not used yet')).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Generate' })
+      screen.queryByRole('button', { name: 'Generate Token' })
     ).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
-    expect(await screen.findByText('Not generated')).toBeVisible()
+    expect(
+      await screen.findByRole('button', { name: 'Generate Token' })
+    ).toBeVisible()
   })
 
   it('rotation requires confirmation and verification, and failure keeps the existing token state', async () => {
@@ -362,40 +364,28 @@ describe('system access token management', () => {
       })
     )
     expect(
-      await screen.findByRole('button', { name: 'Generate' })
+      await screen.findByRole('button', { name: 'Generate Token' })
     ).toBeVisible()
     await waitFor(() =>
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     )
   })
 
-  it('access history opens by keyboard in a full-width mobile sheet and Escape closes it', async () => {
-    useAuthStore
-      .getState()
-      .auth.setUser({ id: 1, username: 'admin', role: 100 })
+  it('shows the request header example and a full-width generate action', async () => {
     renderCard()
-    const user = userEvent.setup()
-    const trigger = screen.getByRole('button', { name: 'Access records' })
-    trigger.focus()
-    await user.keyboard('{Enter}')
-    const sheet = await screen.findByRole('dialog', { name: 'Access records' })
-    expect(sheet).toHaveClass('w-full', 'sm:max-w-5xl')
-    await waitFor(() =>
-      expect(api.get).toHaveBeenCalledWith('/api/audit/self', {
-        params: expect.objectContaining({ category: 'access_token' }),
-      })
-    )
-    expect(api.get).not.toHaveBeenCalledWith('/api/audit', expect.anything())
+    expect(await screen.findByText('Request header example')).toBeVisible()
     expect(
-      within(sheet).queryByRole('tablist', { name: 'View scope' })
-    ).not.toBeInTheDocument()
-    expect(
-      within(sheet).getByRole('combobox', { name: 'Token scope' })
+      screen.getByText(/curl -X GET .*\/api\/\.\.\./)
     ).toBeVisible()
-    await user.keyboard('{Escape}')
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    )
-    expect(trigger).toHaveFocus()
+    expect(
+      screen.queryByRole('button', { name: 'Access records' })
+    ).not.toBeInTheDocument()
+    const generate = await screen.findByRole('button', {
+      name: 'Generate Token',
+    })
+    expect(generate).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'Regenerate' })
+    ).not.toBeInTheDocument()
   })
 })

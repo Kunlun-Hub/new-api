@@ -24,6 +24,7 @@ type MidjourneyRequest struct {
 	Base64Array []string `json:"base64Array"`
 	Content     string   `json:"content"`
 	MaskBase64  string   `json:"maskBase64"`
+	Mode        string   `json:"mode"`
 }
 
 type MidjourneyResponse struct {
@@ -49,6 +50,7 @@ type MidjourneyDto struct {
 	Action      string      `json:"action"`
 	CustomId    string      `json:"customId"`
 	BotType     string      `json:"botType"`
+	Mode        string      `json:"mode"`
 	Prompt      string      `json:"prompt"`
 	PromptEn    string      `json:"promptEn"`
 	Description string      `json:"description"`

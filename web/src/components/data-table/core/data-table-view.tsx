@@ -305,6 +305,7 @@ function renderEmptyState<TData>(
       title={props.emptyTitle}
       description={props.emptyDescription}
       icon={props.emptyIcon}
+      cellClassName={props.emptyCellClassName}
     >
       {props.emptyAction}
     </TableEmpty>
@@ -316,11 +317,17 @@ function renderDefaultRow<TData>(
   row: Row<TData>,
   getColumnClassName: DataTableColumnClassName
 ) {
+  const onRowClick = props.onRowClick
   return (
     <DataTableRow
       key={row.id}
       row={row}
-      className={cn(props.tableBodyRowClassName, props.getRowClassName?.(row))}
+      className={cn(
+        props.tableBodyRowClassName,
+        props.getRowClassName?.(row),
+        onRowClick && 'cursor-pointer'
+      )}
+      onClick={onRowClick ? () => onRowClick(row) : undefined}
       getColumnClassName={getColumnClassName}
       cellRenderColumns={props.table.options.columns}
     />

@@ -28,10 +28,22 @@ export interface MessageVersion {
   content: string
 }
 
+export interface MessageAttachment {
+  id: string
+  name: string
+  url: string
+  isImage: boolean
+  /** Upload lifecycle; attachments still uploading are not sent to the model. */
+  status?: 'uploading' | 'done' | 'error'
+}
+
 export interface Message {
   key: string
   from: MessageRole
   versions: MessageVersion[]
+  attachments?: MessageAttachment[]
+  /** Marks the last message that must be dropped from the model context. */
+  contextBoundary?: boolean
   createdAt?: number
   startedAt?: number
   completedAt?: number
@@ -58,10 +70,15 @@ export interface ChatCompletionMessage {
 }
 
 export interface ContentPart {
-  type: 'text' | 'image_url'
+  type: 'text' | 'image_url' | 'file'
   text?: string
   image_url?: {
     url: string
+  }
+  file?: {
+    filename?: string
+    file_data?: string
+    file_url?: string
   }
 }
 
@@ -76,6 +93,7 @@ export interface ChatCompletionRequest {
   frequency_penalty?: number
   presence_penalty?: number
   seed?: number
+  reasoning_effort?: string
 }
 
 export interface ChatCompletionChunk {
@@ -126,6 +144,12 @@ export interface PlaygroundConfig {
   presence_penalty: number
   seed: number | null
   stream: boolean
+  /** Reasoning effort passed upstream as `reasoning_effort`; empty = default. */
+  reasoning_effort: string
+  /** Maximum number of conversation turns sent to the model. */
+  max_context: number
+  /** Optional system prompt prepended to the conversation. */
+  system: string
 }
 
 export interface ParameterEnabled {

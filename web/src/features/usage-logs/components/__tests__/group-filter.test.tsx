@@ -102,6 +102,12 @@ async function renderFilter(
     await userEvent.click(
       await screen.findByRole('button', { name: /^Filter/ })
     )
+  } else {
+    // The group filter lives in the advanced filter panel, matching the
+    // reference console where only the date range, token and model are pinned.
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'More filters' })
+    )
   }
   await screen.findByRole('combobox', { name: 'Group' })
   return router
@@ -122,7 +128,7 @@ afterEach(() => {
   }
 })
 
-it('loads personal groups and filters choices without submitting until Search', async () => {
+it('loads personal groups and filters choices without submitting until Query', async () => {
   const router = await renderFilter()
   const input = screen.getByRole('combobox', { name: 'Group' })
   await userEvent.click(input)
@@ -134,7 +140,7 @@ it('loads personal groups and filters choices without submitting until Search', 
   await userEvent.click(screen.getByRole('option', { name: 'premium' }))
   expect(input).toHaveValue('premium')
   expect(router.state.location.search).not.toHaveProperty('group')
-  await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Query' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({
       group: 'premium',
@@ -180,14 +186,14 @@ it.each([{}, null])(
     expect(input).toHaveValue('retired')
     await userEvent.clear(input)
     await userEvent.type(input, 'historical')
-    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Query' }))
     await waitFor(() =>
       expect(router.state.location.search).toMatchObject({
         group: 'historical',
       })
     )
     await userEvent.clear(input)
-    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Query' }))
     await waitFor(() =>
       expect(router.state.location.search).not.toHaveProperty('group')
     )
@@ -221,7 +227,7 @@ it('keeps a selected group visible on focus and can clear it without choosing an
 it('keeps the compact input and masks the dropdown together with other sensitive filters', async () => {
   await renderFilter()
   const input = screen.getByRole('combobox', { name: 'Group' })
-  expect(input).toHaveClass('h-8', 'text-sm', 'leading-5')
+  expect(input).toHaveClass('h-9', 'text-sm', 'leading-5')
   await userEvent.click(screen.getByRole('button', { name: /^Hide$/ }))
   await userEvent.click(input)
   const option = await screen.findByRole('option', { name: 'premium' })
@@ -256,7 +262,7 @@ it('lets mobile users select a long group name inside the filter drawer and subm
   await userEvent.click(option)
   expect(input).toHaveValue(longGroup)
   expect(dialog).toBeVisible()
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Search' }))
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Query' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ group: longGroup })
   )
@@ -280,7 +286,7 @@ it.each([1, 10])(
       screen.queryByRole('option', { name: 'auto' })
     ).not.toBeInTheDocument()
     await userEvent.click(option)
-    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Query' }))
     await waitFor(() =>
       expect(router.state.location.search).toMatchObject({ group: 'auto-team' })
     )
@@ -297,7 +303,7 @@ it('keeps historical auto values editable when auto is the only available group'
   expect(screen.queryByRole('option', { name: 'auto' })).not.toBeInTheDocument()
   await userEvent.clear(input)
   await userEvent.type(input, 'retired')
-  await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Query' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ group: 'retired' })
   )

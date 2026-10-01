@@ -32,30 +32,54 @@ export const ModelCapabilityBadges = memo(
   function ModelCapabilityBadges(props: {
     model: PricingModel
     className?: string
+    /** Maximum number of capability chips before collapsing into a `+N` chip. */
+    maxVisible?: number
+    /** Capability keys rendered elsewhere, e.g. the web-search chip next to the billing mode. */
+    exclude?: string[]
   }) {
     const { t } = useTranslation()
-    const badges = getCapabilityBadges(props.model)
+    const badges = getCapabilityBadges(props.model).filter(
+      (badge) => !props.exclude?.includes(badge.key)
+    )
     const contextLabel = formatContextLength(props.model.context_length)
 
     if (badges.length === 0 && !contextLabel) return null
 
+    const visible =
+      props.maxVisible === undefined
+        ? badges
+        : badges.slice(0, props.maxVisible)
+    const hidden =
+      props.maxVisible === undefined ? [] : badges.slice(props.maxVisible)
+    const chipClass =
+      'border-border/40 h-4.5 rounded-4xl px-2 py-0.5 text-[10px] font-medium'
+
     return (
-      <div
-        className={cn('flex flex-wrap items-center gap-1.5', props.className)}
-      >
-        {badges.map((badge) => (
-          <Badge
-            key={badge.key}
-            variant='secondary'
-            className='rounded-md px-1.5 py-0.5 text-[11px] font-normal'
-          >
+      <div className={cn('flex flex-wrap items-center gap-1', props.className)}>
+        {visible.map((badge) => (
+          <Badge key={badge.key} variant='outline' className={chipClass}>
             {t(badge.labelKey)}
           </Badge>
         ))}
+        {hidden.length > 0 && (
+          <Badge
+            variant='outline'
+            className={chipClass}
+            title={hidden.map((badge) => t(badge.labelKey)).join(', ')}
+          >
+            +{hidden.length}
+          </Badge>
+        )}
         {contextLabel && (
-          <span className='text-muted-foreground ml-auto font-mono text-[11px] tabular-nums'>
+          <Badge
+            variant='secondary'
+            className={cn(
+              chipClass,
+              'border-transparent font-mono tabular-nums'
+            )}
+          >
             {contextLabel}
-          </span>
+          </Badge>
         )}
       </div>
     )

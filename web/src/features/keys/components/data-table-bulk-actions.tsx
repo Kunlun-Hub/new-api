@@ -16,23 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type Table } from '@tanstack/react-table'
+import type { Table } from '@tanstack/react-table'
 import { Copy, Trash2, Loader2 } from 'lucide-react'
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
 import { Button } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Popconfirm } from '@/components/ui/popconfirm'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
+import { handleServerError } from '@/lib/handle-server-error'
 
-import { type ApiKey } from '../types'
-import { ApiKeysMultiDeleteDialog } from './api-keys-multi-delete-dialog'
+import { batchDeleteApiKeys } from '../api'
+import { ERROR_MESSAGES } from '../constants'
+import type { ApiKey } from '../types'
 import { useApiKeys } from './api-keys-provider'
 
 type DataTableBulkActionsProps<TData> = {
@@ -43,10 +40,10 @@ export function DataTableBulkActions<TData>({
   table,
 }: DataTableBulkActionsProps<TData>) {
   const { t } = useTranslation()
-  const { resolveRealKeysBatch } = useApiKeys()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const { resolveRealKeysBatch, triggerRefresh } = useApiKeys()
   const [isCopying, setIsCopying] = useState(false)
   const selectedRows = table.getFilteredSelectedRowModel().rows
+  const selectedCount = selectedRows.length
 
   const handleBatchCopy = useCallback(async () => {
     if (selectedRows.length === 0) return
@@ -80,59 +77,65 @@ export function DataTableBulkActions<TData>({
     }
   }, [selectedRows, resolveRealKeysBatch, t])
 
+  const handleBatchDelete = async () => {
+    const ids = selectedRows.map((row) => (row.original as ApiKey).id)
+    const result = await batchDeleteApiKeys(ids)
+
+    if (result.success) {
+      toast.success(
+        t('Successfully deleted {{count}} API key(s)', {
+          count: result.data || ids.length,
+        })
+      )
+      table.resetRowSelection()
+      triggerRefresh()
+      return
+    }
+
+    handleServerError(result, t(ERROR_MESSAGES.BATCH_DELETE_FAILED))
+  }
+
   return (
-    <>
-      <BulkActionsToolbar table={table} entityName='API key'>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant='outline'
-                size='icon'
-                className='size-8'
-                onClick={handleBatchCopy}
-                disabled={isCopying}
-                aria-label={t('Copy selected keys')}
-              />
-            }
-          >
-            {isCopying ? (
-              <Loader2 className='size-4 animate-spin' />
-            ) : (
-              <Copy className='size-4' />
-            )}
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{t('Copy selected keys')}</p>
-          </TooltipContent>
-        </Tooltip>
+    <div className='flex items-center gap-2'>
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        onClick={handleBatchCopy}
+        disabled={isCopying}
+      >
+        {isCopying ? (
+          <Loader2 className='mr-1 size-3.5 animate-spin' aria-hidden='true' />
+        ) : (
+          <Copy className='mr-1 size-3.5' aria-hidden='true' />
+        )}
+        {t('Copy {{count}}', { count: selectedCount })}
+      </Button>
 
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant='destructive'
-                size='icon'
-                onClick={() => setShowDeleteConfirm(true)}
-                className='size-8'
-                aria-label={t('Delete selected API keys')}
-              />
-            }
-          >
-            <Trash2 />
-            <span className='sr-only'>{t('Delete selected API keys')}</span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{t('Delete selected API keys')}</p>
-          </TooltipContent>
-        </Tooltip>
-      </BulkActionsToolbar>
+      <Popconfirm
+        destructive
+        title={t('Delete selected tokens?')}
+        description={t(
+          '{{count}} token(s) will be deleted. This action cannot be undone.',
+          { count: selectedCount }
+        )}
+        confirmText={t('Delete')}
+        onConfirm={handleBatchDelete}
+      >
+        <Button type='button' variant='outline' size='sm'>
+          <Trash2 className='mr-1 size-3.5' aria-hidden='true' />
+          {t('Delete {{count}}', { count: selectedCount })}
+        </Button>
+      </Popconfirm>
 
-      <ApiKeysMultiDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        table={table}
-      />
-    </>
+      <Button
+        type='button'
+        variant='secondary'
+        size='sm'
+        onClick={() => table.resetRowSelection()}
+      >
+        {t('Cancel')}
+      </Button>
+    </div>
   )
 }
