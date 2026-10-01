@@ -26,6 +26,7 @@ import {
 
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger, useOptionalSidebar } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 
 import { Main } from './main'
 import { PageFooterProvider } from './page-footer'
@@ -55,6 +56,11 @@ SectionPageLayoutBreadcrumb.displayName = 'SectionPageLayout.Breadcrumb'
 export type SectionPageLayoutProps = {
   children: ReactNode
   stackActionsOnMobile?: boolean
+  /**
+   * Bound the layout to the viewport height so nested panes (tables, editors)
+   * scroll on their own instead of growing the document.
+   */
+  fillHeight?: boolean
 }
 
 export function SectionPageLayout(props: SectionPageLayoutProps) {
@@ -83,7 +89,15 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
 
   return (
     <PageFooterProvider container={footerContainer}>
-      <Main>
+      <Main
+        className={cn(
+          // `flex-none` keeps the explicit viewport height: as a growing flex
+          // item the base `flex-1` basis would win over `height` and let long
+          // content stretch the document instead of scrolling its own panes.
+          props.fillHeight &&
+            'h-[calc(100svh-var(--app-header-height,0px))] min-h-0 flex-none overflow-hidden'
+        )}
+      >
         <header className='flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 lg:px-8'>
           {sidebar != null && (
             <>
@@ -93,14 +107,19 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
               />
               <Separator
                 orientation='vertical'
-                className='mr-2 h-4 self-center bg-border/60'
+                className='bg-border/60 mr-2 h-4 self-center'
               />
             </>
           )}
           <div className='min-w-0 flex-1'>{breadcrumb}</div>
         </header>
 
-        <div className='flex flex-1 flex-col gap-5 p-4 lg:px-20 lg:py-8'>
+        <div
+          className={cn(
+            'flex flex-1 flex-col gap-5 p-4 lg:px-20 lg:py-8',
+            props.fillHeight && 'min-h-0 overflow-hidden'
+          )}
+        >
           {(title != null || actions != null) && (
             <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4'>
               <div

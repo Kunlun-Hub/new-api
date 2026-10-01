@@ -26,6 +26,11 @@ export type SectionDefinition<TSettings, TExtraArgs extends unknown[] = []> = {
   id: string
   titleKey: string
   build: (settings: TSettings, ...extraArgs: TExtraArgs) => ReactNode
+  /**
+   * Sections with nested panes bound themselves to the viewport height so the
+   * panes scroll internally instead of growing the whole document.
+   */
+  fillHeight?: boolean
 }
 
 /**

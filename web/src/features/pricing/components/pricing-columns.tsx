@@ -17,187 +17,180 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef } from '@tanstack/react-table'
+import { Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  BadgeCell,
-  BadgeListCell,
-  DataTableColumnHeader,
-} from '@/components/data-table'
-import { GroupBadge } from '@/components/group-badge'
-import { StatusBadge } from '@/components/status-badge'
-import { getLobeIcon } from '@/lib/lobe-icon'
+import { CopyButton } from '@/components/copy-button'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { getBillingCurrencySymbol } from '@/lib/currency'
 
-import { parseTags } from '../lib/filters'
+import { useModelPerfMap } from '../hooks/use-model-perf-map'
+import { getMetaTagBadges } from '../lib/capability-badges'
 import type { PricingModel } from '../types'
-import { CachedPriceCell } from './cached-price-cell'
+import { ModelAvailabilityCell } from './model-availability-cell'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
-import { ModelPriceCell, type ModelPriceCellOptions } from './model-price-cell'
+import { ModelCapabilityBadges } from './model-capability-badges'
+import type { ModelPriceCellOptions } from './model-price-cell'
+import { ModelTablePriceCell } from './model-table-price-cell'
 
 // ----------------------------------------------------------------------------
 // Pricing Table Columns
 // ----------------------------------------------------------------------------
 
-export type PricingColumnsOptions = ModelPriceCellOptions
+export type PricingColumnsOptions = ModelPriceCellOptions & {
+  onModelTry?: (modelName: string) => void
+}
+
+/** Column widths measured from the reference model square table. */
+export const PRICING_COLUMN_SIZES = {
+  model: 347,
+  tags: 292,
+  context: 122,
+  billing: 106,
+  price: 180,
+  availability: 252,
+  actions: 129,
+} as const
+
+function formatTableContext(tokens?: number): string | null {
+  if (!tokens || !Number.isFinite(tokens) || tokens <= 0) return null
+  return `${Math.round(tokens / 1000)}K`
+}
 
 export function usePricingColumns(
   options: PricingColumnsOptions = {}
 ): ColumnDef<PricingModel>[] {
   const { t } = useTranslation()
+  const perfMap = useModelPerfMap()
+  const currencySymbol = getBillingCurrencySymbol()
+  const tokenUnitLabel = options.tokenUnit === 'K' ? 'K' : 'M'
 
   return [
-    // Model column
+    // Model name column — the name itself is a copy button, like the reference.
     {
       accessorKey: 'model_name',
-      meta: { label: t('Model') },
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('Model')} />
-      ),
-      cell: ({ row }) => {
-        const model = row.original
-        const modelIconKey = model.icon || model.vendor_icon
-        const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 14) : null
-
-        return (
-          <div className='flex max-w-full min-w-0 items-center gap-2'>
-            {modelIcon}
-            <span className='truncate font-mono text-sm font-medium'>
-              {model.model_name}
-            </span>
-          </div>
-        )
-      },
-      minSize: 200,
-    },
-
-    // Type column
-    {
-      accessorKey: 'quota_type',
-      header: t('Type'),
+      meta: { label: t('Model name') },
+      header: t('Model name'),
       cell: ({ row }) => (
-        <ModelBillingModeBadge model={row.original} className='-ml-1.5' />
+        <span onClick={(event) => event.stopPropagation()}>
+          <CopyButton
+            value={row.original.model_name}
+            size='default'
+            tooltip={t('Copy model name')}
+            aria-label={t('Copy {{name}}', {
+              name: row.original.model_name,
+            })}
+            className='hover:text-primary h-auto max-w-80 justify-start gap-x-2 p-0 font-medium hover:bg-transparent'
+          >
+            <span className='truncate'>{row.original.model_name}</span>
+          </CopyButton>
+        </span>
       ),
-      size: 110,
+      size: PRICING_COLUMN_SIZES.model,
       enableSorting: false,
     },
 
-    // Price column
-    {
-      accessorKey: 'price',
-      meta: { label: t('Price') },
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('Price')} />
-      ),
-      cell: ({ row }) => (
-        <ModelPriceCell model={row.original} options={options} />
-      ),
-      size: 180,
-      enableSorting: false,
-    },
-
-    // Cached price column (Vercel AI Gateway style)
-    {
-      id: 'cached_price',
-      header: t('Cached'),
-      cell: ({ row }) => (
-        <CachedPriceCell model={row.original} options={options} />
-      ),
-      size: 110,
-      enableSorting: false,
-    },
-
-    // Vendor column
-    {
-      accessorKey: 'vendor_name',
-      header: t('Vendor'),
-      cell: ({ row }) => {
-        const model = row.original
-        if (!model.vendor_name) {
-          return <span className='text-muted-foreground/50 text-xs'>—</span>
-        }
-        const vendorIcon = model.vendor_icon
-          ? getLobeIcon(model.vendor_icon, 12)
-          : null
-        return (
-          <BadgeCell className='gap-1.5'>
-            {vendorIcon}
-            <StatusBadge
-              label={model.vendor_name}
-              autoColor={model.vendor_name}
-              size='sm'
-              copyable={false}
-            />
-          </BadgeCell>
-        )
-      },
-      size: 130,
-      enableSorting: false,
-    },
-
-    // Tags column
+    // Capability tags column
     {
       accessorKey: 'tags',
+      meta: { label: t('Tags') },
       header: t('Tags'),
-      cell: ({ row }) => {
-        const tags = parseTags(row.original.tags)
-        return (
-          <BadgeListCell
-            items={tags.map((tag) => (
-              <StatusBadge
-                key={tag}
-                label={tag}
-                autoColor={tag}
-                size='sm'
-                copyable={false}
-              />
-            ))}
-          />
-        )
-      },
-      size: 140,
+      cell: ({ row }) => (
+        <ModelCapabilityBadges
+          model={row.original}
+          size='md'
+          maxVisible={2}
+          hideContext
+          leadingBadges={getMetaTagBadges(row.original)}
+        />
+      ),
+      size: PRICING_COLUMN_SIZES.tags,
       enableSorting: false,
     },
 
-    // Endpoints column
+    // Context window column
     {
-      accessorKey: 'supported_endpoint_types',
-      header: t('Endpoints'),
+      accessorKey: 'context_length',
+      meta: { label: t('Context') },
+      header: t('Context'),
       cell: ({ row }) => {
-        const endpoints = row.original.supported_endpoint_types || []
+        const label = formatTableContext(row.original.context_length)
         return (
-          <BadgeListCell
-            items={endpoints.map((ep) => (
-              <StatusBadge
-                key={ep}
-                label={ep}
-                autoColor={ep}
-                size='sm'
-                copyable={false}
-              />
-            ))}
-          />
+          <Badge
+            variant='ghost'
+            className='h-5 rounded-4xl px-2 py-0.5 text-xs font-medium'
+          >
+            {label ?? '-'}
+          </Badge>
         )
       },
-      size: 130,
+      size: PRICING_COLUMN_SIZES.context,
       enableSorting: false,
     },
 
-    // Enable Groups column
+    // Billing mode column
     {
-      accessorKey: 'enable_groups',
-      header: t('Groups'),
-      cell: ({ row }) => {
-        const groups = row.original.enable_groups || []
-        return (
-          <BadgeListCell
-            items={groups.map((group) => (
-              <GroupBadge key={group} group={group} size='sm' />
-            ))}
-            tooltipClassName='max-w-[280px] p-2'
-          />
-        )
-      },
-      size: 130,
+      accessorKey: 'quota_type',
+      meta: { label: t('Billing') },
+      header: t('Billing'),
+      cell: ({ row }) => (
+        <ModelBillingModeBadge
+          model={row.original}
+          appearance='chip'
+          className='h-5 rounded-4xl border-transparent px-2 py-0.5 text-xs!'
+        />
+      ),
+      size: PRICING_COLUMN_SIZES.billing,
+      enableSorting: false,
+    },
+
+    // Input/output price column
+    {
+      accessorKey: 'price',
+      meta: { label: t('Input/Output {{currency}}/{{unit}}') },
+      header: t('Input/Output {{currency}}/{{unit}}', {
+        currency: currencySymbol,
+        unit: tokenUnitLabel,
+      }),
+      cell: ({ row }) => (
+        <ModelTablePriceCell model={row.original} options={options} />
+      ),
+      size: PRICING_COLUMN_SIZES.price,
+      enableSorting: false,
+    },
+
+    // Availability column
+    {
+      id: 'availability',
+      meta: { label: t('Availability') },
+      header: t('Availability'),
+      cell: ({ row }) => (
+        <ModelAvailabilityCell perf={perfMap.get(row.original.model_name)} />
+      ),
+      size: PRICING_COLUMN_SIZES.availability,
+      enableSorting: false,
+    },
+
+    // Row actions column
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <Button
+          variant='outline'
+          size='sm'
+          className='h-7 gap-1 px-2 text-xs!'
+          onClick={(event) => {
+            event.stopPropagation()
+            options.onModelTry?.(row.original.model_name)
+          }}
+        >
+          <Sparkles aria-hidden data-icon='inline-start' />
+          {t('Try')}
+        </Button>
+      ),
+      size: PRICING_COLUMN_SIZES.actions,
       enableSorting: false,
     },
   ]

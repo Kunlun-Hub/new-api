@@ -114,6 +114,7 @@ const BILLING_SECTIONS = [
   {
     id: 'model-pricing',
     titleKey: 'Model Pricing',
+    fillHeight: true,
     build: (settings: BillingSettings) => (
       <RatioSettingsCard
         titleKey='Model Pricing'

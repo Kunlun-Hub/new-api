@@ -42,6 +42,7 @@ type SettingsPageProps<
   ) => ReactNode
   getSectionMeta: (sectionId: TSectionId) => {
     titleKey: string
+    fillHeight?: boolean
   }
   extraArgs?: TExtraArgs
   loadingMessage?: string
@@ -54,6 +55,7 @@ type SettingsPageProps<
 type SettingsPageFrameProps = {
   title: ReactNode
   children: ReactNode
+  fillHeight?: boolean
 }
 
 function SettingsPageFrame(props: SettingsPageFrameProps) {
@@ -68,7 +70,7 @@ function SettingsPageFrame(props: SettingsPageFrameProps) {
       actionsContainer={actionsContainer}
       titleStatusContainer={titleStatusContainer}
     >
-      <SectionPageLayout>
+      <SectionPageLayout fillHeight={props.fillHeight}>
         <SectionPageLayout.Breadcrumb>
           <ConsoleBreadcrumb
             items={[
@@ -168,7 +170,10 @@ export function SettingsPage<
   )
 
   return (
-    <SettingsPageFrame title={t(sectionMeta.titleKey)}>
+    <SettingsPageFrame
+      title={t(sectionMeta.titleKey)}
+      fillHeight={sectionMeta.fillHeight}
+    >
       {sectionContent}
     </SettingsPageFrame>
   )

@@ -563,6 +563,20 @@ export function getCurrencyLabel(): string {
 }
 
 /**
+ * Currency symbol used for billing/pricing amounts (never token display).
+ *
+ * @returns Symbol string such as `$`, `¥`, or the configured custom symbol
+ *
+ * @example
+ * getBillingCurrencySymbol() → "¥"
+ */
+export function getBillingCurrencySymbol(): string {
+  const { config } = getCurrencyDisplay()
+  const meta = getBillingDisplayMeta(config)
+  return meta.kind === 'custom' || meta.kind === 'currency' ? meta.symbol : '$'
+}
+
+/**
  * Check if currency display is enabled (not in token-only mode).
  *
  * @returns True if displaying in actual currency (USD/CNY/etc), false if tokens only

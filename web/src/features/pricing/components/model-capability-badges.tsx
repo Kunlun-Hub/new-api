@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 import {
   formatContextLength,
   getCapabilityBadges,
+  type CapabilityBadge,
 } from '../lib/capability-badges'
 import type { PricingModel } from '../types'
 
@@ -32,16 +33,25 @@ export const ModelCapabilityBadges = memo(
   function ModelCapabilityBadges(props: {
     model: PricingModel
     className?: string
-    /** Maximum number of capability chips before collapsing into a `+N` chip. */
+    /** Maximum number of chips before collapsing the rest into a `+N` chip. */
     maxVisible?: number
     /** Capability keys rendered elsewhere, e.g. the web-search chip next to the billing mode. */
     exclude?: string[]
+    /** `sm` (default) is the card chip size, `md` matches the model square table. */
+    size?: 'sm' | 'md'
+    /** Extra chips prepended to the model's own capabilities. */
+    leadingBadges?: CapabilityBadge[]
+    /** Hide the trailing context-window chip when it has a dedicated column. */
+    hideContext?: boolean
   }) {
     const { t } = useTranslation()
-    const badges = getCapabilityBadges(props.model).filter(
-      (badge) => !props.exclude?.includes(badge.key)
-    )
-    const contextLabel = formatContextLength(props.model.context_length)
+    const badges = [
+      ...(props.leadingBadges ?? []),
+      ...getCapabilityBadges(props.model),
+    ].filter((badge) => !props.exclude?.includes(badge.key))
+    const contextLabel = props.hideContext
+      ? null
+      : formatContextLength(props.model.context_length)
 
     if (badges.length === 0 && !contextLabel) return null
 
@@ -51,8 +61,10 @@ export const ModelCapabilityBadges = memo(
         : badges.slice(0, props.maxVisible)
     const hidden =
       props.maxVisible === undefined ? [] : badges.slice(props.maxVisible)
-    const chipClass =
-      'border-border/40 h-4.5 rounded-4xl px-2 py-0.5 text-[10px] font-medium'
+    const isTableSize = props.size === 'md'
+    const chipClass = isTableSize
+      ? 'h-5 rounded-4xl px-2 py-0.5 text-xs! font-medium'
+      : 'border-border/40 h-4.5 rounded-4xl px-2 py-0.5 text-[10px] font-medium'
 
     return (
       <div className={cn('flex flex-wrap items-center gap-1', props.className)}>
@@ -63,8 +75,8 @@ export const ModelCapabilityBadges = memo(
         ))}
         {hidden.length > 0 && (
           <Badge
-            variant='outline'
-            className={chipClass}
+            variant={isTableSize ? 'secondary' : 'outline'}
+            className={cn(chipClass, isTableSize && 'border-transparent')}
             title={hidden.map((badge) => t(badge.labelKey)).join(', ')}
           >
             +{hidden.length}

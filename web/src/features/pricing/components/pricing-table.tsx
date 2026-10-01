@@ -16,19 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { Row, PaginationState } from '@tanstack/react-table'
-import { useState, useCallback } from 'react'
+import type { Row } from '@tanstack/react-table'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  DataTablePagination,
   DataTableRow,
   DataTableView,
   useDataTable,
 } from '@/components/data-table'
 
 import { DEFAULT_PRICING_PAGE_SIZE, DEFAULT_TOKEN_UNIT } from '../constants'
+import { useIncrementalList } from '../hooks/use-incremental-list'
 import type { PricingModel, TokenUnit } from '../types'
+import { LoadMoreSentinel } from './load-more-sentinel'
 import { usePricingColumns } from './pricing-columns'
 
 export interface PricingTableProps {
@@ -40,6 +41,28 @@ export interface PricingTableProps {
   showRechargePrice?: boolean
   selectedGroup?: string
   onModelClick?: (modelName: string) => void
+  onModelTry?: (modelName: string) => void
+}
+
+/** Header/cell classes per column, matching the reference table alignment. */
+const HEADER_CLASS_NAMES: Record<string, string> = {
+  model_name: 'px-4 py-3 text-left',
+  tags: 'px-4 py-3 text-left',
+  context_length: 'px-4 py-3 text-right',
+  quota_type: 'px-4 py-3 text-left',
+  price: 'px-4 py-3 text-right',
+  availability: 'px-4 py-3 text-center',
+  actions: 'px-4 py-3 text-right',
+}
+
+const CELL_CLASS_NAMES: Record<string, string> = {
+  model_name: 'px-4 py-3',
+  tags: 'px-4 py-3',
+  context_length: 'px-4 py-3 text-right text-xs!',
+  quota_type: 'px-4 py-3',
+  price: 'px-4 py-3 text-right font-mono text-xs! font-normal!',
+  availability: 'px-4 py-3 text-center',
+  actions: 'px-4 py-3 text-right',
 }
 
 export function PricingTable(props: PricingTableProps) {
@@ -53,12 +76,13 @@ export function PricingTable(props: PricingTableProps) {
     showRechargePrice = false,
     selectedGroup,
     onModelClick,
+    onModelTry,
   } = props
 
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: DEFAULT_PRICING_PAGE_SIZE,
-  })
+  const { visibleItems, sentinelRef, hasMore, loadMore } = useIncrementalList(
+    models,
+    DEFAULT_PRICING_PAGE_SIZE
+  )
 
   const columns = usePricingColumns({
     tokenUnit,
@@ -66,15 +90,13 @@ export function PricingTable(props: PricingTableProps) {
     usdExchangeRate,
     showRechargePrice,
     selectedGroup,
+    onModelTry,
   })
 
   const { table } = useDataTable({
-    data: models,
+    data: visibleItems,
     columns,
-    pageCount: Math.ceil(models.length / pagination.pageSize),
-    pagination,
-    onPaginationChange: setPagination,
-    manualPagination: false,
+    manualPagination: true,
     withFilteredRowModel: false,
     withSortedRowModel: false,
     withFacetedRowModel: false,
@@ -96,20 +118,32 @@ export function PricingTable(props: PricingTableProps) {
         emptyDescription={t('No models match your current filters.')}
         skeletonKeyPrefix='pricing-skeleton'
         applyHeaderSize
-        getColumnClassName={(_columnId, kind) =>
-          kind === 'header' ? 'text-muted-foreground font-medium' : undefined
+        containerClassName='border-border/40 overflow-hidden rounded-xl'
+        tableHeaderRowClassName='border-border/40 bg-muted/30 hover:bg-muted/30'
+        getColumnClassName={(columnId, kind) =>
+          kind === 'header'
+            ? HEADER_CLASS_NAMES[columnId]
+            : CELL_CLASS_NAMES[columnId]
         }
-        renderRow={(row: Row<PricingModel>) => (
+        renderRow={(row: Row<PricingModel>, { getCellClassName }) => (
           <DataTableRow
             key={row.id}
             row={row}
-            className='hover:bg-muted/30 cursor-pointer transition-colors'
+            getColumnClassName={getCellClassName}
+            className='border-border/40 hover:bg-muted/20 h-[53px]! cursor-pointer transition-colors'
+            role='link'
+            tabIndex={0}
+            aria-label={t('Details for {{name}}', {
+              name: row.original.model_name,
+            })}
             onClick={() => handleRowClick(row.original)}
           />
         )}
       />
 
-      {!isLoading && models.length > 0 && <DataTablePagination table={table} />}
+      {!isLoading && hasMore && (
+        <LoadMoreSentinel sentinelRef={sentinelRef} onLoadMore={loadMore} />
+      )}
     </div>
   )
 }

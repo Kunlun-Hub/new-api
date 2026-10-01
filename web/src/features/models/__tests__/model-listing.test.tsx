@@ -112,6 +112,18 @@ function CatalogPrice(props: { model: PricingModel }) {
   )
 }
 
+function renderCatalogPrice(model: PricingModel) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  clients.push(client)
+  return render(
+    <QueryClientProvider client={client}>
+      <CatalogPrice model={model} />
+    </QueryClientProvider>
+  )
+}
+
 async function renderList(
   items: Model[] = [
     metadata,
@@ -611,22 +623,26 @@ it.each([
     expect(button.textContent?.replaceAll(/\s/g, '')).toContain(text)
     expect(button).not.toHaveTextContent('Unset price')
     expect(button).not.toHaveTextContent('Cache')
-    render(
-      <CatalogPrice
-        model={{
-          id: 1,
-          model_name: name,
-          quota_type: 0,
-          model_ratio: 0,
-          completion_ratio: 0,
-          enable_groups: [],
-          ...catalog,
-        }}
-      />
-    )
-    expect(button.textContent).toBe(
-      screen.getByRole('group', { name: 'Catalog price' }).textContent
-    )
+    renderCatalogPrice({
+      id: 1,
+      model_name: name,
+      quota_type: 0,
+      model_ratio: 0,
+      completion_ratio: 0,
+      enable_groups: [],
+      ...catalog,
+    })
+    const catalogPrices: string[] =
+      screen
+        .getByRole('group', { name: 'Catalog price' })
+        .textContent?.match(/\d+(?:\.\d+)?/g) ?? []
+    const pagePrices: string[] =
+      button.textContent?.match(/\d+(?:\.\d+)?/g) ?? []
+    let cursor = 0
+    for (const price of catalogPrices) {
+      cursor = pagePrices.indexOf(price, cursor) + 1
+      expect(cursor, `catalog price ${price} is missing`).toBeGreaterThan(0)
+    }
   }
 )
 

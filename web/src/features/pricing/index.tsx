@@ -227,6 +227,7 @@ export function Pricing() {
         showRechargePrice={showRechargePrice}
         selectedGroup={groupFilter}
         onModelClick={handleModelClick}
+        onModelTry={handleModelTry}
       />
     )
   }
