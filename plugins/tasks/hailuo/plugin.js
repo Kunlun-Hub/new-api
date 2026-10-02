@@ -62,7 +62,7 @@ export const meta = {
     en: "MiniMax Hailuo video generation (text-to-video, image-to-video, and MiniMax-H3 multimodal reference)",
     zh: "MiniMax 海螺视频生成（文生视频、图生视频、MiniMax-H3 多模态参考生视频）",
   },
-  version: "1.2.0",
+  version: "1.2.1",
   author: { name: "QuantumNous" },
   channelTypes: [35],
   models: [
@@ -600,10 +600,14 @@ export function buildContentRequest(ctx) {
     if (!url) throw new Error("artifact_not_found");
     return { url: url, method: ctx.clientRequest.method, credentialless: true };
   }
+  // MiniMax retired the direct download route: /v1/files/download now answers
+  // 301 to a path that no longer serves files. /v1/files/retrieve returns a
+  // signed CDN URL, so resolve it first and fetch that URL without credentials.
   return {
-    url: ctx.baseUrl + "/v1/files/download?file_id=" + encodeURIComponent(fileID),
-    method: ctx.clientRequest.method,
-    headers: { Accept: "video/*", Authorization: "Bearer " + ctx.apiKey },
+    url: ctx.baseUrl + "/v1/files/retrieve?file_id=" + encodeURIComponent(fileID),
+    method: "GET",
+    headers: { Accept: "application/json", Authorization: "Bearer " + ctx.apiKey },
+    resolve: { jsonPath: "file.download_url" },
   };
 }
 

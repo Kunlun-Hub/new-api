@@ -111,6 +111,15 @@ type TaskContentRequest struct {
 	Headers        map[string]string
 	Body           []byte
 	Credentialless bool
+	// Resolve, when set, turns the request into a two-step fetch: the host
+	// performs this request first, reads a JSON body, and then fetches the URL
+	// found at Path without credentials. It lets a plugin reach vendors whose
+	// artifact endpoint only returns a signed download URL.
+	Resolve *TaskContentResolve
+}
+
+type TaskContentResolve struct {
+	Path []string
 }
 
 type TaskContentRequestProvider interface {

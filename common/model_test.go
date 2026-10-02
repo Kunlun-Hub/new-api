@@ -8,6 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMiniMaxImageModelEndpointClassification(t *testing.T) {
+	assert.Contains(t, common.GetEndpointTypesByChannelType(constant.ChannelTypeMiniMax, "image-01"), constant.EndpointTypeImageGeneration)
+	for _, name := range []string{"MiniMax-H3", "MiniMax-Hailuo-2.3"} {
+		t.Run(name, func(t *testing.T) {
+			assert.NotContains(t, common.GetEndpointTypesByChannelType(constant.ChannelTypeMiniMax, name), constant.EndpointTypeImageGeneration)
+		})
+	}
+}
+
 func TestWanEndpointsDistinguishImagesFromVideos(t *testing.T) {
 	for _, name := range []string{
 		"wan2.7-image-pro", "wan2.7-image", "wan2.6-image", "wan2.6-t2i",

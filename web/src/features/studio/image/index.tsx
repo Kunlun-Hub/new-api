@@ -164,33 +164,51 @@ export function StudioImage(props: { initialPrompt?: string }) {
 
   const pricing = useQuery({
     queryKey: ['studio-image-models'],
-    queryFn: async () => (await getPricing()).data ?? [],
+    queryFn: async () => await getPricing(),
     staleTime: 5 * 60 * 1000,
     retry: false,
   })
 
   const providers = useMemo<StudioImageProvider[]>(() => {
-    const list: StudioImageProvider[] = [
-      {
+    const list: StudioImageProvider[] = []
+    const models = pricing.data?.data ?? []
+
+    // Midjourney is served through its own task channels, so the static
+    // version list is only offered while such a model is really configured.
+    if (
+      models.some(
+        (model) => resolveModelProvider(model.model_name)?.name === 'Midjourney'
+      )
+    ) {
+      list.push({
         value: 'mj',
         label: 'Midjourney',
         iconKey: 'Midjourney',
         models: MJ_VERSIONS,
-      },
-    ]
+      })
+    }
 
+    const vendorById = new Map(
+      (pricing.data?.vendors ?? []).map((vendor) => [vendor.id, vendor])
+    )
     const grouped = new Map<string, StudioImageProvider>()
-    for (const model of pricing.data ?? []) {
+    for (const model of models) {
       if (
         !(model.supported_endpoint_types ?? []).includes(IMAGE_ENDPOINT_TYPE)
       ) {
         continue
       }
-      const vendor = model.vendor_name || t('Other')
+      const vendorMeta = model.vendor_id
+        ? vendorById.get(model.vendor_id)
+        : undefined
+      const vendor = model.vendor_name || vendorMeta?.name || t('Other')
       const entry = grouped.get(vendor) ?? {
         value: vendor,
         label: vendor,
-        iconKey: resolveModelProvider(model.model_name)?.icon,
+        iconKey:
+          model.vendor_icon ??
+          vendorMeta?.icon ??
+          resolveModelProvider(model.model_name)?.icon,
         models: [],
       }
       entry.models.push({ value: model.model_name, label: model.model_name })
@@ -203,6 +221,21 @@ export function StudioImage(props: { initialPrompt?: string }) {
   const provider =
     providers.find((item) => item.value === providerValue) ?? providers[0]
   const token = tokens.find((item) => item.id === tokenId) ?? tokens[0]
+
+  // The composer starts from the Midjourney defaults; once the catalog loads,
+  // snap the provider and model version to a combination that really exists.
+  useEffect(() => {
+    const active = providers.find((item) => item.value === providerValue)
+    if (!active) {
+      if (providers[0]) setProviderValue(providers[0].value)
+      return
+    }
+    const options = active.value === 'mj' ? MJ_VERSIONS : active.models
+    if (options.some((option) => option.value === values.version)) return
+    if (options[0]) {
+      setValues((current) => ({ ...current, version: options[0].value }))
+    }
+  }, [providers, providerValue, values.version])
 
   const galleryActive = genScreen.hasArtworks || genScreen.tab !== 'history'
 

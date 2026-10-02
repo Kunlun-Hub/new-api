@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useQuery } from '@tanstack/react-query'
 import { Clapperboard, HeartOff } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,6 +31,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { fetchTokenKey } from '@/features/keys/api'
+import { getPricing } from '@/features/pricing/api'
 import { StudioArtworkCard } from '@/features/studio/components/studio-artwork-card'
 import { StudioArtworkViewer } from '@/features/studio/components/studio-artwork-viewer'
 import { StudioGalleryLayout } from '@/features/studio/components/studio-gallery-layout'
@@ -61,6 +63,7 @@ import {
   DEFAULT_VIDEO_SCHEMA,
   STUDIO_VIDEO_VENDORS,
   buildVideoRequest,
+  filterAvailableVideoVendors,
   defaultVideoValues,
   normalizeVideoValues,
   videoSchemaById,
@@ -151,13 +154,40 @@ export function StudioVideo(props: { initialPrompt?: string }) {
   const pollTimer = useRef<number | null>(null)
   const genScreen = useGenScreen('video')
 
+  const pricing = useQuery({
+    queryKey: ['studio-video-models'],
+    queryFn: async () => (await getPricing()).data ?? [],
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
+
+  const vendors = useMemo(() => {
+    const available = new Set(
+      (pricing.data ?? []).map((model) => model.model_name)
+    )
+    return filterAvailableVideoVendors(STUDIO_VIDEO_VENDORS, available)
+  }, [pricing.data])
+
   const schema: StudioVideoSchema = useMemo(() => {
-    for (const vendor of STUDIO_VIDEO_VENDORS) {
+    for (const vendor of vendors) {
       const found = vendor.schemas.find((item) => item.id === schemaId)
       if (found) return found
     }
-    return DEFAULT_VIDEO_SCHEMA
-  }, [schemaId])
+    return vendors[0]?.schemas[0] ?? DEFAULT_VIDEO_SCHEMA
+  }, [schemaId, vendors])
+
+  useEffect(() => {
+    if (pricing.isLoading) return
+    const active = vendors.some((vendor) =>
+      vendor.schemas.some((item) => item.id === schemaId)
+    )
+    if (active) return
+    const first = vendors[0]?.schemas[0]
+    if (!first) return
+    setSchemaId(first.id)
+    setModel(first.models[0]?.value ?? '')
+    setValues(defaultVideoValues(first))
+  }, [pricing.isLoading, schemaId, vendors])
 
   const token = tokens.find((item) => item.id === tokenId) ?? tokens[0]
   const galleryActive = genScreen.hasArtworks || genScreen.tab !== 'history'
@@ -459,44 +489,59 @@ export function StudioVideo(props: { initialPrompt?: string }) {
     [genScreen.filtered]
   )
 
-  const composer = (
-    <StudioVideoInput
-      canResetValues={canResetValues}
-      chips={PROMPT_CHIPS}
-      disabled={!token}
-      floating={galleryActive}
-      greeting={
-        <StudioGreeting
-          icon={Clapperboard}
-          iconClassName='text-primary/70'
-          question={t('what would you like to film?')}
-        />
-      }
-      initialPrompt={props.initialPrompt}
-      media={media}
-      model={model}
-      onChange={setValue}
-      onMediaChange={setMedia}
-      onModelChange={changeModel}
-      onResetValues={resetValues}
-      onSchemaChange={(nextId) => {
-        const next = videoSchemaById(nextId)
-        if (next) applySchema(next)
-      }}
-      onTokenChange={setTokenId}
-      onTokenRefresh={() => void refresh()}
-      onVendorChange={changeVendor}
-      onSubmit={(prompt, drafts) => void runGeneration(prompt, drafts)}
-      promptSeed={promptSeed}
-      schema={schema}
-      submitting={task.status === 'submitting'}
-      tokenId={token?.id ?? null}
-      tokens={tokens}
-      tokensLoading={tokensLoading}
-      values={values}
-      vendors={STUDIO_VIDEO_VENDORS}
-    />
-  )
+  const composer =
+    vendors.length === 0 ? (
+      <div className='flex h-[55vh] flex-col items-center justify-center gap-2.5'>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia>
+              <Clapperboard className='text-muted-foreground/50 size-16' />
+            </EmptyMedia>
+            <EmptyTitle>{t('No video models available')}</EmptyTitle>
+            <EmptyDescription>
+              {t('Ask an administrator to enable a video model on a channel.')}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </div>
+    ) : (
+      <StudioVideoInput
+        canResetValues={canResetValues}
+        chips={PROMPT_CHIPS}
+        disabled={!token}
+        floating={galleryActive}
+        greeting={
+          <StudioGreeting
+            icon={Clapperboard}
+            iconClassName='text-primary/70'
+            question={t('what would you like to film?')}
+          />
+        }
+        initialPrompt={props.initialPrompt}
+        media={media}
+        model={model}
+        onChange={setValue}
+        onMediaChange={setMedia}
+        onModelChange={changeModel}
+        onResetValues={resetValues}
+        onSchemaChange={(nextId) => {
+          const next = videoSchemaById(nextId)
+          if (next) applySchema(next)
+        }}
+        onTokenChange={setTokenId}
+        onTokenRefresh={() => void refresh()}
+        onVendorChange={changeVendor}
+        onSubmit={(prompt, drafts) => void runGeneration(prompt, drafts)}
+        promptSeed={promptSeed}
+        schema={schema}
+        submitting={task.status === 'submitting'}
+        tokenId={token?.id ?? null}
+        tokens={tokens}
+        tokensLoading={tokensLoading}
+        values={values}
+        vendors={vendors}
+      />
+    )
 
   const viewing = genScreen.viewing
 

@@ -509,6 +509,71 @@ func TestProxyTaskMediaPassesThroughUnsatisfiedRange(t *testing.T) {
 	assert.Equal(t, "private, no-store", recorder.Header().Get("Cache-Control"))
 }
 
+func TestProxyTaskMediaResolvesSignedArtifactURL(t *testing.T) {
+	task := setupGenericTaskTest(t)
+	var resolveAuthorization, artifactAuthorization, artifactRange, artifactMethod string
+	artifact := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		artifactAuthorization = r.Header.Get("Authorization")
+		artifactRange = r.Header.Get("Range")
+		artifactMethod = r.Method
+		w.Header().Set("Content-Type", "video/mp4")
+		_, _ = w.Write([]byte("resolved-video"))
+	}))
+	defer artifact.Close()
+	resolve := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resolveAuthorization = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"file":{"download_url":"` + artifact.URL + `/video.mp4?sig=1"}}`))
+	}))
+	defer resolve.Close()
+	allowPrivateTaskMediaTest(t)
+
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodGet, "/content", nil)
+	c.Request.Header.Set("Range", "bytes=0-3")
+
+	err := proxyTaskMedia(c, task, &relaychannel.TaskContentRequest{
+		URL: resolve.URL, Method: http.MethodGet,
+		Headers: map[string]string{"Authorization": "Bearer provider-secret"},
+		Resolve: &relaychannel.TaskContentResolve{Path: []string{"file", "download_url"}},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, "resolved-video", recorder.Body.String())
+	assert.Equal(t, "Bearer provider-secret", resolveAuthorization)
+	assert.Empty(t, artifactAuthorization)
+	assert.Equal(t, "bytes=0-3", artifactRange)
+
+	headRecorder := httptest.NewRecorder()
+	headContext, _ := gin.CreateTestContext(headRecorder)
+	headContext.Request = httptest.NewRequest(http.MethodHead, "/content", nil)
+	require.NoError(t, proxyTaskMedia(headContext, task, &relaychannel.TaskContentRequest{
+		URL: resolve.URL, Method: http.MethodGet,
+		Headers: map[string]string{"Authorization": "Bearer provider-secret"},
+		Resolve: &relaychannel.TaskContentResolve{Path: []string{"file", "download_url"}},
+	}))
+	assert.Equal(t, http.StatusOK, headRecorder.Code)
+	assert.Empty(t, headRecorder.Body.String())
+	assert.Equal(t, http.MethodGet, artifactMethod)
+
+	missing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"base_resp":{"status_code":0}}`))
+	}))
+	defer missing.Close()
+	missingRecorder := httptest.NewRecorder()
+	missingContext, _ := gin.CreateTestContext(missingRecorder)
+	missingContext.Request = httptest.NewRequest(http.MethodGet, "/content", nil)
+	err = proxyTaskMedia(missingContext, task, &relaychannel.TaskContentRequest{
+		URL: missing.URL, Method: http.MethodGet,
+		Resolve: &relaychannel.TaskContentResolve{Path: []string{"file", "download_url"}},
+	})
+	var proxyErr *taskMediaProxyError
+	require.ErrorAs(t, err, &proxyErr)
+	assert.Equal(t, "artifact_gone", proxyErr.code)
+}
+
 func TestTaskMediaResponseHeaderTimeoutDoesNotTruncateBody(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "video/mp4")

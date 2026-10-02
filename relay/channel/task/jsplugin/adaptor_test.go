@@ -499,6 +499,43 @@ export function buildContentRequest(ctx) { return {url:"https://cdn.example/vide
 	assert.Equal(t, "https://cdn.example/video.mp4", descriptor.URL)
 }
 
+func TestTaskAdaptorBuildContentRequestResolve(t *testing.T) {
+	newAdaptor := func(t *testing.T, descriptor string) *TaskAdaptor {
+		t.Helper()
+		source := strings.Replace(mockPlugin, `export function listArtifacts() { return []; }
+export function buildContentRequest() { throw new Error("artifact_not_found"); }`, `export function listArtifacts() { return [{key:"video",type:"video"}]; }
+export function buildContentRequest(ctx) { return `+descriptor+`; }
+`, 1)
+		plugin, err := pluginruntime.NewRegistry().Register(source, pluginruntime.Options{})
+		require.NoError(t, err)
+		adaptor := New(plugin)
+		adaptor.Init(&relaycommon.RelayInfo{ChannelMeta: &relaycommon.ChannelMeta{ChannelBaseUrl: "https://provider.example", ApiKey: "key"}})
+		return adaptor
+	}
+	task := &model.Task{TaskID: "task", Data: []byte(`{}`)}
+
+	descriptor, err := newAdaptor(t,
+		`{url:ctx.baseUrl+"/retrieve",method:"GET",headers:{"Authorization":"Bearer "+ctx.apiKey},resolve:{jsonPath:"file.download_url"}}`,
+	).BuildContentRequest(task, "video", channel.TaskArtifactClientRequest{Method: http.MethodGet})
+	require.NoError(t, err)
+	require.NotNil(t, descriptor)
+	require.NotNil(t, descriptor.Resolve)
+	assert.Equal(t, []string{"file", "download_url"}, descriptor.Resolve.Path)
+
+	for name, expression := range map[string]string{
+		"credentialless": `{url:"https://cdn.example/x",method:"GET",credentialless:true,resolve:{jsonPath:"file.download_url"}}`,
+		"non GET":        `{url:ctx.baseUrl+"/retrieve",method:"HEAD",resolve:{jsonPath:"file.download_url"}}`,
+		"empty path":     `{url:ctx.baseUrl+"/retrieve",method:"GET",resolve:{jsonPath:"  "}}`,
+		"unsafe path":    `{url:ctx.baseUrl+"/retrieve",method:"GET",resolve:{jsonPath:"file[0].download_url"}}`,
+		"body":           `{url:ctx.baseUrl+"/retrieve",method:"GET",body:{fileID:"1"},resolve:{jsonPath:"file.download_url"}}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := newAdaptor(t, expression).BuildContentRequest(task, "video", channel.TaskArtifactClientRequest{Method: http.MethodGet})
+			require.Error(t, err)
+		})
+	}
+}
+
 func TestTaskAdaptorMapsJSContract(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	service.InitHttpClient()

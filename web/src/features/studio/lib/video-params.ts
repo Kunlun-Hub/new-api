@@ -258,6 +258,114 @@ const SEED_RANGE_FIELD: StudioVideoField = {
 const MEDIA_PLACEHOLDER_REQUIRED = 'Required'
 const MEDIA_PLACEHOLDER_OPTIONAL = 'Optional'
 
+const HAILUO_MODERN_MODELS: StudioVideoSchema['models'] = [
+  { value: 'MiniMax-Hailuo-2.3', label: 'Hailuo 2.3' },
+  { value: 'MiniMax-Hailuo-02', label: 'Hailuo 02' },
+]
+
+const HAILUO_IMAGE_MODELS: StudioVideoSchema['models'] = [
+  { value: 'MiniMax-Hailuo-2.3', label: 'Hailuo 2.3' },
+  { value: 'MiniMax-Hailuo-2.3-Fast', label: 'Hailuo 2.3 Fast' },
+  { value: 'MiniMax-Hailuo-02', label: 'Hailuo 02' },
+]
+
+const HAILUO_H3_MODELS: StudioVideoSchema['models'] = [
+  { value: 'MiniMax-H3', label: 'MiniMax H3' },
+]
+
+const HAILUO_DURATION: StudioVideoField = {
+  name: 'duration',
+  label: 'Duration',
+  type: 'buttons',
+  billable: true,
+  default: '6',
+  options: [
+    { value: '6', label: '6s' },
+    { value: '10', label: '10s' },
+  ],
+}
+
+const HAILUO_H3_DURATION: StudioVideoField = {
+  name: 'duration',
+  label: 'Duration',
+  type: 'slider',
+  billable: true,
+  default: '5',
+  min: 4,
+  max: 15,
+  step: 1,
+}
+
+const HAILUO_RESOLUTION: StudioVideoField = {
+  name: 'resolution',
+  label: 'Resolution',
+  type: 'buttons',
+  default: '768P',
+  options: [
+    { value: '768P', label: '768P' },
+    { value: '1080P', label: '1080P' },
+    { value: '512P', label: '512P', models: ['MiniMax-Hailuo-02'] },
+  ],
+}
+
+const HAILUO_H3_RESOLUTION: StudioVideoField = {
+  name: 'resolution',
+  label: 'Resolution',
+  type: 'buttons',
+  default: '768P',
+  options: [
+    { value: '768P', label: '768P' },
+    { value: '2K', label: '2K' },
+  ],
+}
+
+const HAILUO_RATIO: StudioVideoField = {
+  name: 'ratio',
+  label: 'Aspect ratio',
+  type: 'buttons',
+  default: '16:9',
+  options: ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9'].map((value) => ({
+    value,
+    label: value,
+  })),
+}
+
+const HAILUO_FIRST_FRAME: StudioVideoField = {
+  name: 'firstFrameImage',
+  label: 'Start frame',
+  type: 'buttons',
+  placeholder: MEDIA_PLACEHOLDER_OPTIONAL,
+  media: { kind: 'image', max: 1 },
+  toolbar: true,
+  submitKey: 'first_frame_image',
+}
+
+const HAILUO_REQUIRED_FIRST_FRAME: StudioVideoField = {
+  ...HAILUO_FIRST_FRAME,
+  placeholder: MEDIA_PLACEHOLDER_REQUIRED,
+  required: true,
+}
+
+const HAILUO_REFERENCE_VIDEO: StudioVideoField = {
+  name: 'referenceVideo',
+  label: 'Reference video',
+  type: 'buttons',
+  placeholder: 'Optional (up to 3 videos)',
+  media: { kind: 'video', multiple: true, max: 3 },
+  toolbar: true,
+  submitKey: 'reference_video',
+}
+
+const HAILUO_REFERENCE_AUDIO: StudioVideoField = {
+  name: 'referenceAudio',
+  label: 'Reference audio',
+  type: 'buttons',
+  placeholder: 'Optional (up to 3 audio files)',
+  media: { kind: 'audio', multiple: true, max: 3 },
+  toolbar: true,
+  submitKey: 'reference_audio',
+}
+
 export const STUDIO_VIDEO_VENDORS: StudioVideoVendor[] = [
   {
     id: 'kling',
@@ -656,6 +764,45 @@ export const STUDIO_VIDEO_VENDORS: StudioVideoVendor[] = [
       },
     ],
   },
+  {
+    id: 'hailuo',
+    name: 'Hailuo',
+    schemas: [
+      {
+        id: 'hailuo/text2video',
+        vendor: 'hailuo',
+        title: 'Text to video',
+        models: HAILUO_MODERN_MODELS,
+        fields: [HAILUO_DURATION, HAILUO_RESOLUTION],
+      },
+      {
+        id: 'hailuo/image2video',
+        vendor: 'hailuo',
+        title: 'Image to video',
+        models: HAILUO_IMAGE_MODELS,
+        promptOptional: true,
+        fields: [
+          HAILUO_REQUIRED_FIRST_FRAME,
+          HAILUO_DURATION,
+          HAILUO_RESOLUTION,
+        ],
+      },
+      {
+        id: 'hailuo/h3',
+        vendor: 'hailuo',
+        title: 'Multimodal video',
+        models: HAILUO_H3_MODELS,
+        fields: [
+          HAILUO_FIRST_FRAME,
+          HAILUO_REFERENCE_VIDEO,
+          HAILUO_REFERENCE_AUDIO,
+          HAILUO_RATIO,
+          HAILUO_H3_RESOLUTION,
+          HAILUO_H3_DURATION,
+        ],
+      },
+    ],
+  },
 ]
 
 function viduRatio(options: string[]): StudioVideoField {
@@ -890,6 +1037,34 @@ export function videoVendorById(id: string): StudioVideoVendor {
   )
 }
 
+/**
+ * Keeps only vendors, schemas, and models that are enabled on at least one
+ * channel. Falls back to the full catalog when nothing is available so the
+ * composer stays usable while pricing is still loading.
+ */
+export function filterAvailableVideoVendors(
+  vendors: StudioVideoVendor[],
+  availableModels: Set<string>
+): StudioVideoVendor[] {
+  // An empty set means the pricing catalog has not loaded, so keep the full
+  // catalog for a stable first paint. A loaded catalog without any matching
+  // video model must stay empty: offering a channel-less vendor only fails on
+  // submit.
+  if (availableModels.size === 0) return vendors
+  const result: StudioVideoVendor[] = []
+  for (const vendor of vendors) {
+    const schemas = vendor.schemas.flatMap((schema) => {
+      const models = schema.models.filter((model) =>
+        availableModels.has(model.value)
+      )
+      if (models.length === 0) return []
+      return [{ ...schema, models }]
+    })
+    if (schemas.length > 0) result.push({ ...vendor, schemas })
+  }
+  return result
+}
+
 export function videoSchemaById(id: string): StudioVideoSchema | undefined {
   for (const vendor of STUDIO_VIDEO_VENDORS) {
     const schema = vendor.schemas.find((item) => item.id === id)
@@ -1037,7 +1212,16 @@ export function buildVideoRequest(
   const body: Record<string, unknown> = { prompt }
   const metadata: Record<string, unknown> = {}
   for (const field of schema.fields) {
-    if (field.type === 'alert' || field.media) continue
+    if (field.type === 'alert') continue
+    if (field.media) {
+      if (!field.submitKey) continue
+      const fieldMedia = media.filter((item) => item.field === field.name)
+      if (fieldMedia.length === 0) continue
+      metadata[field.submitKey] = field.media.multiple
+        ? fieldMedia.map((item) => item.value)
+        : fieldMedia[0].value
+      continue
+    }
     if (!isVideoFieldVisible(field, values, model)) continue
     const raw = values[field.name]
     if (raw === undefined || raw === '') continue

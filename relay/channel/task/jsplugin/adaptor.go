@@ -45,6 +45,14 @@ type requestDescriptor struct {
 	RewriteModel   string            `json:"rewriteModel"`
 	BodyType       string            `json:"bodyType"`
 	Parts          []requestPart     `json:"parts"`
+	Resolve        *requestResolve   `json:"resolve"`
+}
+
+// requestResolve lets a content request describe a two-step fetch: the host
+// performs the descriptor request first, reads a JSON body, and then fetches
+// the URL found at JSONPath without credentials.
+type requestResolve struct {
+	JSONPath string `json:"jsonPath"`
 }
 
 type requestPart struct {
@@ -74,6 +82,7 @@ type taskResult struct {
 }
 
 var taskArtifactKeyPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$`)
+var artifactResolveSegmentPattern = regexp.MustCompile(`^[A-Za-z0-9_]+$`)
 
 const maxTaskArtifacts = 64
 
@@ -971,13 +980,51 @@ func (a *TaskAdaptor) BuildContentRequest(task *model.Task, artifactKey string, 
 			}
 		}
 	}
+	resolve, err := buildArtifactResolve(descriptor, method)
+	if err != nil {
+		return nil, err
+	}
 	return &channel.TaskContentRequest{
 		URL:            descriptor.URL,
 		Method:         method,
 		Headers:        descriptor.Headers,
 		Body:           body,
 		Credentialless: descriptor.Credentialless,
+		Resolve:        resolve,
 	}, nil
+}
+
+// buildArtifactResolve validates the optional two-step resolution of a content
+// request. The resolution step must be a credentialed GET whose JSON response
+// carries the final artifact URL, so the host can fetch that URL without
+// forwarding the provider key to the CDN.
+func buildArtifactResolve(descriptor requestDescriptor, method string) (*channel.TaskContentResolve, error) {
+	if descriptor.Resolve == nil {
+		return nil, nil
+	}
+	if descriptor.Credentialless {
+		return nil, fmt.Errorf("plugin artifact resolve requests cannot be credentialless")
+	}
+	if method != http.MethodGet {
+		return nil, fmt.Errorf("plugin artifact resolve requests must use GET")
+	}
+	if descriptor.Body != nil {
+		return nil, fmt.Errorf("plugin artifact resolve requests cannot contain a body")
+	}
+	jsonPath := strings.TrimSpace(descriptor.Resolve.JSONPath)
+	if jsonPath == "" || len(jsonPath) > 200 {
+		return nil, fmt.Errorf("plugin artifact resolve path is invalid")
+	}
+	segments := strings.Split(jsonPath, ".")
+	if len(segments) > 8 {
+		return nil, fmt.Errorf("plugin artifact resolve path is invalid")
+	}
+	for _, segment := range segments {
+		if !artifactResolveSegmentPattern.MatchString(segment) {
+			return nil, fmt.Errorf("plugin artifact resolve path is invalid")
+		}
+	}
+	return &channel.TaskContentResolve{Path: segments}, nil
 }
 
 func taskArtifactContext(task *model.Task) (map[string]any, error) {

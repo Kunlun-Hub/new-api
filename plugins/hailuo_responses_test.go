@@ -134,10 +134,12 @@ func TestHailuoArtifactContentProxy(t *testing.T) {
 	descriptor, err := adaptor.BuildContentRequest(task, "video", channel.TaskArtifactClientRequest{Method: http.MethodHead})
 	require.NoError(t, err)
 	require.NotNil(t, descriptor)
-	assert.Equal(t, "https://api.minimax.example/v1/files/download?file_id=file%2Fwith%20space", descriptor.URL)
-	assert.Equal(t, http.MethodHead, descriptor.Method)
-	assert.Equal(t, map[string]string{"Accept": "video/*", "Authorization": "Bearer test-ak"}, descriptor.Headers)
+	assert.Equal(t, "https://api.minimax.example/v1/files/retrieve?file_id=file%2Fwith%20space", descriptor.URL)
+	assert.Equal(t, http.MethodGet, descriptor.Method)
+	assert.Equal(t, map[string]string{"Accept": "application/json", "Authorization": "Bearer test-ak"}, descriptor.Headers)
 	assert.False(t, descriptor.Credentialless)
+	require.NotNil(t, descriptor.Resolve)
+	assert.Equal(t, []string{"file", "download_url"}, descriptor.Resolve.Path)
 }
 
 func loadHailuoPlugin(t *testing.T) *jsplugin.LoadedPlugin {

@@ -27,6 +27,7 @@ var (
 		"wanx2.1-t2i-plus",
 		"wanx2.0-t2i-turbo",
 		"prefix:imagen-",
+		"image-01",
 		"flux-",
 		"flux.1-",
 	}
