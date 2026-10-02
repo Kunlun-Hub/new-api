@@ -3,7 +3,8 @@
 - 参考站：https://gpt.ge （账号：674904341@qq.com）
 - 目标：页面 / 样式 / 按钮 / 弹窗 / 功能 逐页 1:1 复刻；参考站有而我们没有的能力，自行开发后端接口补齐
 - 状态含义：`✅ 完成` / `🟡 进行中` / `⬜ 未开始` / `➖ 不适用`
-- 最后更新：2026-10-01（第四十二轮：顶栏「文档」打不开（点击跳首页）修复 —— `/doc`、`/doc/$slug` 的守卫由 `help` 模块改为 `docs` 模块，并清掉被误填成后台设置页地址的 `general_setting.docs_link`）
+- 最后更新：2026-10-02（第四十三轮：公网 429 修复 —— Cloudflare 后面的真实客户端 IP 未生效导致所有访客共用一个限流桶；`TRUSTED_PROXIES` 改为 Cloudflare 网段 + `GLOBAL_WEB_RATE_LIMIT` 120→600）
+- 上一轮：2026-10-01（第四十二轮：顶栏「文档」打不开（点击跳首页）修复 —— `/doc`、`/doc/$slug` 的守卫由 `help` 模块改为 `docs` 模块，并清掉被误填成后台设置页地址的 `general_setting.docs_link`）
 - 上一轮：2026-10-01（第四十一轮：模型详情页头部按钮 1:1 —— 「在线体验」「复制链接」改为参考站的独立胶囊按钮（复制链接按钮此前是 36px 圆形图标按钮却带可见文案，文字溢出到框外））
 - 上一轮：2026-10-01（第四十轮：模型广场「列表视图」按参考站 1:1 重做（7 列 / 53px 行高 / 复制模型名 / 24 段可用率 / 加载更多），并修好后台「模型定价」编辑区不跟随滚轮滚动）
 - 上一轮：2026-10-01（第三十九轮：清空内置模型价格 —— 代码默认表 / 内置计费表达式 / 数据库持久化条目全部置空）
@@ -83,6 +84,13 @@
 - **金额格式（第十二轮实测）**：参考站余额/消耗/收益/实付这类**金额一律固定 2 位小数**（`$0.00`、`$0.30`、`$1.00`、`实付 60.00 元`），用 `formatQuotaFixed(quota)` 或 `formatCurrencyFromUSD(usd, { fixedFractionDigits: 2 })` / `formatLocalCurrencyAmount(amount, { fixedFractionDigits: 2 })`。反例（保持变长精度、勿改）：模型价格（`$0.014`、`$0.1`）、日志表格金额（`formatLogQuota`，6 位小数）、今日小卡金额（参考站就是 `$0`，不补零）、令牌页「已用 / 剩余」（无货币符号，单位在列头/详情里）。
 
 ## 3. 变更记录（倒序）
+
+### 2026-10-02（第四十三轮：公网 429 修复 —— Cloudflare 真实客户端 IP + 放宽 web 限流）
+- **用户反馈**：访问站点出现浏览器错误页「该网页无法正常运作 HTTP ERROR 429」。
+- **排查（容器日志 + Redis 计数）**：站点 `ai.4w.ink` 走 Cloudflare，容器里所有访客的 peer IP 都是 CF 边缘段（172.71.8.136 / 104.22.x / 162.158.x）；而 `docker-compose.local.yml` 里 `TRUSTED_PROXIES: "none"` 让 gin 忽略 `X-Forwarded-For`，于是**全部访客共用一个 `GW` 桶**（默认 120 次 / 180s，`common/init.go`）。SPA 一次冷加载要拉几十个 async chunk，两三次访问即打满，日志里 `/static/js/async/*.js`、`/pricing`、`/models/metadata` 全部 429（Redis `rateLimit:v2:ip:GW:172.71.8.136` = 447）。
+- **修复**：`docker-compose.local.yml` 的 `TRUSTED_PROXIES` 改为 Cloudflare 官方公布的 15 个 IPv4 + 7 个 IPv6 段（附 https://www.cloudflare.com/ips/ 注释，网段变动时更新），新增 `GLOBAL_WEB_RATE_LIMIT: "600"` 给真实 IP 计数留出冷加载余量；`docker compose -f docker-compose.local.yml up -d new-api` 重建容器。
+- **验证（生产 3000 + 真实域名）**：经 CF 访问时日志记录的客户端 IP 变为真实 IP（访客 `122.224.130.186`、本机 `45.136.13.170`），不再是 CF 段；从非可信来源伪造 `X-Forwarded-For: 203.0.113.9` 仍被忽略（记为 `127.0.0.1`），未引入 IP 伪造面；域名连续 120 次请求全部 200（`rateLimit:v2:ip:GW:45.136.13.170` = 120），重建后日志 0 条 429。
+- **遗留**：origin `3000/tcp` 仍对公网放行（firewalld），若要彻底杜绝 CF Worker 伪造转发头，可把 3000 限制为仅 Cloudflare 网段。
 
 ### 2026-10-01（第四十二轮：顶栏「文档」点击跳首页修复）
 - **用户反馈**：顶栏「文档」点不了，点击就直接跳到首页。

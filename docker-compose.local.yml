@@ -32,9 +32,15 @@ services:
       SQL_MAX_LIFETIME: "60"
       RELAY_IDLE_CONN_TIMEOUT: "90"
       STREAMING_TIMEOUT: "300"
-      # No reverse proxy in front of the container. Set this to the proxy's
-      # IP/CIDR once one is added, otherwise forwarding headers are ignored.
-      TRUSTED_PROXIES: "none"
+      # The public site (ai.4w.ink) is served through Cloudflare, so every
+      # visitor arrives from a Cloudflare edge IP. Trust only Cloudflare's
+      # published ranges and read the real client IP from X-Forwarded-For;
+      # otherwise all visitors share one rate-limit bucket. Refresh the list
+      # from https://www.cloudflare.com/ips/ when Cloudflare updates it.
+      TRUSTED_PROXIES: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22,2400:cb00::/32,2606:4700::/32,2803:f800::/32,2405:b500::/32,2405:8100::/32,2a06:98c0::/29,2c0f:f248::/32"
+      # One SPA cold load fetches dozens of chunks; keep per-visitor headroom
+      # now that the limiter keys on the real client IP.
+      GLOBAL_WEB_RATE_LIMIT: "600"
     volumes:
       - new-api-logs:/data/logs
     ulimits:
