@@ -39,6 +39,10 @@ export const API_ENDPOINTS = {
   USER_GROUPS: '/api/user/self/groups',
 } as const
 
+// Endpoint type used to filter the chat model list, so image/video-only
+// models never appear as chat options.
+export const CHAT_ENDPOINT_TYPE = 'openai' as const
+
 // Default group — uses 'default' as the safe fallback; auto-group is
 // only selected when the backend confirms it is available for the user.
 export const DEFAULT_GROUP = 'default' as const

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -690,6 +691,13 @@ func GetUserModels(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	endpoint := strings.TrimSpace(c.Query("endpoint"))
+	if endpoint != "" {
+		if _, known := common.GetDefaultEndpointInfo(constant.EndpointType(endpoint)); !known && endpoint != string(constant.EndpointTypeOpenAIVideo) {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+	}
 	groups := service.GetUserUsableGroups(user.Group)
 	group := c.Query("group")
 	var groupsToQuery []string
@@ -707,10 +715,22 @@ func GetUserModels(c *gin.Context) {
 			groupsToQuery = []string{group}
 		}
 	}
+	models := service.GetGroupsEnabledModels(groupsToQuery)
+	if endpoint != "" {
+		endpointType := constant.EndpointType(endpoint)
+		model.GetPricing()
+		filtered := make([]string, 0, len(models))
+		for _, modelName := range models {
+			if slices.Contains(model.GetModelSupportEndpointTypes(modelName), endpointType) {
+				filtered = append(filtered, modelName)
+			}
+		}
+		models = filtered
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    service.GetGroupsEnabledModels(groupsToQuery),
+		"data":    models,
 	})
 }
 

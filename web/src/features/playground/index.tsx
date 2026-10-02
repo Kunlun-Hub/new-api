@@ -20,6 +20,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { PlaygroundChat } from './components/chat/playground-chat'
 import { PlaygroundInput } from './components/input/playground-input'
+import { CHAT_ENDPOINT_TYPE } from './constants'
 import {
   useChatHandler,
   usePlaygroundConversation,
@@ -186,6 +187,7 @@ function PlaygroundSurface(props: {
   const { isLoadingModels } = usePlaygroundOptions({
     currentGroup: config.group,
     currentModel: config.model,
+    endpoint: CHAT_ENDPOINT_TYPE,
     setGroups,
     setModels,
     updateConfig,

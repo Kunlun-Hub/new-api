@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -201,6 +202,27 @@ func appendPricingEndpoint(endpoints []string, endpoint string) []string {
 	return append(endpoints, endpoint)
 }
 
+// pricingDeclaredEndpointsAreNonText 判断显式声明的端点是否全部为已知非文本端点。
+// 这类声明（例如仅 image-generation）会覆盖渠道推断端点，使媒体模型别名不再出现在
+// 聊天端点列表中；未知的自定义端点键保持原有追加合并逻辑。
+func pricingDeclaredEndpointsAreNonText(endpoints []string) bool {
+	if len(endpoints) == 0 {
+		return false
+	}
+	for _, endpoint := range endpoints {
+		switch constant.EndpointType(endpoint) {
+		case constant.EndpointTypeImageGeneration,
+			constant.EndpointTypeOpenAIVideo,
+			constant.EndpointTypeEmbeddings,
+			constant.EndpointTypeJinaRerank,
+			constant.EndpointTypeOpenAIAlphaSearch:
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func updatePricing() {
 	//modelRatios := common.GetModelRatios()
 	enableAbilities, err := GetAllEnableAbilityWithChannels()
@@ -266,23 +288,38 @@ func updatePricing() {
 		modelSupportEndpointsStr[ability.Model] = endpoints
 	}
 
-	// 再补充模型自定义端点：若配置有效则追加到已有推断，不再裁剪渠道真实能力
+	// 再处理模型自定义端点：默认追加到渠道推断，不裁剪渠道真实能力；
+	// 但当显式声明的端点全部为已知非文本端点（图片/视频/向量等）时，以声明为准，
+	// 避免模型别名（如 MiniMax-IMG -> image-01）被通用 OpenAI 兜底端点当成聊天模型。
 	for modelName, meta := range metaMap {
 		if strings.TrimSpace(meta.Endpoints) == "" {
 			continue
 		}
 		var raw map[string]any
-		if err := common.Unmarshal([]byte(meta.Endpoints), &raw); err == nil {
-			endpoints := modelSupportEndpointsStr[modelName]
-			for k, v := range raw {
-				switch v.(type) {
-				case string, map[string]any:
-					endpoints = appendPricingEndpoint(endpoints, k)
-				}
+		if err := common.Unmarshal([]byte(meta.Endpoints), &raw); err != nil {
+			continue
+		}
+		declared := make([]string, 0, len(raw))
+		for k, v := range raw {
+			switch v.(type) {
+			case string, map[string]any:
+				declared = append(declared, k)
 			}
-			if len(endpoints) > 0 {
-				modelSupportEndpointsStr[modelName] = endpoints
-			}
+		}
+		if len(declared) == 0 {
+			continue
+		}
+		slices.Sort(declared)
+		if pricingDeclaredEndpointsAreNonText(declared) {
+			modelSupportEndpointsStr[modelName] = declared
+			continue
+		}
+		endpoints := modelSupportEndpointsStr[modelName]
+		for _, endpoint := range declared {
+			endpoints = appendPricingEndpoint(endpoints, endpoint)
+		}
+		if len(endpoints) > 0 {
+			modelSupportEndpointsStr[modelName] = endpoints
 		}
 	}
 

@@ -265,6 +265,66 @@ func TestGetUserModelsExpandsAutoGroupsInConfiguredOrder(t *testing.T) {
 	assert.Equal(t, "zz-default-model", models[2])
 }
 
+func TestGetUserModelsFiltersByEndpoint(t *testing.T) {
+	db := setupModelListControllerTestDB(t)
+	t.Cleanup(model.InvalidatePricingCache)
+	require.NoError(t, db.Create(&model.User{
+		Id:       1004,
+		Username: "endpoint-model-user",
+		Password: "password",
+		Group:    "default",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+	require.NoError(t, db.Create(&model.Channel{
+		Id:     1101,
+		Name:   "endpoint-filter-channel",
+		Key:    "endpoint-filter-key",
+		Type:   constant.ChannelTypeOpenAI,
+		Status: common.ChannelStatusEnabled,
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{
+		{Group: "default", Model: "zz-chat-model", ChannelId: 1101, Enabled: true},
+		{Group: "default", Model: "zz-image-alias-model", ChannelId: 1101, Enabled: true},
+	}).Error)
+	require.NoError(t, db.Create(&model.Model{
+		ModelName: "zz-image-alias-model",
+		Endpoints: `{"image-generation": "/v1/images/generations"}`,
+		Status:    1,
+		NameRule:  model.NameRuleExact,
+	}).Error)
+	model.InvalidatePricingCache()
+
+	chatRecorder := httptest.NewRecorder()
+	chatContext, _ := gin.CreateTestContext(chatRecorder)
+	chatContext.Request = httptest.NewRequest(http.MethodGet, "/api/user/models?group=default&endpoint=openai", nil)
+	chatContext.Set("id", 1004)
+
+	GetUserModels(chatContext)
+
+	assert.ElementsMatch(t, []string{"zz-chat-model"}, decodeUserModelsResponse(t, chatRecorder))
+
+	imageRecorder := httptest.NewRecorder()
+	imageContext, _ := gin.CreateTestContext(imageRecorder)
+	imageContext.Request = httptest.NewRequest(http.MethodGet, "/api/user/models?group=default&endpoint=image-generation", nil)
+	imageContext.Set("id", 1004)
+
+	GetUserModels(imageContext)
+
+	assert.ElementsMatch(t, []string{"zz-image-alias-model"}, decodeUserModelsResponse(t, imageRecorder))
+
+	invalidRecorder := httptest.NewRecorder()
+	invalidContext, _ := gin.CreateTestContext(invalidRecorder)
+	invalidContext.Request = httptest.NewRequest(http.MethodGet, "/api/user/models?group=default&endpoint=not-an-endpoint", nil)
+	invalidContext.Set("id", 1004)
+
+	GetUserModels(invalidContext)
+
+	var invalidPayload userModelsResponse
+	require.Equal(t, http.StatusOK, invalidRecorder.Code)
+	require.NoError(t, common.Unmarshal(invalidRecorder.Body.Bytes(), &invalidPayload))
+	assert.False(t, invalidPayload.Success)
+}
+
 func TestListModelsIncludesTieredBillingModel(t *testing.T) {
 	withSelfUseModeDisabled(t)
 	withTieredBillingConfig(t, map[string]string{

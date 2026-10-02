@@ -136,6 +136,23 @@ func TestPricingModelMetadataEndpointsMergeWithAdvancedCustomInference(t *testin
 	}, byModel["gemini-2.5-flash"])
 }
 
+func TestPricingModelMetadataNonTextEndpointsReplaceGenericOpenAIFallback(t *testing.T) {
+	resetPricingEndpointTestTables(t)
+
+	insertPricingEndpointChannel(t, 502, constant.ChannelTypeOpenAI, dto.ChannelOtherSettings{})
+	insertPricingEndpointAbility(t, 502, "media-alias-model")
+	require.NoError(t, DB.Create(&Model{
+		ModelName: "media-alias-model",
+		Endpoints: `{"image-generation": "/v1/images/generations"}`,
+		Status:    1,
+		NameRule:  NameRuleExact,
+	}).Error)
+
+	byModel := pricingEndpointTypesByModel(t)
+
+	assert.Equal(t, []constant.EndpointType{constant.EndpointTypeImageGeneration}, byModel["media-alias-model"])
+}
+
 func TestPricingModelMetadataEndpointsCanProvideEndpointWithoutChannelInference(t *testing.T) {
 	resetPricingEndpointTestTables(t)
 

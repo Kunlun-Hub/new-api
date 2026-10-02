@@ -44,9 +44,12 @@ export async function sendChatCompletion(
 /**
  * Get user available models
  */
-export async function getUserModels(group: string): Promise<ModelOption[]> {
+export async function getUserModels(
+  group: string,
+  endpoint?: string
+): Promise<ModelOption[]> {
   const res = await api.get(API_ENDPOINTS.USER_MODELS, {
-    params: { group },
+    params: { group, endpoint },
   })
   const { data } = res
   requireServerSuccess(data)
