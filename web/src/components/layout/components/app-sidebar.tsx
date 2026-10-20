@@ -16,8 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Wallet } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -28,10 +28,11 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
-import { useSidebarView } from '@/hooks/use-sidebar-view'
 import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
+import { useSidebarView } from '@/hooks/use-sidebar-view'
 import { MOTION_TRANSITION, MOTION_VARIANTS } from '@/lib/motion'
 
 import { NavGroup } from './nav-group'
@@ -58,6 +59,7 @@ export function AppSidebar() {
   const { t } = useTranslation()
   const { collapsible, variant } = useLayout()
   const { key, view, navGroups } = useSidebarView()
+  const { state: sidebarState } = useSidebar()
   const shouldReduce = useReducedMotion()
   const isWalletVisible = useIsSidebarModuleVisible('/wallet')
 
@@ -85,9 +87,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       {!view && (
-        <SidebarFooter className='group-data-[collapsible=icon]:hidden gap-2'>
+        <SidebarFooter className='gap-2'>
           {isWalletVisible && (
-            <SidebarMenu>
+            <SidebarMenu className='group-data-[collapsible=icon]:hidden'>
               <SidebarMenuItem>
                 <a
                   href='/wallet'
@@ -109,8 +111,10 @@ export function AppSidebar() {
             </SidebarMenu>
           )}
           <SidebarMenu>
-            <SidebarMenuItem>
-              <ProfileDropdown variant='card' />
+            <SidebarMenuItem className='flex justify-center'>
+              <ProfileDropdown
+                variant={sidebarState === 'collapsed' ? 'icon' : 'card'}
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
