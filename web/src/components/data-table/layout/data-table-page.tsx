@@ -259,6 +259,11 @@ export type DataTablePageProps<TData> = {
   cardSurfaceToolbar?: boolean
 
   /**
+   * Card surface className override when {@link cardSurface} is enabled.
+   */
+  cardClassName?: string
+
+  /**
    * Desktop table container className (the bordered scroll wrapper).
    */
   tableClassName?: string
@@ -384,7 +389,12 @@ export function DataTablePage<TData>(props: DataTablePageProps<TData>) {
         {cardSurface ? (
           <>
             {!cardSurfaceToolbar && toolbarNode}
-            <div className='border-border/40 rounded-xl border p-3 lg:p-5'>
+            <div
+              className={cn(
+                'border-border/40 rounded-xl border p-3 lg:p-5',
+                props.cardClassName
+              )}
+            >
               {cardSurfaceToolbar && toolbarNode && (
                 <div className='border-border/40 border-b pb-4'>
                   {toolbarNode}

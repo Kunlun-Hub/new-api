@@ -44,6 +44,23 @@ export function buildGitHubOAuthUrl(clientId: string, state: string): string {
 }
 
 /**
+ * Build Google OAuth URL
+ */
+export function buildGoogleOAuthUrl(clientId: string, state: string): string {
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+  url.searchParams.set('client_id', clientId)
+  url.searchParams.set(
+    'redirect_uri',
+    `${window.location.origin}/oauth/google`
+  )
+  url.searchParams.set('response_type', 'code')
+  url.searchParams.set('scope', 'openid email profile')
+  url.searchParams.set('state', state)
+  url.searchParams.set('prompt', 'select_account')
+  return url.toString()
+}
+
+/**
  * Build Discord OAuth URL
  */
 export function buildDiscordOAuthUrl(clientId: string, state: string): string {
@@ -92,6 +109,11 @@ export function buildOAuthAuthorizationUrl(
     case 'github':
       if (status.github_client_id) {
         return buildGitHubOAuthUrl(status.github_client_id, state)
+      }
+      break
+    case 'google':
+      if (status.google_client_id) {
+        return buildGoogleOAuthUrl(status.google_client_id, state)
       }
       break
     case 'discord':

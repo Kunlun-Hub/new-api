@@ -591,6 +591,31 @@ export function ModelMutateDrawer(props: {
                           </FormItem>
                         )}
                       />
+
+                      <FormField
+                        control={form.control}
+                        name='gift_quota_enabled'
+                        render={({ field }) => (
+                          <FormItem className={sideDrawerSwitchItemClassName()}>
+                            <div className='flex flex-col gap-0.5'>
+                              <FormLabel className='text-base'>
+                                {t('Gift credit usable')}
+                              </FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'When enabled, gift credit is spent before the account balance for this model.'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </SideDrawerSection>
                   </form>
                 </Form>

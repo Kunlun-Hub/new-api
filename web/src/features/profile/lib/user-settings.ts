@@ -57,14 +57,23 @@ export function toNotificationMethod(value: unknown): NotificationMethod {
   )
 }
 
+/** Switches whose absence means "never chosen", which the server resolves */
+type DefaultedSwitch = 'quota_warning_enabled' | 'channel_notify_enabled'
+
+type NormalizedUserSettings = Required<
+  Omit<UpdateUserSettingsRequest, DefaultedSwitch>
+> &
+  Pick<UpdateUserSettingsRequest, DefaultedSwitch> & { notify_type: NotifyType }
+
 export function normalizeUserSettings(
   setting?: string
-): Required<UpdateUserSettingsRequest> {
+): NormalizedUserSettings {
   const parsed = parseUserSettings(setting)
   return {
     notify_type: toNotifyType(parsed.notify_type),
     quota_warning_threshold:
       parsed.quota_warning_threshold ?? DEFAULT_QUOTA_WARNING_THRESHOLD,
+    quota_warning_enabled: parsed.quota_warning_enabled,
     notification_email: parsed.notification_email ?? '',
     webhook_url: parsed.webhook_url ?? '',
     webhook_secret: parsed.webhook_secret ?? '',
@@ -77,6 +86,7 @@ export function normalizeUserSettings(
     record_ip_log: parsed.record_ip_log || false,
     upstream_model_update_notify_enabled:
       parsed.upstream_model_update_notify_enabled || false,
+    channel_notify_enabled: parsed.channel_notify_enabled,
     wecom_url: parsed.wecom_url ?? '',
     dingtalk_url: parsed.dingtalk_url ?? '',
     feishu_url: parsed.feishu_url ?? '',

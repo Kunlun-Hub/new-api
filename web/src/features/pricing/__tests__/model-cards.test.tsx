@@ -374,9 +374,12 @@ describe('model cards', () => {
         queryClient.getQueryState(['perf-metrics-summary', 24])?.status
       ).toBe('error')
     )
-    expect(request).toHaveBeenCalledWith('/api/perf-metrics/summary', {
-      params: { hours: 24 },
-    })
+    expect(request).toHaveBeenCalledWith(
+      '/api/perf-metrics/summary',
+      expect.objectContaining({
+        params: expect.objectContaining({ hours: 24 }),
+      })
+    )
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Try' }))
     expect(onModelClick).toHaveBeenCalledWith('example-model')

@@ -76,9 +76,25 @@ export function ProfileBanner({ profile, loading }: ProfileBannerProps) {
   const avatarFallbackStyle = getUserAvatarStyle(avatarName)
   const roleLabel = getRoleLabel(profile.role)
 
+  const giftQuota = profile.gift_quota ?? 0
+  const giftExpiredAt = profile.gift_quota_expired_at ?? 0
+  const giftExpireHint =
+    giftExpiredAt > 0
+      ? `${t('Expires at')} ${dayjs.unix(giftExpiredAt).format('YYYY-MM-DD')}`
+      : t('Never expires')
+
   const stats = [
     { label: t('Account Balance'), value: formatQuotaFixed(profile.quota) },
-    { label: t('Total Spent'), value: formatQuotaFixed(profile.used_quota) },
+    {
+      label: t('Gift credit'),
+      value: formatQuotaFixed(giftQuota),
+      hint: giftQuota > 0 ? giftExpireHint : undefined,
+    },
+    {
+      label: t('Total Spent'),
+      value: formatQuotaFixed(profile.used_quota),
+      hint: `${t('Gift credit spent')}: ${formatQuotaFixed(profile.gift_used_quota ?? 0)}`,
+    },
     {
       label: t('Request Count'),
       value: formatCompactNumber(profile.request_count),
@@ -169,19 +185,26 @@ export function ProfileBanner({ profile, loading }: ProfileBannerProps) {
             </div>
           </div>
 
-          <div className='border-border/40 grid grid-cols-3 gap-px overflow-hidden rounded-xl border max-lg:w-full'>
+          <div className='border-border/40 grid grid-cols-2 gap-px overflow-hidden rounded-xl border max-lg:w-full sm:grid-cols-4'>
             {stats.map((item, index) => (
               <dl
                 key={item.label}
                 className={cn(
                   'px-4 py-2.5 text-center',
-                  index > 0 && 'border-border/40 border-l border-dashed'
+                  index % 2 > 0 && 'border-border/40 border-l border-dashed',
+                  index > 1 &&
+                    'max-sm:border-border/40 border-border/40 max-sm:border-t max-sm:border-dashed sm:border-l sm:border-dashed'
                 )}
               >
                 <dt className='text-sm font-semibold'>{item.value}</dt>
                 <dd className='text-muted-foreground mt-0.5 text-xs'>
                   {item.label}
                 </dd>
+                {item.hint && (
+                  <dd className='text-muted-foreground/60 mt-0.5 text-[10px] whitespace-nowrap'>
+                    {item.hint}
+                  </dd>
+                )}
               </dl>
             ))}
           </div>

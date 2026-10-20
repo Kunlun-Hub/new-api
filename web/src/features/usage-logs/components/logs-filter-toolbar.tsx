@@ -61,8 +61,8 @@ interface LogsFilterToolbarProps<TData> {
   mobilePinnedFilters?: ReactNode
   mobileFilters?: ReactNode
   mobileFilterCount?: number
-  stats?: ReactNode
   actionStart?: ReactNode
+  actionEnd?: ReactNode
   hasActiveFilters: boolean
   hasAdvancedActiveFilters?: boolean
   advancedFilterCount?: number
@@ -198,13 +198,13 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
                 {props.searchLoading && <Loader2 className='animate-spin' />}
                 {t('Query')}
               </Button>
+              {props.actionEnd}
               <DataTableViewOptions table={props.table} />
             </>
           }
         >
           {props.compactMobile ? (
             <div className='flex min-w-0 flex-col gap-2.5'>
-              {props.stats}
               <div className='w-full min-w-0 [&_button]:min-h-9'>
                 {props.mobilePinnedFilters}
               </div>
@@ -212,7 +212,6 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
           ) : (
             <div className='grid gap-2'>
               <div className='grid gap-2'>{props.mobilePinnedFilters}</div>
-              {props.stats}
             </div>
           )}
         </DataTableMobileFilterPanel>
@@ -260,12 +259,12 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
   return (
     <div
       className={cn(
-        'bg-background sticky top-[calc(var(--app-header-height,4rem)+var(--banner-h,0px))] z-10 flex flex-col gap-2 pt-1',
+        'bg-background sticky top-[calc(var(--app-header-height,4rem)+var(--banner-h,0px))] z-10 flex items-center justify-between max-lg:flex-col',
         props.className
       )}
     >
-      <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+      <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2 max-lg:order-1'>
+        <div className='contents'>
           {props.primaryFilters}
           <Button
             type='button'
@@ -273,7 +272,7 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
             onClick={props.onSearch}
             disabled={props.searchLoading}
             aria-busy={props.searchLoading}
-            className='max-lg:w-full'
+            className='w-full lg:w-auto'
           >
             {props.searchLoading ? (
               <Loader2 className='animate-spin' />
@@ -283,12 +282,14 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
             {t('Query')}
           </Button>
         </div>
+      </div>
 
-        <div className='flex flex-wrap items-center justify-between gap-2 lg:justify-end'>
+      <div className='flex flex-wrap items-center justify-between gap-2 max-lg:w-full lg:justify-end'>
+        <div className='flex min-w-0 items-center gap-2'>
           {props.secondaryFilters}
-          <div className='flex flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
-            {props.stats}
+          <div className='flex flex-wrap items-center justify-end gap-2'>
             {props.actionStart}
+            {props.actionEnd}
             {props.onExport != null && (
               <Tooltip>
                 <TooltipTrigger
@@ -335,7 +336,7 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
       </div>
 
       {advancedOpen && props.advancedFilters && (
-        <div className='flex flex-wrap items-center gap-2'>
+        <div className='flex w-full basis-full flex-wrap items-center gap-2'>
           {props.advancedFilters}
         </div>
       )}

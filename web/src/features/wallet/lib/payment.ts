@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { getServerMessage } from '@/lib/server-error-message'
+
 import {
   PAYMENT_TYPES,
   DEFAULT_PRESET_MULTIPLIERS,
@@ -27,6 +29,22 @@ import type { PaymentMethod, PresetAmount, TopupInfo } from '../types'
 // ============================================================================
 // Payment Processing Functions
 // ============================================================================
+
+/**
+ * Payment endpoints answer errors as {"message": "error", "data": text}. When
+ * the response also carries a message_key, this is its translation; callers
+ * fall back to the text they already read.
+ */
+export function getPaymentErrorTranslation(
+  response: unknown
+): string | undefined {
+  if (!response || typeof response !== 'object') return undefined
+  const body = response as Record<string, unknown>
+  if (typeof body.message_key !== 'string' || !body.message_key) {
+    return undefined
+  }
+  return getServerMessage(body)
+}
 
 /**
  * Check if browser is Safari
@@ -76,6 +94,20 @@ export function isStripePayment(paymentType: string): boolean {
 }
 
 /**
+ * Check if payment method is Alipay Official (native precreate QR code flow)
+ */
+export function isAlipayOfficialPayment(paymentType: string): boolean {
+  return paymentType === PAYMENT_TYPES.ALIPAY_OFFICIAL
+}
+
+/**
+ * Check if payment method is WeChat Pay Official (native API v3 QR code flow)
+ */
+export function isWechatOfficialPayment(paymentType: string): boolean {
+  return paymentType === PAYMENT_TYPES.WECHAT_OFFICIAL
+}
+
+/**
  * Check if payment method is Waffo
  */
 export function isWaffoPayment(paymentType: string): boolean {
@@ -95,6 +127,8 @@ export function isWaffoPancakePayment(paymentType: string): boolean {
 
 export interface PaymentProcessors {
   regular: (topupAmount: number, paymentType: string) => Promise<boolean>
+  alipay: (topupAmount: number) => Promise<boolean>
+  wechat: (topupAmount: number) => Promise<boolean>
   waffo: (topupAmount: number, payMethodIndex: number) => Promise<boolean>
   waffoPancake: (topupAmount: number) => Promise<boolean>
 }
@@ -105,6 +139,14 @@ export async function dispatchSelectedPayment(
   waffoMethodIndex: number | null,
   processors: PaymentProcessors
 ): Promise<boolean> {
+  if (isAlipayOfficialPayment(paymentMethod.type)) {
+    return processors.alipay(topupAmount)
+  }
+
+  if (isWechatOfficialPayment(paymentMethod.type)) {
+    return processors.wechat(topupAmount)
+  }
+
   if (isWaffoPayment(paymentMethod.type)) {
     if (waffoMethodIndex === null) {
       return false
@@ -150,9 +192,20 @@ export function getDefaultPaymentType(topupInfo: TopupInfo | null): string {
 /**
  * Get minimum topup amount from topup info
  */
-export function getMinTopupAmount(topupInfo: TopupInfo | null): number {
+export function getMinTopupAmount(
+  topupInfo: TopupInfo | null,
+  paymentType?: string
+): number {
   if (!topupInfo) {
     return DEFAULT_MIN_TOPUP
+  }
+
+  if (isAlipayOfficialPayment(paymentType ?? '')) {
+    return topupInfo.alipay_min_topup || DEFAULT_MIN_TOPUP
+  }
+
+  if (isWechatOfficialPayment(paymentType ?? '')) {
+    return topupInfo.wechat_min_topup || DEFAULT_MIN_TOPUP
   }
 
   if (topupInfo.enable_online_topup) {
@@ -169,6 +222,14 @@ export function getMinTopupAmount(topupInfo: TopupInfo | null): number {
 
   if (topupInfo.enable_waffo_pancake_topup) {
     return topupInfo.waffo_pancake_min_topup || DEFAULT_MIN_TOPUP
+  }
+
+  if (topupInfo.enable_alipay_topup) {
+    return topupInfo.alipay_min_topup || DEFAULT_MIN_TOPUP
+  }
+
+  if (topupInfo.enable_wechat_topup) {
+    return topupInfo.wechat_min_topup || DEFAULT_MIN_TOPUP
   }
 
   return DEFAULT_MIN_TOPUP

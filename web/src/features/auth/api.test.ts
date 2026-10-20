@@ -23,11 +23,47 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { api, type RefreshOutcome } from '@/lib/api'
 import type { AuthBundle } from '@/stores/auth-store'
 
-import { executeLogout } from './api'
+import { createOAuthFlow, executeLogout, resetPassword } from './api'
 import { useOAuthLogin } from './hooks/use-oauth-login'
 import { consumeOAuthLoginRedirect } from './lib/oauth-callback-mode'
 
 afterEach(() => vi.restoreAllMocks())
+
+test('sends the Turnstile token when starting a login OAuth flow', async () => {
+  const post = vi.spyOn(api, 'post').mockResolvedValue({
+    data: { success: true, data: { flow_token: 'oauth-flow' } },
+  })
+
+  await expect(
+    createOAuthFlow('github', 'login', undefined, undefined, 'turnstile-login')
+  ).resolves.toBe('oauth-flow')
+
+  expect(post).toHaveBeenCalledWith(
+    '/api/oauth/state',
+    expect.objectContaining({ provider: 'github', intent: 'login' }),
+    expect.objectContaining({
+      headers: { 'X-Turnstile-Token': 'turnstile-login' },
+    })
+  )
+})
+
+test('sends the Turnstile token when confirming a password reset', async () => {
+  const post = vi.spyOn(api, 'post').mockResolvedValue({
+    data: { success: true, data: 'generated-password' },
+  })
+
+  await expect(
+    resetPassword('user@example.com', 'reset-token', 'turnstile-reset')
+  ).resolves.toEqual({ success: true, data: 'generated-password' })
+
+  expect(post).toHaveBeenCalledWith(
+    '/api/user/reset',
+    { email: 'user@example.com', token: 'reset-token' },
+    expect.objectContaining({
+      headers: { 'X-Turnstile-Token': 'turnstile-reset' },
+    })
+  )
+})
 
 test.each([true, false])(
   'starts Telegram OAuth only when configuration is ready: %s',

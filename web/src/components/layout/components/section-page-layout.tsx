@@ -107,7 +107,7 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
               />
               <Separator
                 orientation='vertical'
-                className='bg-border/60 mr-2 h-4 self-center'
+                className='bg-border/60 mr-2 h-4 self-center!'
               />
             </>
           )}

@@ -20,7 +20,10 @@ import axios from 'axios'
 
 import { api, refreshAuthentication, type RefreshOutcome } from '@/lib/api'
 import { AuthOperationError } from '@/lib/secure-verification'
-import { getServerErrorMessageKey } from '@/lib/server-error-message'
+import {
+  getServerErrorMessageKey,
+  getServerMessage,
+} from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
 import {
@@ -38,6 +41,11 @@ import type {
   RegisterPayload,
   ApiResponse,
 } from './types'
+
+function turnstileHeaders(turnstile?: string) {
+  const token = turnstile?.trim()
+  return token ? { 'X-Turnstile-Token': token } : undefined
+}
 
 // ============================================================================
 // Authentication APIs
@@ -64,12 +72,15 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
       passwordFields = { password: payload.password }
     }
     const res = await api.post<LoginResponse>(
-      `/api/user/login?turnstile=${turnstile}`,
+      '/api/user/login',
       {
         username: payload.username,
         ...passwordFields,
       },
-      { skipAuthRefresh: true }
+      {
+        headers: turnstileHeaders(turnstile),
+        skipAuthRefresh: true,
+      }
     )
     if (payload.passwordEncryptionEnabled && !res.data?.success) {
       clearPasswordEncryptionCache()
@@ -151,8 +162,26 @@ export async function sendPasswordResetEmail(
   turnstile?: string
 ): Promise<ApiResponse> {
   const res = await api.get('/api/reset_password', {
-    params: { email, turnstile },
+    params: { email },
+    headers: turnstileHeaders(turnstile),
   })
+  return res.data
+}
+
+// Confirm a password reset with the emailed token and a fresh Turnstile token.
+export async function resetPassword(
+  email: string,
+  token: string,
+  turnstile?: string
+): Promise<ApiResponse<string>> {
+  const res = await api.post<ApiResponse<string>>(
+    '/api/user/reset',
+    { email, token },
+    {
+      headers: turnstileHeaders(turnstile),
+      skipBusinessError: true,
+    }
+  )
   return res.data
 }
 
@@ -172,9 +201,12 @@ export async function createOAuthAuthorization(
   intent: 'login' | 'bind' | 'verify',
   operation?: VerificationOperation,
   signal?: AbortSignal,
-  proofToken?: string
+  proofToken?: string,
+  turnstileToken?: string
 ): Promise<{ state: string; authorizationUrl?: string }> {
   const aff = intent === 'login' ? getAffiliateCode() : ''
+  const turnstile =
+    intent === 'login' ? turnstileHeaders(turnstileToken) : undefined
   const res = await api.post(
     '/api/oauth/state',
     {
@@ -186,7 +218,10 @@ export async function createOAuthAuthorization(
     },
     {
       skipAuthRefresh: intent === 'login',
-      ...(proofToken ? { headers: { 'X-Security-Proof': proofToken } } : {}),
+      headers: {
+        ...(proofToken ? { 'X-Security-Proof': proofToken } : {}),
+        ...turnstile,
+      },
       singleUseAuthorization: intent === 'bind',
       signal,
       skipBusinessError: true,
@@ -204,7 +239,7 @@ export async function createOAuthAuthorization(
   }
   throw new AuthOperationError(
     getServerErrorMessageKey(res.data) ||
-      res.data?.message ||
+      getServerMessage(res.data) ||
       'Failed to initialize OAuth',
     res.data?.code
   )
@@ -214,10 +249,19 @@ export async function createOAuthFlow(
   provider: string,
   intent: 'login' | 'bind' | 'verify',
   operation?: VerificationOperation,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  turnstileToken?: string
 ): Promise<string> {
-  return (await createOAuthAuthorization(provider, intent, operation, signal))
-    .state
+  return (
+    await createOAuthAuthorization(
+      provider,
+      intent,
+      operation,
+      signal,
+      undefined,
+      turnstileToken
+    )
+  ).state
 }
 
 // WeChat login by authorization code
@@ -245,8 +289,9 @@ export async function telegramLogin(
 
 // User registration
 export async function register(payload: RegisterPayload): Promise<ApiResponse> {
-  const res = await api.post(`/api/user/register`, payload, {
-    params: { turnstile: payload.turnstile ?? '' },
+  const { turnstile, ...registration } = payload
+  const res = await api.post('/api/user/register', registration, {
+    headers: turnstileHeaders(turnstile),
   })
   return res.data
 }
@@ -257,7 +302,8 @@ export async function sendEmailVerification(
   turnstile?: string
 ): Promise<ApiResponse> {
   const res = await api.get('/api/verification', {
-    params: { email, turnstile },
+    params: { email },
+    headers: turnstileHeaders(turnstile),
   })
   return res.data
 }

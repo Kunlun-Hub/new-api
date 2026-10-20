@@ -65,6 +65,7 @@ const DEFAULT_SIDEBAR_MODULES: SidebarModulesAdminConfig = {
   finance: {
     enabled: true,
     topup: true,
+    redPacket: true,
     invitation: true,
     orders: true,
   },
@@ -129,6 +130,8 @@ const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
   '/usage-logs/drawing': { section: 'console', module: 'midjourney' },
   '/usage-logs/task': { section: 'console', module: 'task' },
   '/wallet': { section: 'finance', module: 'topup' },
+  '/red-packets': { section: 'finance', module: 'redPacket' },
+  '/red-packet-records': { section: 'finance', module: 'redPacket' },
   '/tickets': { section: 'personal', module: 'ticket' },
   '/invitation': { section: 'finance', module: 'invitation' },
   '/orders': { section: 'finance', module: 'orders' },
@@ -293,9 +296,7 @@ function filterNavItems(
       }
       return item
     })
-    .filter((item) =>
-      isNavItemVisible(item, adminConfig, userConfig, features)
-    )
+    .filter((item) => isNavItemVisible(item, adminConfig, userConfig, features))
 }
 
 /**
@@ -370,5 +371,10 @@ export function useIsSidebarModuleVisible(url: string): boolean {
       ? null
       : parseUserSidebarConfig(auth?.user?.sidebar_modules)
 
-  return isModuleEnabled(url, adminConfig, userConfig, parseConsoleFeatures(status))
+  return isModuleEnabled(
+    url,
+    adminConfig,
+    userConfig,
+    parseConsoleFeatures(status)
+  )
 }

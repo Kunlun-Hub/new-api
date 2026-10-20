@@ -22,8 +22,10 @@ type Midjourney struct {
 	FailReason  string `json:"fail_reason"`
 	ChannelId   int    `json:"channel_id"`
 	Quota       int    `json:"quota"`
-	Buttons     string `json:"buttons"`
-	Properties  string `json:"properties"`
+	// GiftQuota is the part of Quota paid with gift credit at settlement time.
+	GiftQuota  int    `json:"gift_quota" gorm:"default:0"`
+	Buttons    string `json:"buttons"`
+	Properties string `json:"properties"`
 
 	TokenId          int `json:"-" gorm:"default:0"`
 	BillingChannelId int `json:"-" gorm:"default:0"`
@@ -176,7 +178,7 @@ func (midjourney *Midjourney) Update() error {
 
 func (midjourney *Midjourney) UpdateBillingState() error {
 	return DB.Model(midjourney).
-		Select("quota", "token_id", "billing_channel_id").
+		Select("quota", "gift_quota", "token_id", "billing_channel_id").
 		Updates(midjourney).Error
 }
 

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SiGoogle } from 'react-icons/si'
 
 import {
   IconDiscord,
@@ -47,6 +48,8 @@ type OAuthProvidersProps = {
   buttonClassName?: string
   /** Render the provider name only, keeping the full label as the accessible name */
   compactLabels?: boolean
+  turnstileToken?: string
+  onTurnstileConsumed?: () => void
 }
 
 type ProviderButton = {
@@ -69,6 +72,8 @@ export function OAuthProviders({
   buttonLayout = 'stack',
   buttonClassName,
   compactLabels = false,
+  turnstileToken,
+  onTurnstileConsumed,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -76,12 +81,16 @@ export function OAuthProviders({
     githubButtonText,
     githubButtonDisabled,
     handleGitHubLogin,
+    handleGoogleLogin,
     handleDiscordLogin,
     handleOIDCLogin,
     handleLinuxDOLogin,
     handleTelegramLogin,
     handleCustomOAuthLogin,
-  } = useOAuthLogin(status, redirectTo)
+  } = useOAuthLogin(status, redirectTo, {
+    turnstileToken,
+    onTurnstileConsumed,
+  })
 
   const providerButtons: ProviderButton[] = []
 
@@ -104,6 +113,16 @@ export function OAuthProviders({
       onClick: handleGitHubLogin,
       icon: <IconGithub className='h-4 w-4' />,
       disabled: githubButtonDisabled,
+    })
+  }
+
+  if (status?.google_oauth) {
+    providerButtons.push({
+      key: 'google',
+      name: t('Google'),
+      label: t('Continue with Google'),
+      onClick: handleGoogleLogin,
+      icon: <SiGoogle className='h-4 w-4' />,
     })
   }
 

@@ -22,6 +22,7 @@ import {
   Wrench01Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { CircleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
@@ -33,6 +34,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { formatLogQuota } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 import { hasToolSurcharge } from '../lib/format'
 import type { LogOtherData } from '../types'
@@ -41,6 +43,12 @@ interface LogCostDisplayProps {
   quota: number
   other: LogOtherData | null
   showBillingSource?: boolean
+  /** Gift credit share of the charge; rendered as an extra chip when > 0. */
+  giftQuota?: number
+  /** Plain text keeps the usage table aligned with the reference console. */
+  variant?: 'badge' | 'plain'
+  /** Error logs show a compact error affordance instead of a zero amount. */
+  errorMessage?: string
 }
 
 function ToolSurchargeMarker() {
@@ -80,6 +88,7 @@ function ToolSurchargeMarker() {
 
 export function LogCostDisplay(props: LogCostDisplayProps) {
   const { t } = useTranslation()
+  const variant = props.variant ?? 'badge'
   const isSubscription = props.other?.billing_source === 'subscription'
   const showToolSurcharge = hasToolSurcharge(props.other)
   const quota = isSubscription
@@ -100,41 +109,103 @@ export function LogCostDisplay(props: LogCostDisplayProps) {
     source = t('Wallet')
   }
 
+  if (props.errorMessage) {
+    return (
+      <div className={cn('flex w-full', variant === 'plain' && 'justify-end')}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span
+                  className='inline-flex cursor-default items-center gap-0.5 rounded-full border border-red-500/20 bg-red-500/10 px-1.5 py-0.5 text-[11px] text-red-500'
+                  tabIndex={0}
+                  aria-label={t('View Error')}
+                />
+              }
+            >
+              <CircleAlert className='size-3' aria-hidden='true' />
+              {t('View Error')}
+            </TooltipTrigger>
+            <TooltipContent
+              side='top'
+              className='max-w-80 leading-relaxed break-all whitespace-pre-wrap'
+            >
+              {props.errorMessage}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    )
+  }
+
+  const sourceMarker = source ? (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            className='inline-flex shrink-0 cursor-help items-center'
+            role='img'
+            aria-label={source}
+            tabIndex={0}
+          >
+            <HugeiconsIcon
+              icon={isSubscription ? CrownIcon : Wallet01Icon}
+              className='size-3.5'
+              strokeWidth={2}
+              aria-hidden='true'
+            />
+          </span>
+        }
+      />
+      <TooltipContent>{source}</TooltipContent>
+    </Tooltip>
+  ) : null
+  const amount = (
+    <span className='whitespace-nowrap'>{formatLogQuota(quota)}</span>
+  )
+
   return (
     <TooltipProvider>
-      <div className='inline-flex w-fit items-center gap-1.5'>
-        <StatusBadge
-          type='badge'
-          variant='neutral'
-          size='lg'
-          copyable={false}
-          className='border-border/80 bg-muted/60 text-foreground rounded-md border font-semibold tabular-nums'
-        >
-          {source ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <span
-                    className='inline-flex shrink-0 cursor-help'
-                    role='img'
-                    aria-label={source}
-                    tabIndex={0}
-                  >
-                    <HugeiconsIcon
-                      icon={isSubscription ? CrownIcon : Wallet01Icon}
-                      className='size-3.5'
-                      strokeWidth={2}
-                      aria-hidden='true'
-                    />
-                  </span>
-                }
-              />
-              <TooltipContent>{source}</TooltipContent>
-            </Tooltip>
-          ) : null}
-          <span className='whitespace-nowrap'>{formatLogQuota(quota)}</span>
-        </StatusBadge>
+      <div
+        className={cn(
+          'inline-flex w-fit items-center gap-1.5',
+          variant === 'plain' &&
+            'flex w-full justify-end font-medium tabular-nums'
+        )}
+      >
+        {variant === 'badge' ? (
+          <StatusBadge
+            type='badge'
+            variant='neutral'
+            size='lg'
+            copyable={false}
+            className='border-border/80 bg-muted/60 text-foreground rounded-md border font-semibold tabular-nums'
+          >
+            {sourceMarker}
+            {amount}
+          </StatusBadge>
+        ) : (
+          <>
+            {sourceMarker}
+            {amount}
+          </>
+        )}
         {showToolSurcharge ? <ToolSurchargeMarker /> : null}
+        {props.giftQuota && props.giftQuota > 0 ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Badge
+                  variant='outline'
+                  className='h-5 cursor-help rounded-4xl border-emerald-500/40 px-2 text-[10px] font-medium text-emerald-600 tabular-nums dark:text-emerald-400'
+                >
+                  {t('Gift credit')} {formatLogQuota(props.giftQuota)}
+                </Badge>
+              }
+            />
+            <TooltipContent>{t('Paid with gift credit')}</TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
     </TooltipProvider>
   )

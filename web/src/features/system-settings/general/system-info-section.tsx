@@ -33,6 +33,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
+import { parseFooterColumns } from '@/lib/footer-columns'
+
 import { FormDirtyIndicator } from '../components/form-dirty-indicator'
 import { FormNavigationGuard } from '../components/form-navigation-guard'
 import {
@@ -52,6 +54,7 @@ const _systemInfoSchema = z.object({
   TaskPublicAddress: z.string().refine(isValidTaskPublicAddress),
   Logo: z.string().url().optional().or(z.literal('')),
   Footer: z.string().optional(),
+  FooterColumns: z.string().optional(),
   About: z.string().optional(),
   HomePageContent: z.string().optional(),
   general_setting: z.object({
@@ -84,6 +87,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     TaskPublicAddress: normalizeValue(defaultValues.TaskPublicAddress),
     Logo: normalizeValue(defaultValues.Logo),
     Footer: normalizeValue(defaultValues.Footer),
+    FooterColumns: normalizeValue(defaultValues.FooterColumns),
     About: normalizeValue(defaultValues.About),
     HomePageContent: normalizeValue(defaultValues.HomePageContent),
     general_setting: {
@@ -108,6 +112,12 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     }),
     Logo: z.string().url().optional().or(z.literal('')),
     Footer: z.string().optional(),
+    FooterColumns: z
+      .string()
+      .optional()
+      .refine((value) => !value || parseFooterColumns(value) !== null, {
+        error: () => t('Enter valid footer links JSON'),
+      }),
     About: z.string().optional(),
     HomePageContent: z.string().optional(),
     general_setting: z.object({
@@ -271,6 +281,30 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t('Footer text displayed at the bottom of pages')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='FooterColumns'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Footer Links')}</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        className='font-mono text-xs'
+                        placeholder='[{"title": "About", "links": [{"text": "Docs", "href": "https://example.com"}]}]'
+                        rows={6}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Configure the footer link columns as JSON. Leave empty to use the built-in links.'
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

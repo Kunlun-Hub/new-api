@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 )
 
@@ -34,23 +35,74 @@ var ErrInsufficientWalletQuota = errors.New("wallet quota insufficient")
 
 type WalletFunding struct {
 	userId   int
-	consumed int // 实际预扣的用户额度
+	consumed int // 实际预扣的用户额度（含礼赠金部分）
+	// giftEligible 表示当前计费模型允许使用礼赠金；此时礼赠金优先扣减，
+	// 余额承担剩余部分。
+	giftEligible bool
+	giftConsumed int // consumed 中由礼赠金承担的部分
 }
 
 func (w *WalletFunding) Source() string { return BillingSourceWallet }
+
+// takeGiftQuota 尽可能从礼赠金扣除 amount，返回实际扣除的额度。
+func (w *WalletFunding) takeGiftQuota(amount int) (int, error) {
+	if !w.giftEligible || amount <= 0 {
+		return 0, nil
+	}
+	reserved, err := model.TryReserveUserGiftQuota(w.userId, amount)
+	if err != nil {
+		return 0, err
+	}
+	w.giftConsumed += reserved
+	return reserved, nil
+}
 
 func (w *WalletFunding) PreConsume(amount int) error {
 	if amount <= 0 {
 		return nil
 	}
-	reserved, err := model.TryReserveUserQuota(w.userId, amount)
+	gift, err := w.takeGiftQuota(amount)
 	if err != nil {
 		return err
 	}
-	if !reserved {
-		return ErrInsufficientWalletQuota
+	rest := amount - gift
+	if rest > 0 {
+		reserved, err := model.TryReserveUserQuota(w.userId, rest)
+		if err != nil || !reserved {
+			// 余额不足时回滚已扣的礼赠金，保证失败请求不产生任何扣费。
+			if gift > 0 {
+				w.giftConsumed -= gift
+				if rollbackErr := model.IncreaseUserGiftQuota(w.userId, gift); rollbackErr != nil {
+					common.SysError("error rolling back gift quota pre-consume: " + rollbackErr.Error())
+				}
+			}
+			if err != nil {
+				return err
+			}
+			return ErrInsufficientWalletQuota
+		}
 	}
 	w.consumed = amount
+	return nil
+}
+
+// ConsumeAvailable 按礼赠金优先的顺序扣减 amount，剩余部分记为钱包支出。
+// allowDebt 为 true 时允许余额欠费（结算补扣场景）。
+func (w *WalletFunding) ConsumeAvailable(amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	gift, err := w.takeGiftQuota(amount)
+	if err != nil {
+		return err
+	}
+	rest := amount - gift
+	if rest > 0 {
+		if err := model.DecreaseUserQuota(w.userId, rest, false); err != nil {
+			return err
+		}
+	}
+	w.consumed += amount
 	return nil
 }
 
@@ -59,9 +111,44 @@ func (w *WalletFunding) Settle(delta int) error {
 		return nil
 	}
 	if delta > 0 {
-		return model.DecreaseUserQuota(w.userId, delta, false)
+		// 补扣同样礼赠金优先；余额不足部分允许欠费，与原有结算语义一致。
+		return w.ConsumeAvailable(delta)
 	}
-	return model.IncreaseUserQuota(w.userId, -delta, false)
+	refund := -delta
+	giftRefund := 0
+	if w.giftConsumed > 0 {
+		giftRefund = min(refund, w.giftConsumed)
+		if err := model.IncreaseUserGiftQuota(w.userId, giftRefund); err != nil {
+			return err
+		}
+		w.giftConsumed -= giftRefund
+	}
+	if rest := refund - giftRefund; rest > 0 {
+		return model.IncreaseUserQuota(w.userId, rest, false)
+	}
+	return nil
+}
+
+// RollbackReserve 撤销一次未完成的补充预扣（预扣失败补偿路径）。
+func (w *WalletFunding) RollbackReserve(delta int) error {
+	if delta <= 0 {
+		return nil
+	}
+	giftRefund := 0
+	if w.giftConsumed > 0 {
+		giftRefund = min(delta, w.giftConsumed)
+		if err := model.IncreaseUserGiftQuota(w.userId, giftRefund); err != nil {
+			return err
+		}
+		w.giftConsumed -= giftRefund
+	}
+	if rest := delta - giftRefund; rest > 0 {
+		if err := model.IncreaseUserQuota(w.userId, rest, false); err != nil {
+			return err
+		}
+	}
+	w.consumed -= delta
+	return nil
 }
 
 func (w *WalletFunding) Refund() error {
@@ -70,7 +157,17 @@ func (w *WalletFunding) Refund() error {
 	}
 	// IncreaseUserQuota 是 quota += N 的非幂等操作，不能重试，否则会多退额度。
 	// 订阅的 RefundSubscriptionPreConsume 有 requestId 幂等保护所以可以重试。
-	return model.IncreaseUserQuota(w.userId, w.consumed, false)
+	if w.giftConsumed > 0 {
+		if err := model.IncreaseUserGiftQuota(w.userId, w.giftConsumed); err != nil {
+			return err
+		}
+	}
+	if rest := w.consumed - w.giftConsumed; rest > 0 {
+		return model.IncreaseUserQuota(w.userId, rest, false)
+	}
+	w.consumed = 0
+	w.giftConsumed = 0
+	return nil
 }
 
 // ---------------------------------------------------------------------------

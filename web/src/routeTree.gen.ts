@@ -37,6 +37,7 @@ import { Route as HelpIndexRouteImport } from './routes/help/index'
 import { Route as MonitoringIndexRouteImport } from './routes/monitoring/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
 import { Route as PricingIndexRouteImport } from './routes/pricing/index'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as RankingsIndexRouteImport } from './routes/rankings/index'
 import { Route as SetupIndexRouteImport } from './routes/setup/index'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
@@ -57,6 +58,8 @@ import { Route as AuthenticatedModelsSectionRouteImport } from './routes/_authen
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedPlaygroundIndexRouteImport } from './routes/_authenticated/playground/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
+import { Route as AuthenticatedRedPacketRecordsIndexRouteImport } from './routes/_authenticated/red-packet-records/index'
+import { Route as AuthenticatedRedPacketsIndexRouteImport } from './routes/_authenticated/red-packets/index'
 import { Route as AuthenticatedRedemptionCodesIndexRouteImport } from './routes/_authenticated/redemption-codes/index'
 import { Route as AuthenticatedSecurityIndexRouteImport } from './routes/_authenticated/security/index'
 import { Route as AuthenticatedSubscriptionsIndexRouteImport } from './routes/_authenticated/subscriptions/index'
@@ -232,6 +235,11 @@ const PricingIndexRoute = PricingIndexRouteImport.update({
   path: '/pricing/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RankingsIndexRoute = RankingsIndexRouteImport.update({
   id: '/rankings/',
   path: '/rankings/',
@@ -340,6 +348,18 @@ const AuthenticatedProfileIndexRoute =
   AuthenticatedProfileIndexRouteImport.update({
     id: '/profile/',
     path: '/profile/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRedPacketRecordsIndexRoute =
+  AuthenticatedRedPacketRecordsIndexRouteImport.update({
+    id: '/red-packet-records/',
+    path: '/red-packet-records/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRedPacketsIndexRoute =
+  AuthenticatedRedPacketsIndexRouteImport.update({
+    id: '/red-packets/',
+    path: '/red-packets/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRedemptionCodesIndexRoute =
@@ -569,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/doc/$slug': typeof DocSlugRoute
   '/oauth/$provider': typeof OauthProviderRoute
+  '/r/$token': typeof RTokenRoute
   '/studio/chat': typeof StudioChatRoute
   '/studio/image': typeof StudioImageRoute
   '/studio/video': typeof StudioVideoRoute
@@ -600,6 +621,8 @@ export interface FileRoutesByFullPath {
   '/orders/': typeof AuthenticatedOrdersIndexRoute
   '/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
+  '/red-packet-records/': typeof AuthenticatedRedPacketRecordsIndexRoute
+  '/red-packets/': typeof AuthenticatedRedPacketsIndexRoute
   '/redemption-codes/': typeof AuthenticatedRedemptionCodesIndexRoute
   '/security/': typeof AuthenticatedSecurityIndexRoute
   '/subscriptions/': typeof AuthenticatedSubscriptionsIndexRoute
@@ -651,6 +674,7 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/doc/$slug': typeof DocSlugRoute
   '/oauth/$provider': typeof OauthProviderRoute
+  '/r/$token': typeof RTokenRoute
   '/studio/chat': typeof StudioChatRoute
   '/studio/image': typeof StudioImageRoute
   '/studio/video': typeof StudioVideoRoute
@@ -682,6 +706,8 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/playground': typeof AuthenticatedPlaygroundIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
+  '/red-packet-records': typeof AuthenticatedRedPacketRecordsIndexRoute
+  '/red-packets': typeof AuthenticatedRedPacketsIndexRoute
   '/redemption-codes': typeof AuthenticatedRedemptionCodesIndexRoute
   '/security': typeof AuthenticatedSecurityIndexRoute
   '/subscriptions': typeof AuthenticatedSubscriptionsIndexRoute
@@ -737,6 +763,7 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/doc/$slug': typeof DocSlugRoute
   '/oauth/$provider': typeof OauthProviderRoute
+  '/r/$token': typeof RTokenRoute
   '/studio/chat': typeof StudioChatRoute
   '/studio/image': typeof StudioImageRoute
   '/studio/video': typeof StudioVideoRoute
@@ -768,6 +795,8 @@ export interface FileRoutesById {
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
+  '/_authenticated/red-packet-records/': typeof AuthenticatedRedPacketRecordsIndexRoute
+  '/_authenticated/red-packets/': typeof AuthenticatedRedPacketsIndexRoute
   '/_authenticated/redemption-codes/': typeof AuthenticatedRedemptionCodesIndexRoute
   '/_authenticated/security/': typeof AuthenticatedSecurityIndexRoute
   '/_authenticated/subscriptions/': typeof AuthenticatedSubscriptionsIndexRoute
@@ -822,6 +851,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/doc/$slug'
     | '/oauth/$provider'
+    | '/r/$token'
     | '/studio/chat'
     | '/studio/image'
     | '/studio/video'
@@ -853,6 +883,8 @@ export interface FileRouteTypes {
     | '/orders/'
     | '/playground/'
     | '/profile/'
+    | '/red-packet-records/'
+    | '/red-packets/'
     | '/redemption-codes/'
     | '/security/'
     | '/subscriptions/'
@@ -904,6 +936,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/doc/$slug'
     | '/oauth/$provider'
+    | '/r/$token'
     | '/studio/chat'
     | '/studio/image'
     | '/studio/video'
@@ -935,6 +968,8 @@ export interface FileRouteTypes {
     | '/orders'
     | '/playground'
     | '/profile'
+    | '/red-packet-records'
+    | '/red-packets'
     | '/redemption-codes'
     | '/security'
     | '/subscriptions'
@@ -989,6 +1024,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/doc/$slug'
     | '/oauth/$provider'
+    | '/r/$token'
     | '/studio/chat'
     | '/studio/image'
     | '/studio/video'
@@ -1020,6 +1056,8 @@ export interface FileRouteTypes {
     | '/_authenticated/orders/'
     | '/_authenticated/playground/'
     | '/_authenticated/profile/'
+    | '/_authenticated/red-packet-records/'
+    | '/_authenticated/red-packets/'
     | '/_authenticated/redemption-codes/'
     | '/_authenticated/security/'
     | '/_authenticated/subscriptions/'
@@ -1066,6 +1104,7 @@ export interface RootRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
   DocSlugRoute: typeof DocSlugRoute
   OauthProviderRoute: typeof OauthProviderRoute
+  RTokenRoute: typeof RTokenRoute
   StudioChatRoute: typeof StudioChatRoute
   StudioImageRoute: typeof StudioImageRoute
   StudioVideoRoute: typeof StudioVideoRoute
@@ -1283,6 +1322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rankings/': {
       id: '/rankings/'
       path: '/rankings'
@@ -1421,6 +1467,20 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile/'
       preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/red-packet-records/': {
+      id: '/_authenticated/red-packet-records/'
+      path: '/red-packet-records'
+      fullPath: '/red-packet-records/'
+      preLoaderRoute: typeof AuthenticatedRedPacketRecordsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/red-packets/': {
+      id: '/_authenticated/red-packets/'
+      path: '/red-packets'
+      fullPath: '/red-packets/'
+      preLoaderRoute: typeof AuthenticatedRedPacketsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/redemption-codes/': {
@@ -1778,6 +1838,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
   AuthenticatedPlaygroundIndexRoute: typeof AuthenticatedPlaygroundIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
+  AuthenticatedRedPacketRecordsIndexRoute: typeof AuthenticatedRedPacketRecordsIndexRoute
+  AuthenticatedRedPacketsIndexRoute: typeof AuthenticatedRedPacketsIndexRoute
   AuthenticatedRedemptionCodesIndexRoute: typeof AuthenticatedRedemptionCodesIndexRoute
   AuthenticatedSecurityIndexRoute: typeof AuthenticatedSecurityIndexRoute
   AuthenticatedSubscriptionsIndexRoute: typeof AuthenticatedSubscriptionsIndexRoute
@@ -1810,6 +1872,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
   AuthenticatedPlaygroundIndexRoute: AuthenticatedPlaygroundIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
+  AuthenticatedRedPacketRecordsIndexRoute:
+    AuthenticatedRedPacketRecordsIndexRoute,
+  AuthenticatedRedPacketsIndexRoute: AuthenticatedRedPacketsIndexRoute,
   AuthenticatedRedemptionCodesIndexRoute:
     AuthenticatedRedemptionCodesIndexRoute,
   AuthenticatedSecurityIndexRoute: AuthenticatedSecurityIndexRoute,
@@ -1842,6 +1907,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
   DocSlugRoute: DocSlugRoute,
   OauthProviderRoute: OauthProviderRoute,
+  RTokenRoute: RTokenRoute,
   StudioChatRoute: StudioChatRoute,
   StudioImageRoute: StudioImageRoute,
   StudioVideoRoute: StudioVideoRoute,

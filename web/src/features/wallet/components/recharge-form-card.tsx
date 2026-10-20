@@ -51,7 +51,7 @@ import type {
 } from '../types'
 import { CreemProductsSection } from './creem-products-section'
 
-const MONEY_FORMAT = { fixedFractionDigits: 2 } as const
+const MONEY_FORMAT = { digitsLarge: 2, digitsSmall: 4 } as const
 
 interface RechargeFormCardProps {
   user: UserWalletData | null
@@ -169,6 +169,8 @@ export function RechargeFormCard({
 
   const hasConfigurableTopup =
     topupInfo?.enable_online_topup ||
+    topupInfo?.enable_alipay_topup ||
+    topupInfo?.enable_wechat_topup ||
     topupInfo?.enable_stripe_topup ||
     enableWaffoTopup ||
     enableWaffoPancakeTopup

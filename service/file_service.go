@@ -235,7 +235,7 @@ func buildCachedFileData(c *gin.Context, fileBytes []byte, mimeType string) *typ
 		diskPath, err := writeToDiskCache(base64Data)
 		if err != nil {
 			// 磁盘缓存失败，回退到内存
-			logger.LogWarn(c, fmt.Sprintf("Failed to write to disk cache, falling back to memory: %v", err))
+			logger.LogWarn(c, common.LogText("Failed to write to disk cache, falling back to memory: %v", err))
 			cachedData = types.NewMemoryCachedData(base64Data, mimeType, int64(len(fileBytes)))
 		} else {
 			cachedData = types.NewDiskCachedData(diskPath, mimeType, int64(len(fileBytes)))

@@ -16,21 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import {
-  CircleDot,
-  KeyRound,
-  Link2,
-  Mail,
-  MessageCircleMore,
-  Send,
-  Unlink,
-} from 'lucide-react'
+import { CircleDot, KeyRound, Link2, Mail, Send, Unlink } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SiGithub, SiGooglechrome, SiLinux } from 'react-icons/si'
+import { SiGoogle } from 'react-icons/si'
 import { toast } from 'sonner'
 
-import { IconDiscord } from '@/assets/brand-icons'
+import {
+  IconGithub,
+  IconWeChat,
+  IconLinuxDo,
+  IconDiscord,
+} from '@/assets/brand-icons'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
@@ -256,6 +253,9 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
   const githubId = (profile as unknown as Record<string, unknown>).github_id as
     | string
     | undefined
+  const googleId = (profile as unknown as Record<string, unknown>).google_id as
+    | string
+    | undefined
   const discordId = (profile as unknown as Record<string, unknown>)
     .discord_id as string | undefined
   const oidcId = (profile as unknown as Record<string, unknown>).oidc_id as
@@ -269,18 +269,8 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
   const linuxDoId = (profile as unknown as Record<string, unknown>)
     .linux_do_id as string | undefined
 
-  const googleProvider = customProviders?.find(
-    (provider) =>
-      provider.slug.toLowerCase() === 'google' ||
-      provider.name.trim().toLowerCase() === 'google'
-  )
-  const googleBinding = googleProvider
-    ? customBindingsByProviderId.get(googleProvider.id)
-    : undefined
-
-  // The reference site only surfaces the providers it supports. Ours keeps the
-  // same core list and reveals the extra channels once an administrator enables
-  // them or the account is already linked to one.
+  // Only providers enabled by the administrator are shown. Keeping disabled
+  // bindings hidden avoids exposing channels that cannot currently be used.
   const bindings: BindingItem[] = [
     {
       id: 'email',
@@ -294,7 +284,7 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     {
       id: 'github',
       label: t('GitHub'),
-      icon: SiGithub,
+      icon: IconGithub,
       value: githubId,
       isBound: Boolean(githubId),
       isEnabled: status?.github_oauth || false,
@@ -303,13 +293,11 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     {
       id: 'google',
       label: t('Google'),
-      icon: SiGooglechrome,
-      value: googleBinding?.provider_user_id,
-      isBound: Boolean(googleBinding),
-      isEnabled: Boolean(googleProvider),
-      onBind: () => {
-        if (googleProvider) void handleBindCustomOAuth(googleProvider)
-      },
+      icon: SiGoogle,
+      value: googleId,
+      isBound: Boolean(googleId),
+      isEnabled: status?.google_oauth || false,
+      onBind: () => void startOAuthBinding('google'),
     },
     {
       id: 'oidc',
@@ -323,7 +311,7 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     {
       id: 'wechat',
       label: t('WeChat'),
-      icon: MessageCircleMore,
+      icon: IconWeChat,
       value: wechatId,
       isBound: Boolean(wechatId),
       isEnabled: status?.wechat_login || false,
@@ -368,7 +356,7 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     bindings.push({
       id: 'linuxdo',
       label: t('LinuxDO'),
-      icon: SiLinux as React.ComponentType<{ className?: string }>,
+      icon: IconLinuxDo,
       value: linuxDoId,
       isBound: Boolean(linuxDoId),
       isEnabled: status?.linuxdo_oauth || false,
@@ -382,41 +370,89 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
         aria-label={t('Account Bindings')}
         className='grid grid-cols-1 gap-4 sm:grid-cols-2'
       >
-        {bindings.map((binding) => {
-          const googleUnbindTarget =
-            binding.id === 'google' && binding.isBound
-              ? googleBinding
-              : undefined
-          let actionLabel = t('Bind')
-          if (!binding.isEnabled) {
-            actionLabel = t('Not enabled')
-          } else if (binding.isBound && binding.id !== 'email') {
-            actionLabel = t('Bound')
-          }
+        {bindings
+          .filter((binding) => binding.isEnabled)
+          .map((binding) => {
+            let actionLabel = t('Bind')
+            if (binding.isBound && binding.id === 'email') {
+              actionLabel = t('Change Email')
+            } else if (binding.isBound) {
+              actionLabel = t('Bound')
+            }
 
+            return (
+              <li
+                key={binding.id}
+                className='hover:from-foreground/4 border-border/40 flex min-w-0 items-center gap-3 rounded-xl border bg-linear-to-br via-transparent to-transparent p-4 transition duration-300'
+              >
+                <div className='border-border/40 bg-background/60 flex size-10 shrink-0 items-center justify-center rounded-lg border'>
+                  <binding.icon className='text-foreground/70 size-5' />
+                </div>
+                <div className='min-w-0 flex-1'>
+                  <div className='text-sm font-medium'>{binding.label}</div>
+                  <div
+                    className='text-muted-foreground truncate text-xs'
+                    title={binding.value || undefined}
+                  >
+                    {binding.value || t('Not bound')}
+                  </div>
+                </div>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='border-border/60 shrink-0'
+                  onClick={binding.onBind}
+                  disabled={
+                    bindingsLocked ||
+                    (binding.isBound && binding.id !== 'email')
+                  }
+                >
+                  {actionLabel}
+                </Button>
+              </li>
+            )
+          })}
+        {customProviders?.map((provider) => {
+          const binding = customBindingsByProviderId.get(provider.id)
+          const isBound = !!binding
           return (
             <li
-              key={binding.id}
+              key={provider.id}
               className='hover:from-foreground/4 border-border/40 flex min-w-0 items-center gap-3 rounded-xl border bg-linear-to-br via-transparent to-transparent p-4 transition duration-300'
             >
-              <div className='border-border/40 bg-background/60 flex size-10 shrink-0 items-center justify-center rounded-lg border'>
-                <binding.icon className='text-foreground/70 size-5' />
-              </div>
-              <div className='min-w-0 flex-1'>
-                <div className='text-sm font-medium'>{binding.label}</div>
-                <div
-                  className='text-muted-foreground truncate text-xs'
-                  title={binding.value || undefined}
-                >
-                  {binding.value || t('Not bound')}
+              <div className='flex min-w-0 flex-1 items-center gap-2'>
+                <div className='border-border/40 bg-background/60 flex size-10 shrink-0 items-center justify-center rounded-lg border'>
+                  <Link2 className='text-foreground/70 size-5' />
+                </div>
+                <div className='min-w-0 flex-1'>
+                  <div className='flex items-center gap-1.5'>
+                    <p
+                      className='truncate text-sm font-medium'
+                      title={provider.name}
+                    >
+                      {provider.name}
+                    </p>
+                    {isBound && (
+                      <StatusBadge
+                        label={t('Bound')}
+                        variant='success'
+                        copyable={false}
+                      />
+                    )}
+                  </div>
+                  <p className='text-muted-foreground truncate text-xs'>
+                    {isBound
+                      ? binding?.provider_user_id || t('Bound')
+                      : t('Not bound')}
+                  </p>
                 </div>
               </div>
-              {googleUnbindTarget ? (
+              {isBound ? (
                 <Button
                   variant='ghost'
                   size='sm'
                   className='text-destructive shrink-0'
-                  onClick={() => setUnbindTarget(googleUnbindTarget)}
+                  onClick={() => setUnbindTarget(binding)}
                   disabled={bindingsLocked}
                 >
                   <Unlink className='mr-1 h-3 w-3' />
@@ -427,81 +463,15 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
                   variant='outline'
                   size='sm'
                   className='border-border/60 shrink-0'
-                  onClick={binding.onBind}
-                  disabled={
-                    !binding.isEnabled ||
-                    bindingsLocked ||
-                    (binding.isBound && binding.id !== 'email')
-                  }
+                  onClick={() => void handleBindCustomOAuth(provider)}
+                  disabled={bindingsLocked}
                 >
-                  {actionLabel}
+                  {t('Bind')}
                 </Button>
               )}
             </li>
           )
         })}
-        {customProviders
-          ?.filter((provider) => provider.id !== googleProvider?.id)
-          .map((provider) => {
-            const binding = customBindingsByProviderId.get(provider.id)
-            const isBound = !!binding
-            return (
-              <li
-                key={provider.id}
-                className='hover:from-foreground/4 border-border/40 flex min-w-0 items-center gap-3 rounded-xl border bg-linear-to-br via-transparent to-transparent p-4 transition duration-300'
-              >
-                <div className='flex min-w-0 flex-1 items-center gap-2'>
-                  <div className='border-border/40 bg-background/60 flex size-10 shrink-0 items-center justify-center rounded-lg border'>
-                    <Link2 className='text-foreground/70 size-5' />
-                  </div>
-                  <div className='min-w-0 flex-1'>
-                    <div className='flex items-center gap-1.5'>
-                      <p
-                        className='truncate text-sm font-medium'
-                        title={provider.name}
-                      >
-                        {provider.name}
-                      </p>
-                      {isBound && (
-                        <StatusBadge
-                          label={t('Bound')}
-                          variant='success'
-                          copyable={false}
-                        />
-                      )}
-                    </div>
-                    <p className='text-muted-foreground truncate text-xs'>
-                      {isBound
-                        ? binding?.provider_user_id || t('Bound')
-                        : t('Not bound')}
-                    </p>
-                  </div>
-                </div>
-                {isBound ? (
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className='text-destructive shrink-0'
-                    onClick={() => setUnbindTarget(binding)}
-                    disabled={bindingsLocked}
-                  >
-                    <Unlink className='mr-1 h-3 w-3' />
-                    {t('Unbind')}
-                  </Button>
-                ) : (
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='border-border/60 shrink-0'
-                    onClick={() => void handleBindCustomOAuth(provider)}
-                    disabled={bindingsLocked}
-                  >
-                    {t('Bind')}
-                  </Button>
-                )}
-              </li>
-            )
-          })}
       </ul>
 
       {security.showVerification && (

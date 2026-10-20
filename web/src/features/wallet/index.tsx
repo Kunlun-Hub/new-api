@@ -18,15 +18,18 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { ConsoleBreadcrumb, SectionPageLayout } from '@/components/layout'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { getSelf } from '@/lib/api'
 
+import { isApiSuccess, syncAlipayOrder, syncWechatOrder } from './api'
 import { BillingHistoryDialog } from './components/dialogs/billing-history-dialog'
 import { CreemConfirmDialog } from './components/dialogs/creem-confirm-dialog'
 import { PaymentConfirmDialog } from './components/dialogs/payment-confirm-dialog'
+import { QrPaymentDialog } from './components/dialogs/qr-payment-dialog'
 import { ExtraDiscountCard } from './components/extra-discount-card'
 import { InviteFriendsCard } from './components/invite-friends-card'
 import { RechargeFormCard } from './components/recharge-form-card'
@@ -37,6 +40,8 @@ import {
   usePayment,
   useRedemption,
   useCreemPayment,
+  useAlipayPayment,
+  useWechatPayment,
   useWaffoPayment,
   useWaffoPancakePayment,
 } from './hooks'
@@ -55,6 +60,8 @@ import type {
 
 interface WalletProps {
   initialShowHistory?: boolean
+  /** Trade number handed back by the Alipay cashier return_url */
+  alipayTradeNo?: string
 }
 
 export function Wallet(props: WalletProps) {
@@ -79,7 +86,12 @@ export function Wallet(props: WalletProps) {
 
   const { status } = useStatus()
   const { currency } = useSystemConfig()
-  const { topupInfo, presetAmounts, loading: topupLoading } = useTopupInfo()
+  const {
+    topupInfo,
+    presetAmounts,
+    loading: topupLoading,
+    refetch: refetchTopupInfo,
+  } = useTopupInfo()
 
   // Calculate effective exchange rate - when display type is USD, use rate of 1
   const effectiveUsdExchangeRate = useMemo(() => {
@@ -96,6 +108,18 @@ export function Wallet(props: WalletProps) {
   } = usePayment()
   const { redeeming, redeemCode } = useRedemption()
   const { processing: creemProcessing, processCreemPayment } = useCreemPayment()
+  const {
+    processing: alipayProcessing,
+    order: alipayOrder,
+    processAlipayPayment,
+    closeAlipayOrder,
+  } = useAlipayPayment()
+  const {
+    processing: wechatProcessing,
+    order: wechatOrder,
+    processWechatPayment,
+    closeWechatOrder,
+  } = useWechatPayment()
   const { processing: waffoProcessing, processWaffoPayment } = useWaffoPayment()
   const { processing: pancakeProcessing, processWaffoPancakePayment } =
     useWaffoPancakePayment()
@@ -120,6 +144,34 @@ export function Wallet(props: WalletProps) {
     fetchUser()
   }, [fetchUser])
 
+  // 电脑网站支付回跳后主动对账一次，回调延迟或丢失时也能入账。
+  const alipaySyncHandledRef = useRef(false)
+  useEffect(() => {
+    const tradeNo = props.alipayTradeNo
+    if (!tradeNo || alipaySyncHandledRef.current) {
+      return
+    }
+    alipaySyncHandledRef.current = true
+    void (async () => {
+      try {
+        const response = await syncAlipayOrder(tradeNo)
+        if (isApiSuccess(response) && response.data?.paid) {
+          toast.success(t('Payment successful'))
+          await fetchUser()
+          await refetchTopupInfo()
+        } else if (isApiSuccess(response)) {
+          toast.info(t('Payment not received yet'))
+        } else {
+          toast.error(t('Failed to check payment status'))
+        }
+      } catch {
+        toast.error(t('Failed to check payment status'))
+      } finally {
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    })()
+  }, [props.alipayTradeNo, fetchUser, refetchTopupInfo, t])
+
   useEffect(() => {
     if (props.initialShowHistory) {
       setBillingDialogOpen(true)
@@ -132,11 +184,11 @@ export function Wallet(props: WalletProps) {
   useEffect(() => {
     if (topupInfo && !topupAmountInitializedRef.current) {
       topupAmountInitializedRef.current = true
-      const minTopup = getMinTopupAmount(topupInfo)
+      const defaultPaymentType = getDefaultPaymentType(topupInfo)
+      const minTopup = getMinTopupAmount(topupInfo, defaultPaymentType)
       setTopupAmount(minTopup)
 
       // Calculate initial payment amount with default payment type
-      const defaultPaymentType = getDefaultPaymentType(topupInfo)
       calculatePaymentAmount(minTopup, defaultPaymentType)
     }
   }, [topupInfo, calculatePaymentAmount])
@@ -168,7 +220,7 @@ export function Wallet(props: WalletProps) {
 
     try {
       // Validate minimum topup
-      const minTopup = getMinTopupAmount(topupInfo)
+      const minTopup = getMinTopupAmount(topupInfo, method.type)
       if (topupAmount < minTopup) {
         return
       }
@@ -191,6 +243,8 @@ export function Wallet(props: WalletProps) {
       selectedWaffoMethodIndex,
       {
         regular: processPayment,
+        alipay: processAlipayPayment,
+        wechat: processWechatPayment,
         waffo: processWaffoPayment,
         waffoPancake: processWaffoPancakePayment,
       }
@@ -201,6 +255,26 @@ export function Wallet(props: WalletProps) {
       await fetchUser()
     }
   }
+
+  const handleAlipayPaid = useCallback(() => {
+    closeAlipayOrder()
+    void fetchUser()
+  }, [closeAlipayOrder, fetchUser])
+
+  const handleWechatPaid = useCallback(() => {
+    closeWechatOrder()
+    void fetchUser()
+  }, [closeWechatOrder, fetchUser])
+
+  const checkAlipayOrder = useCallback(async (tradeNo: string) => {
+    const response = await syncAlipayOrder(tradeNo)
+    return isApiSuccess(response) && Boolean(response.data?.paid)
+  }, [])
+
+  const checkWechatOrder = useCallback(async (tradeNo: string) => {
+    const response = await syncWechatOrder(tradeNo)
+    return isApiSuccess(response) && Boolean(response.data?.paid)
+  }, [])
 
   // Handle redemption
   const handleRedeem = async () => {
@@ -339,7 +413,13 @@ export function Wallet(props: WalletProps) {
         paymentAmount={paymentAmount}
         paymentMethod={selectedPaymentMethod}
         calculating={calculating}
-        processing={processing || waffoProcessing || pancakeProcessing}
+        processing={
+          processing ||
+          alipayProcessing ||
+          wechatProcessing ||
+          waffoProcessing ||
+          pancakeProcessing
+        }
         discountRate={getDiscountRate()}
         usdExchangeRate={effectiveUsdExchangeRate}
       />
@@ -347,6 +427,38 @@ export function Wallet(props: WalletProps) {
       <BillingHistoryDialog
         open={billingDialogOpen}
         onOpenChange={setBillingDialogOpen}
+      />
+
+      <QrPaymentDialog
+        order={alipayOrder}
+        title={t('Alipay Payment')}
+        description={t(
+          'Scan the QR code with the Alipay app to complete payment'
+        )}
+        qrCodeTitle={t('Alipay payment QR code')}
+        checkOrder={checkAlipayOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeAlipayOrder()
+          }
+        }}
+        onPaid={handleAlipayPaid}
+      />
+
+      <QrPaymentDialog
+        order={wechatOrder}
+        title={t('WeChat Payment')}
+        description={t(
+          'Scan the QR code with the WeChat app to complete payment'
+        )}
+        qrCodeTitle={t('WeChat payment QR code')}
+        checkOrder={checkWechatOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeWechatOrder()
+          }
+        }}
+        onPaid={handleWechatPaid}
       />
 
       <CreemConfirmDialog

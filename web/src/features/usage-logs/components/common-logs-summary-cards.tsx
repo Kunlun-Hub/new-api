@@ -53,6 +53,7 @@ interface SummaryCardProps {
   description: string
   value: ReactNode
   action?: ReactNode
+  className?: string
 }
 
 function SummaryCard(props: SummaryCardProps) {
@@ -61,9 +62,10 @@ function SummaryCard(props: SummaryCardProps) {
     <div
       className={cn(
         'border-border/40 bg-card/30 flex items-center gap-3 rounded-xl border p-4',
-        'bg-linear-to-br from-foreground/3 to-transparent transition duration-300',
+        'bg-linear-to-br to-transparent transition duration-300',
         'hover:from-foreground/4 hover:shadow-md',
-        'max-md:flex-col'
+        'max-md:flex-col',
+        props.className
       )}
     >
       <div className='bg-primary text-primary-foreground flex size-10 shrink-0 items-center justify-center self-start rounded-full max-md:hidden'>
@@ -146,6 +148,7 @@ export function CommonLogsSummaryCards() {
     (rangeEnd.getTime() - rangeStart.getTime()) / 60_000
   )
   const quota = stats?.quota || 0
+  const giftQuota = stats?.gift_quota || 0
   const costPerMinute = quota / rangeMinutes
 
   const hideCost = !sensitiveVisible
@@ -171,8 +174,15 @@ export function CommonLogsSummaryCards() {
     <div className='grid grid-cols-2 gap-3 lg:gap-5 xl:grid-cols-4'>
       <SummaryCard
         icon={Database}
+        className='from-foreground/3'
         title={t('Interval Cost')}
-        description={t('Total cost in selected period')}
+        description={
+          giftQuota > 0
+            ? `${t('Total cost in selected period')} · ${t('Gift credit')}: ${
+                hideCost ? '••••' : formatLogQuota(giftQuota)
+              }`
+            : t('Total cost in selected period')
+        }
         value={intervalCost}
         action={
           <Button

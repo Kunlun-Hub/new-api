@@ -43,6 +43,9 @@ const defaults: ComponentProps<typeof OAuthSection>['defaultValues'] = {
   GitHubOAuthEnabled: false,
   GitHubClientId: '',
   GitHubClientSecret: '',
+  'google.enabled': false,
+  'google.client_id': '',
+  'google.client_secret': '',
   'discord.enabled': false,
   'discord.client_id': '',
   'discord.client_secret': '',
@@ -166,6 +169,38 @@ describe('OAuth settings saves', () => {
     expect(infoToast).toHaveBeenCalledWith('No changes to save')
     expect(discovery).not.toHaveBeenCalled()
     expect(api.put).not.toHaveBeenCalled()
+  })
+
+  it('saves Google credentials before enabling Google OAuth', async () => {
+    const user = userEvent.setup()
+    await renderSettings()
+    await user.click(screen.getByRole('tab', { name: 'Google' }))
+    await user.type(
+      screen.getByRole('textbox', { name: 'Client ID' }),
+      'google-client'
+    )
+    await user.type(
+      screen.getByLabelText('Client Secret'),
+      'google-client-secret'
+    )
+    await user.click(
+      screen.getByRole('switch', { name: 'Enable Google OAuth' })
+    )
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => expect(api.put).toHaveBeenCalledTimes(3))
+    expect(api.put).toHaveBeenNthCalledWith(1, '/api/option/', {
+      key: 'google.client_id',
+      value: 'google-client',
+    })
+    expect(api.put).toHaveBeenNthCalledWith(2, '/api/option/', {
+      key: 'google.client_secret',
+      value: 'google-client-secret',
+    })
+    expect(api.put).toHaveBeenNthCalledWith(3, '/api/option/', {
+      key: 'google.enabled',
+      value: true,
+    })
   })
 
   it('allows disabling OIDC even when its saved discovery URL is invalid', async () => {

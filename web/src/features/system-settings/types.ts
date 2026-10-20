@@ -145,6 +145,7 @@ export type SiteSettings = {
   SystemName: string
   Logo: string
   Footer: string
+  FooterColumns: string
   About: string
   HomePageContent: string
   ServerAddress: string
@@ -168,6 +169,9 @@ export type AuthSettings = {
   GitHubOAuthEnabled: boolean
   GitHubClientId: string
   GitHubClientSecret: string
+  'google.enabled': boolean
+  'google.client_id': string
+  'google.client_secret': string
   'discord.enabled': boolean
   'discord.client_id': string
   'discord.client_secret': string
@@ -344,6 +348,22 @@ export type BillingSettings = {
   StripeUnitPrice: number
   StripeMinTopUp: number
   StripePromotionCodesEnabled: boolean
+  AlipayEnabled: boolean
+  AlipayPayMode: string
+  AlipayAppId: string
+  AlipayPrivateKey: string
+  AlipayPublicKey: string
+  AlipaySandbox: boolean
+  AlipayMinTopUp: number
+  WechatEnabled: boolean
+  WechatMchId: string
+  WechatAppId: string
+  WechatPrivateKey: string
+  WechatCertSerial: string
+  WechatApiV3Key: string
+  WechatPlatformPublicKey: string
+  WechatPlatformPublicKeyId: string
+  WechatMinTopUp: number
   CreemApiKey: string
   CreemWebhookSecret: string
   CreemTestMode: boolean
@@ -379,7 +399,12 @@ export type OperationsSettings = {
   DefaultCollapseSidebar: boolean
   DemoSiteEnabled: boolean
   SelfUseModeEnabled: boolean
+  QuotaRemindEnabled: boolean
   QuotaRemindThreshold: string
+  EmailProvider: 'smtp' | 'resend'
+  ResendApiKey: string
+  ResendKeyConfigured: boolean
+  ResendFrom: string
   SMTPServer: string
   SMTPPort: string
   SMTPAccount: string
@@ -393,6 +418,8 @@ export type OperationsSettings = {
   WorkerValidKey: string
   WorkerAllowHttpImageRequestEnabled: boolean
   LogConsumeEnabled: boolean
+  'log_setting.user_export_enabled': boolean
+  'log_setting.max_range_days': number
   'performance_setting.disk_cache_enabled': boolean
   'performance_setting.disk_cache_threshold_mb': number
   'performance_setting.disk_cache_max_size_mb': number

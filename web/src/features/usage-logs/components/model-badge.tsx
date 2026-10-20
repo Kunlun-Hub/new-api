@@ -42,10 +42,24 @@ interface ModelBadgeProps {
   className?: string
   wrapText?: boolean
   onInspect?: () => void
+  /** Plain text presentation used by the usage-log table. */
+  variant?: 'badge' | 'plain'
+  showErrorDot?: boolean
 }
 
 function ModelBadgeContent(props: ModelBadgeProps & { copyable: boolean }) {
   const provider = resolveModelProvider(props.modelName)
+
+  if (props.variant === 'plain') {
+    return (
+      <span className='inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap'>
+        {props.showErrorDot && (
+          <span className='size-2 shrink-0 rounded-full bg-red-500' />
+        )}
+        <span className='max-w-60 truncate font-normal'>{props.modelName}</span>
+      </span>
+    )
+  }
 
   return (
     <StatusBadge
@@ -113,6 +127,21 @@ export function ModelBadge(props: ModelBadgeProps) {
     )
 
   if (!hasDetails) {
+    if (props.variant === 'plain' && !props.onInspect) {
+      return (
+        <CopyButton
+          value={props.modelName}
+          position='right'
+          size='sm'
+          aria-label={modelLabel}
+          iconClassName='size-3.5'
+          className='h-auto min-h-0 justify-start bg-transparent! p-0 font-normal'
+        >
+          <ModelBadgeContent {...props} copyable={false} />
+        </CopyButton>
+      )
+    }
+
     if (props.onInspect) {
       return (
         <CopyButton
@@ -170,7 +199,10 @@ export function ModelBadge(props: ModelBadgeProps) {
           <Button
             variant='ghost'
             aria-label={modelLabel}
-            className='h-auto max-w-full min-w-0 flex-wrap justify-start gap-1 p-0 font-normal'
+            className={cn(
+              'h-auto max-w-full min-w-0 flex-wrap justify-start gap-1 p-0 font-normal',
+              props.variant === 'plain' && 'bg-transparent!'
+            )}
           />
         }
       >

@@ -31,6 +31,8 @@ export interface QuotaDataItem {
   token_used?: number
   count?: number
   quota?: number
+  /** Gift credit share of the consumption recorded in this bucket. */
+  gift_quota?: number
 }
 
 export interface FlowQuotaDataItem {

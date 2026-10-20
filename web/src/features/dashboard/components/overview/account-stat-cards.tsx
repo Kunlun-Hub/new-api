@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import dayjs from '@/lib/dayjs'
 import { formatNumber, formatQuotaFixed } from '@/lib/format'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -41,6 +42,8 @@ interface AccountStatCard {
   title: string
   value: string
   hint: string
+  /** Secondary amount line, e.g. the gift credit balance or gift credit spent. */
+  extraHint?: string
   icon: ComponentType<{ className?: string }>
   iconClassName: string
   cta?: { label: string; to: string }
@@ -50,12 +53,24 @@ export function AccountStatCards() {
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.auth.user)
 
+  const giftQuota = Number(user?.gift_quota ?? 0)
+  const giftExpiredAt = Number(user?.gift_quota_expired_at ?? 0)
+  const giftHint =
+    giftQuota > 0
+      ? `${t('Gift credit')}: ${formatQuotaFixed(giftQuota)}${
+          giftExpiredAt > 0
+            ? ` (${t('Expires at')} ${dayjs.unix(giftExpiredAt).format('YYYY-MM-DD HH:mm')})`
+            : ` (${t('Never expires')})`
+        }`
+      : `${t('Gift credit')}: ${formatQuotaFixed(0)}`
+
   const cards: AccountStatCard[] = [
     {
       key: 'balance',
       title: t('Account Balance'),
       value: formatQuotaFixed(Number(user?.quota ?? 0)),
       hint: `${t('User group')}: ${user?.group || 'default'}`,
+      extraHint: giftHint,
       icon: Wallet,
       iconClassName: 'bg-pink-500',
       cta: { label: t('Go to Top Up'), to: '/wallet' },
@@ -65,6 +80,7 @@ export function AccountStatCards() {
       title: t('Total Spent'),
       value: formatQuotaFixed(Number(user?.used_quota ?? 0)),
       hint: t('Lifetime spending'),
+      extraHint: `${t('Gift credit spent')}: ${formatQuotaFixed(Number(user?.gift_used_quota ?? 0))}`,
       icon: CircleDollarSign,
       iconClassName: 'bg-emerald-500',
       cta: { label: t('View Logs'), to: '/usage-logs/common' },
@@ -95,8 +111,15 @@ export function AccountStatCards() {
             <div className='text-2xl font-bold tracking-tight'>
               {card.value}
             </div>
-            <div className='text-muted-foreground mt-2 flex items-center justify-between gap-2 text-xs'>
-              <span className='truncate'>{card.hint}</span>
+            <div className='mt-2 space-y-0.5 text-xs'>
+              <div className='text-muted-foreground truncate'>{card.hint}</div>
+              {card.extraHint && (
+                <div className='truncate font-medium text-emerald-600 dark:text-emerald-400'>
+                  {card.extraHint}
+                </div>
+              )}
+            </div>
+            <div className='mt-1 flex items-center justify-end gap-2 text-xs'>
               {card.cta && (
                 <Button
                   variant='outline'

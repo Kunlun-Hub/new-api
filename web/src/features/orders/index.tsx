@@ -74,6 +74,7 @@ import { useIsAdmin } from '@/hooks/use-admin'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import {
   formatLocalCurrencyAmount,
+  formatCurrencyFromUSD,
   formatQuotaWithCurrency,
 } from '@/lib/currency'
 import { useConsoleFeatures } from '@/lib/console-features'
@@ -307,21 +308,32 @@ export function Orders() {
       {
         accessorKey: 'amount',
         header: t('Top-up quota'),
-        cell: ({ row }) => (
-          <span className='inline-flex items-center gap-0.5 whitespace-nowrap'>
-            <span className='bg-primary text-primary-foreground flex size-4 items-center justify-center rounded-full'>
-              <DollarSign className='size-3' />
+        cell: ({ row }) => {
+          const record = row.original
+          // 在线充值记录的 amount 是 USD 金额，兑换码记录存的才是原始额度。
+          const formatted =
+            record.type === 2
+              ? formatQuotaWithCurrency(record.amount, {
+                  digitsLarge: 2,
+                  digitsSmall: 4,
+                  abbreviate: true,
+                  showSymbol: false,
+                })
+              : formatCurrencyFromUSD(record.amount, {
+                  digitsLarge: 2,
+                  digitsSmall: 4,
+                  abbreviate: true,
+                  showSymbol: false,
+                })
+          return (
+            <span className='inline-flex items-center gap-0.5 whitespace-nowrap'>
+              <span className='bg-primary text-primary-foreground flex size-4 items-center justify-center rounded-full'>
+                <DollarSign className='size-3' />
+              </span>
+              <span className='tabular-nums'>{formatted}</span>
             </span>
-            <span className='tabular-nums'>
-              {formatQuotaWithCurrency(row.original.amount, {
-                digitsLarge: 2,
-                digitsSmall: 4,
-                abbreviate: true,
-                showSymbol: false,
-              })}
-            </span>
-          </span>
-        ),
+          )
+        },
       },
       {
         accessorKey: 'create_time',

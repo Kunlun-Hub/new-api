@@ -39,6 +39,18 @@ export type PaymentResponse = ApiResponse<Record<string, unknown>> & {
   url?: string
 }
 export type StripePaymentResponse = ApiResponse<{ pay_link: string }>
+export type AlipayPaymentResponse = ApiResponse<{
+  trade_no: string
+  qr_code?: string
+  /** Cashier redirect URL for the PC website payment product */
+  pay_url?: string
+}>
+export type AlipaySyncResponse = ApiResponse<{ paid: boolean }>
+export type WechatPaymentResponse = ApiResponse<{
+  trade_no: string
+  qr_code: string
+}>
+export type WechatSyncResponse = ApiResponse<{ paid: boolean }>
 export type AffiliateCodeResponse = ApiResponse<string>
 export type AffiliateTransferResponse = ApiResponse
 export type CreemPaymentResponse = ApiResponse<{ checkout_url: string }>
@@ -124,12 +136,20 @@ export interface TopupInfo {
   enable_online_topup: boolean
   /** Whether Stripe topup is enabled */
   enable_stripe_topup: boolean
+  /** Whether the native Alipay (official precreate) topup is enabled */
+  enable_alipay_topup?: boolean
+  /** Whether the native WeChat Pay (API v3 Native) topup is enabled */
+  enable_wechat_topup?: boolean
   /** Available payment methods */
   pay_methods: PaymentMethod[]
   /** Minimum topup amount for online topup */
   min_topup: number
   /** Minimum topup amount for Stripe */
   stripe_min_topup: number
+  /** Minimum topup amount for the native Alipay gateway */
+  alipay_min_topup?: number
+  /** Minimum topup amount for the native WeChat Pay gateway */
+  wechat_min_topup?: number
   /** Preset amount options */
   amount_options: number[]
   /** Discount rates by amount */
@@ -209,6 +229,18 @@ export interface PaymentRequest {
   amount: number
   /** Payment method identifier */
   payment_method: string
+}
+
+/**
+ * Pending native Alipay order shown as a QR code
+ */
+export interface QrPaymentOrder {
+  /** Trade number of the pending top-up order */
+  tradeNo: string
+  /** QR code payload returned by the native payment gateway */
+  qrCode: string
+  /** Cashier redirect URL returned by alipay.trade.page.pay */
+  payUrl?: string
 }
 
 /**

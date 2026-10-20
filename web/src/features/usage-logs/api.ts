@@ -16,8 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { api, type ApiRequestConfig } from '@/lib/api'
+import { api, getFreshAuthHeaders, type ApiRequestConfig } from '@/lib/api'
+import { createServerError } from '@/lib/server-error-message'
 
+import type { UsageLog } from './data/schema'
 import { buildQueryParams } from './lib/query-params'
 import { parseTaskArtifactsResponse } from './lib/task-artifacts'
 import type {
@@ -86,48 +88,58 @@ export const getUserLogStats = (
   params: Omit<GetLogStatsParams, 'username' | 'channel'> = {}
 ) => fetchLogStats('/api/log', params, false)
 
-export type LogsExportResult =
-  | { ok: true; filename: string; csv: string }
-  | { ok: false; code?: string; message?: string }
-
-function filenameFromDisposition(disposition: string | undefined) {
-  const match = /filename="?([^";]+)"?/.exec(disposition ?? '')
-  return match?.[1] ?? `logs-${Date.now()}.csv`
-}
-
 /**
- * Downloads the filtered logs as a CSV file. The backend answers with JSON when
- * the filter set matches no record, so the payload is inspected by type.
+ * Stream the logs matching params, newest first. The server sends one JSON
+ * log per line and ends with an API response object; a stream that ends
+ * without a successful one is a failed export. Resolves with the log count.
  */
 export async function exportLogs(
   params: GetLogsParams,
-  isAdmin: boolean
-): Promise<LogsExportResult> {
+  isAdmin: boolean,
+  options: { signal: AbortSignal; onLog: (log: UsageLog) => void }
+): Promise<number> {
   const queryParams = buildQueryParams(
     params as unknown as Record<string, unknown>
   )
-  const path = buildApiPath('/api/log', isAdmin)
-  const res = await api.get<Blob>(`${path}/export?${queryParams}`, {
-    responseType: 'blob',
-    skipBusinessError: true,
-    skipErrorHandler: true,
-  })
-  const contentType = String(res.headers?.['content-type'] ?? '')
-  if (contentType.includes('application/json')) {
-    const text = await (res.data as Blob).text()
-    try {
-      return { ok: false, ...(JSON.parse(text) as Record<string, unknown>) }
-    } catch {
-      return { ok: false }
+  const response = await fetch(
+    `${buildApiPath('/api/log', isAdmin)}/export?${queryParams}`,
+    {
+      credentials: 'include',
+      headers: await getFreshAuthHeaders(),
+      signal: options.signal,
     }
+  )
+  if (!response.ok || !response.body) {
+    const body: unknown = await response.json().catch(() => null)
+    throw createServerError(body ?? { status: response.status })
   }
-  return {
-    ok: true,
-    filename: filenameFromDisposition(
-      res.headers?.['content-disposition'] as string | undefined
-    ),
-    csv: await (res.data as Blob).text(),
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let result: { success?: unknown; data?: { count?: number } } | null = null
+  for (;;) {
+    const { done, value } = await reader.read()
+    buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = done ? '' : (lines.pop() ?? '')
+    for (const line of lines) {
+      if (!line.trim()) continue
+      let parsed
+      try {
+        parsed = JSON.parse(line)
+      } catch {
+        throw createServerError(null)
+      }
+      if (typeof parsed.success === 'boolean') result = parsed
+      else options.onLog(parsed as UsageLog)
+    }
+    if (done) break
   }
+  if (result?.success !== true) {
+    throw createServerError(result)
+  }
+  return result.data?.count ?? 0
 }
 
 export async function getUserInfo(

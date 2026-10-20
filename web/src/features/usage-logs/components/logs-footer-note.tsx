@@ -67,14 +67,21 @@ export function LogsFooterNote({ logCategory }: { logCategory: LogCategory }) {
   )
 
   return (
-    <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-2 max-lg:hidden'>
+    <div className='border-border/40 mt-4 flex items-center justify-between gap-x-4 border-t border-dashed pt-5 max-lg:hidden'>
       {logCategory === 'common' ? (
         <div className='flex items-center gap-2'>
           <Popover>
             <PopoverTrigger
-              render={<Button type='button' variant='outline' size='sm' />}
+              render={
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='cursor-pointer text-xs font-semibold'
+                />
+              }
             >
-              {t('Important Notes')}
+              {t('Guide')}
             </PopoverTrigger>
             <PopoverContent align='start' className='w-96 max-w-[90vw] gap-2'>
               <p className='font-mono text-xs break-all'>{formula}</p>
@@ -109,9 +116,16 @@ export function LogsFooterNote({ logCategory }: { logCategory: LogCategory }) {
           </Popover>
           <Popover>
             <PopoverTrigger
-              render={<Button type='button' variant='outline' size='sm' />}
+              render={
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='cursor-pointer text-xs font-semibold'
+                />
+              }
             >
-              {t('Multiplier Notes')}
+              {t('Ratio Guide')}
             </PopoverTrigger>
             <PopoverContent align='start' className='w-96 max-w-[90vw] gap-2'>
               <p className='font-mono text-xs break-all'>{formula}</p>

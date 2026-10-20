@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { parseFooterColumns } from '@/lib/footer-columns'
 import { cn } from '@/lib/utils'
 
 interface FooterLink {
@@ -43,9 +44,10 @@ interface FooterProps {
 }
 
 function FooterLinkItem(props: { link: FooterLink }) {
-  const { t } = useTranslation()
+  // Labels arrive already translated from the built-in columns or verbatim
+  // from the admin-configured columns, so they are never translated again.
   const isExternal = props.link.href.startsWith('http')
-  const label = t(props.link.text)
+  const label = props.link.text
 
   if (isExternal) {
     return (
@@ -160,11 +162,16 @@ function LegalColumn() {
 
 export function Footer(props: FooterProps) {
   const { t } = useTranslation()
-  const { systemName, logo: systemLogo, footerHtml } = useSystemConfig()
+  const { systemName, logo: systemLogo, footerHtml, footerColumns } =
+    useSystemConfig()
   const { status } = useStatus()
 
   const displayLogo = systemLogo || props.logo || '/logo.png'
   const displayName = systemName || props.name || 'New API'
+  const configuredColumns = useMemo(
+    () => parseFooterColumns(footerColumns) ?? undefined,
+    [footerColumns]
+  )
   const currentYear = new Date().getFullYear()
   const hasLegalLinks = Boolean(
     status?.user_agreement_enabled || status?.privacy_policy_enabled
@@ -227,7 +234,8 @@ export function Footer(props: FooterProps) {
     [t]
   )
 
-  const displayColumns = props.columns ?? fallbackColumns
+  const displayColumns =
+    props.columns ?? configuredColumns ?? fallbackColumns
 
   if (footerHtml) {
     return (
@@ -285,7 +293,7 @@ export function Footer(props: FooterProps) {
           <div className='col-span-3 grid gap-6 sm:grid-cols-4'>
             {displayColumns.map((column) => (
               <div key={column.title} className='space-y-4 text-sm'>
-                <span className='block font-medium'>{t(column.title)}</span>
+                <span className='block font-medium'>{column.title}</span>
                 <div className='flex flex-wrap gap-4 sm:flex-col'>
                   {column.links.map((link) => (
                     <FooterLinkItem key={link.href} link={link} />

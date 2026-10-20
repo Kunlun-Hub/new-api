@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -34,6 +35,7 @@ func SetUpLogger(server *gin.Engine) {
 		if strings.HasPrefix(path, "/api/oauth/") || strings.HasPrefix(path, "/oauth/") {
 			path, _, _ = strings.Cut(path, "?")
 		}
+		path = redactTurnstileQuery(path)
 		return fmt.Sprintf("[GIN] %s | %s | %s | %3d | %13v | %15s | %7s %s\n",
 			param.TimeStamp.Format("2006/01/02 - 15:04:05"),
 			tag,
@@ -45,4 +47,28 @@ func SetUpLogger(server *gin.Engine) {
 			path,
 		)
 	}))
+}
+
+func redactTurnstileQuery(path string) string {
+	beforeQuery, rawQuery, found := strings.Cut(path, "?")
+	if !found {
+		return path
+	}
+
+	redacted := false
+	parts := make([]string, 0)
+	for part := range strings.SplitSeq(rawQuery, "&") {
+		rawKey, _, _ := strings.Cut(part, "=")
+		key, err := url.QueryUnescape(rawKey)
+		if err == nil && key == "turnstile" {
+			parts = append(parts, "turnstile=[REDACTED]")
+			redacted = true
+			continue
+		}
+		parts = append(parts, part)
+	}
+	if !redacted {
+		return path
+	}
+	return beforeQuery + "?" + strings.Join(parts, "&")
 }

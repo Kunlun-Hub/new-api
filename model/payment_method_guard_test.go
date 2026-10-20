@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -375,4 +376,88 @@ func TestGetUserTotalTopUpQuotaSumsSuccessfulTopUps(t *testing.T) {
 	empty, err := GetUserTotalTopUpQuota(userId + 2)
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), empty)
+}
+
+func TestRechargeAlipayRequiresMatchingAmountAndCreditsOnce(t *testing.T) {
+	truncateTables(t)
+
+	oldQuotaPerUnit := common.QuotaPerUnit
+	common.QuotaPerUnit = 500000
+	t.Cleanup(func() { common.QuotaPerUnit = oldQuotaPerUnit })
+
+	user := insertUserForPaymentGuardTest(t, 520, 0)
+
+	t.Run("rejects mismatched paid amount", func(t *testing.T) {
+		order := createEpayTestOrder(t, user.Id, "ALIPAYTESTMISMATCH", PaymentProviderAlipay, common.TopUpStatusPending)
+		_, err := RechargeAlipay(order.TradeNo, decimal.NewFromFloat(9.99), "127.0.0.1")
+		require.ErrorIs(t, err, ErrPaymentAmountMismatch)
+		assert.Equal(t, 0, getUserQuotaForPaymentGuardTest(t, user.Id))
+		assert.Equal(t, common.TopUpStatusPending, getTopUpStatusForPaymentGuardTest(t, order.TradeNo))
+	})
+
+	t.Run("credits exactly once", func(t *testing.T) {
+		order := createEpayTestOrder(t, user.Id, "ALIPAYTESTONCE", PaymentProviderAlipay, common.TopUpStatusPending)
+		alreadyDone, err := RechargeAlipay(order.TradeNo, decimal.NewFromFloat(10.0), "127.0.0.1")
+		require.NoError(t, err)
+		assert.False(t, alreadyDone)
+		assert.Equal(t, 2*500000, getUserQuotaForPaymentGuardTest(t, user.Id))
+
+		reloaded := GetTopUpByTradeNo(order.TradeNo)
+		require.NotNil(t, reloaded)
+		assert.Equal(t, common.TopUpStatusSuccess, reloaded.Status)
+		assert.Equal(t, PaymentMethodAlipay, reloaded.PaymentMethod)
+
+		alreadyDone, err = RechargeAlipay(order.TradeNo, decimal.NewFromFloat(10.0), "127.0.0.1")
+		require.NoError(t, err)
+		assert.True(t, alreadyDone)
+		assert.Equal(t, 2*500000, getUserQuotaForPaymentGuardTest(t, user.Id))
+	})
+
+	t.Run("rejects orders from another provider", func(t *testing.T) {
+		order := createEpayTestOrder(t, user.Id, "ALIPAYTESTFOREIGN", PaymentProviderEpay, common.TopUpStatusPending)
+		_, err := RechargeAlipay(order.TradeNo, decimal.NewFromFloat(10.0), "127.0.0.1")
+		require.ErrorIs(t, err, ErrPaymentMethodMismatch)
+	})
+}
+
+func TestRechargeWechatRequiresMatchingAmountAndCreditsOnce(t *testing.T) {
+	truncateTables(t)
+
+	oldQuotaPerUnit := common.QuotaPerUnit
+	common.QuotaPerUnit = 500000
+	t.Cleanup(func() { common.QuotaPerUnit = oldQuotaPerUnit })
+
+	user := insertUserForPaymentGuardTest(t, 530, 0)
+
+	t.Run("rejects mismatched paid amount", func(t *testing.T) {
+		order := createEpayTestOrder(t, user.Id, "WECHATTESTMISMATCH", PaymentProviderWechat, common.TopUpStatusPending)
+		_, err := RechargeWechat(order.TradeNo, decimal.NewFromFloat(9.99), "127.0.0.1")
+		require.ErrorIs(t, err, ErrPaymentAmountMismatch)
+		assert.Equal(t, 0, getUserQuotaForPaymentGuardTest(t, user.Id))
+		assert.Equal(t, common.TopUpStatusPending, getTopUpStatusForPaymentGuardTest(t, order.TradeNo))
+	})
+
+	t.Run("credits exactly once", func(t *testing.T) {
+		order := createEpayTestOrder(t, user.Id, "WECHATTESTONCE", PaymentProviderWechat, common.TopUpStatusPending)
+		alreadyDone, err := RechargeWechat(order.TradeNo, decimal.NewFromFloat(10.0), "127.0.0.1")
+		require.NoError(t, err)
+		assert.False(t, alreadyDone)
+		assert.Equal(t, 2*500000, getUserQuotaForPaymentGuardTest(t, user.Id))
+
+		reloaded := GetTopUpByTradeNo(order.TradeNo)
+		require.NotNil(t, reloaded)
+		assert.Equal(t, common.TopUpStatusSuccess, reloaded.Status)
+		assert.Equal(t, PaymentMethodWechat, reloaded.PaymentMethod)
+
+		alreadyDone, err = RechargeWechat(order.TradeNo, decimal.NewFromFloat(10.0), "127.0.0.1")
+		require.NoError(t, err)
+		assert.True(t, alreadyDone)
+		assert.Equal(t, 2*500000, getUserQuotaForPaymentGuardTest(t, user.Id))
+	})
+
+	t.Run("rejects orders from another provider", func(t *testing.T) {
+		order := createEpayTestOrder(t, user.Id, "WECHATTESTFOREIGN", PaymentProviderAlipay, common.TopUpStatusPending)
+		_, err := RechargeWechat(order.TradeNo, decimal.NewFromFloat(10.0), "127.0.0.1")
+		require.ErrorIs(t, err, ErrPaymentMethodMismatch)
+	})
 }

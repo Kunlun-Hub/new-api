@@ -154,6 +154,12 @@ export interface LogOtherData {
     upstream_task_id?: string
     node_name?: string
   }
+  // Structured log content: English source keys plus params, rendered in the
+  // viewer's language. `content` keeps the English text for older clients.
+  content_parts?: {
+    key: string
+    params?: Record<string, string | number | boolean>
+  }[]
   // Language-independent operation descriptor (audit/login logs).
   // Frontend renders localized content from action + params via i18n templates.
   op?: {
@@ -278,6 +284,8 @@ export interface LogOtherData {
  */
 export interface LogStatistics {
   quota: number
+  /** Gift credit share of the interval cost. */
+  gift_quota?: number
   rpm: number
   tpm: number
 }
@@ -302,6 +310,8 @@ export interface MidjourneyLog {
   prompt: string
   prompt_en?: string
   quota?: number
+  /** Gift credit share of the charge; 0 when the task was not paid with gift credit. */
+  gift_quota?: number
   description?: string
   buttons?: string
   properties?: string
@@ -329,6 +339,8 @@ export interface TaskLog {
   channel_id: number
   group: string
   quota: number
+  /** Gift credit share of the charge; 0 when the task was not paid with gift credit. */
+  gift_quota?: number
   submit_time: number // seconds
   start_time?: number // seconds
   finish_time?: number // seconds

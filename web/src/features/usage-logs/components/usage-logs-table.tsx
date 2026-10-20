@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -103,10 +103,6 @@ interface UsageLogsTableProps {
 
 export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
   const { t } = useTranslation()
-  const getColumnClassName = useCallback(
-    () => (logCategory === 'common' ? 'py-2' : 'py-3.5'),
-    [logCategory]
-  )
   const {
     isAdminView: isAdmin,
     isRootView: isRoot,
@@ -264,6 +260,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
         fixedHeight={false}
         cardSurface
         cardSurfaceToolbar={false}
+        cardClassName='pt-1!'
         compactPagination={isMobile && isCommon}
         columns={columns as ColumnDef<Record<string, unknown>>[]}
         isLoading={isLoadingData}
@@ -278,6 +275,18 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
         tableClassName={cn(
           '[&_[data-slot=table]]:text-[13px] [&_[data-slot=table]_td]:text-[13px] [&_[data-slot=table]_td_*]:text-[13px] [&_[data-slot=table]_th]:text-[13px] [&_[data-slot=table]_th_*]:text-[13px]'
         )}
+        pinnedColumns={
+          isCommon
+            ? [
+                {
+                  columnId: 'quota',
+                  side: 'right' as const,
+                  headerClassName: 'z-2 rounded-tr-xl !bg-background',
+                  cellClassName: 'z-2 !bg-background',
+                },
+              ]
+            : undefined
+        }
         mobile={
           <UsageLogsMobileList
             table={table}
@@ -292,7 +301,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
             <TaskLogsFilterBar table={table} logCategory={logCategory} />
           )
         }
-        renderRow={(row) => {
+        renderRow={(row, helpers) => {
           const logType = (row.original as Record<string, unknown>).type as
             | number
             | undefined
@@ -327,7 +336,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
                   'cursor-pointer hover:[background-color:color-mix(in_oklch,var(--muted)_50%,var(--background))]'
               )}
               onClick={onRowClick}
-              getColumnClassName={getColumnClassName}
+              getColumnClassName={helpers.getCellClassName}
               cellRenderColumns={table.options.columns}
             />
           )

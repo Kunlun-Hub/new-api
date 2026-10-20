@@ -166,6 +166,7 @@ describe('quota adjustment log localization', () => {
         token_name: '',
         model_name: '',
         quota: 0,
+        gift_quota: 0,
         prompt_tokens: 0,
         completion_tokens: 0,
         use_time: 0,

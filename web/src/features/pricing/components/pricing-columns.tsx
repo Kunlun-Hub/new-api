@@ -31,6 +31,7 @@ import type { PricingModel } from '../types'
 import { ModelAvailabilityCell } from './model-availability-cell'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelCapabilityBadges } from './model-capability-badges'
+import { ModelPaymentBadges } from './model-payment-badges'
 import type { ModelPriceCellOptions } from './model-price-cell'
 import { ModelTablePriceCell } from './model-table-price-cell'
 
@@ -73,19 +74,22 @@ export function usePricingColumns(
       meta: { label: t('Model name') },
       header: t('Model name'),
       cell: ({ row }) => (
-        <span onClick={(event) => event.stopPropagation()}>
-          <CopyButton
-            value={row.original.model_name}
-            size='default'
-            tooltip={t('Copy model name')}
-            aria-label={t('Copy {{name}}', {
-              name: row.original.model_name,
-            })}
-            className='hover:text-primary h-auto max-w-80 justify-start gap-x-2 p-0 font-medium hover:bg-transparent'
-          >
-            <span className='truncate'>{row.original.model_name}</span>
-          </CopyButton>
-        </span>
+        <div className='flex flex-col items-start gap-1'>
+          <span onClick={(event) => event.stopPropagation()}>
+            <CopyButton
+              value={row.original.model_name}
+              size='default'
+              tooltip={t('Copy model name')}
+              aria-label={t('Copy {{name}}', {
+                name: row.original.model_name,
+              })}
+              className='hover:text-primary h-auto max-w-80 justify-start gap-x-2 p-0 font-medium hover:bg-transparent'
+            >
+              <span className='truncate'>{row.original.model_name}</span>
+            </CopyButton>
+          </span>
+          <ModelPaymentBadges model={row.original} />
+        </div>
       ),
       size: PRICING_COLUMN_SIZES.model,
       enableSorting: false,

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import i18next from 'i18next'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useStatus } from '@/hooks/use-status'
@@ -26,13 +26,21 @@ import { useStatus } from '@/hooks/use-status'
  * Hook for managing Turnstile verification
  */
 export function useTurnstile() {
-  const { status } = useStatus()
+  const { status, loading } = useStatus()
   const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
 
   const isTurnstileEnabled = !!(
     status?.turnstile_check && status?.turnstile_site_key
   )
   const turnstileSiteKey = status?.turnstile_site_key || ''
+  const turnstileReady =
+    !loading && (!isTurnstileEnabled || Boolean(turnstileToken))
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken('')
+    setTurnstileWidgetKey((current) => current + 1)
+  }, [])
 
   /**
    * Validate if turnstile is ready when required
@@ -51,7 +59,10 @@ export function useTurnstile() {
     isTurnstileEnabled,
     turnstileSiteKey,
     turnstileToken,
+    turnstileWidgetKey,
+    turnstileReady,
     setTurnstileToken,
+    resetTurnstile,
     validateTurnstile,
   }
 }

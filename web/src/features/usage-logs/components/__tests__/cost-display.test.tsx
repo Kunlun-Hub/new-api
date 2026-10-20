@@ -44,6 +44,8 @@ describe('log cost display', () => {
     i18next.addResourceBundle('en', 'translation', {
       Subscription: 'Subscription',
       Wallet: 'Wallet',
+      'Gift credit': 'Gift credit',
+      'Paid with gift credit': 'Paid with gift credit',
       'Includes tool-call surcharge': 'Includes tool-call surcharge',
     })
   })
@@ -153,6 +155,27 @@ describe('log cost display', () => {
     { source: 'subscription', label: 'Subscription' },
     { source: 'wallet', label: 'Wallet' },
   ])(
+    'vertically centers the $source icon within its container',
+    ({ source, label }) => {
+      renderCost({
+        quota: 5000,
+        other: { billing_source: source },
+        showBillingSource: true,
+      })
+
+      // Mobile cards give inline-flex descendants a minimum height, so the
+      // source container must center its smaller icon independently of the badge.
+      expect(screen.getByRole('img', { name: label })).toHaveClass(
+        'inline-flex',
+        'items-center'
+      )
+    }
+  )
+
+  test.each([
+    { source: 'subscription', label: 'Subscription' },
+    { source: 'wallet', label: 'Wallet' },
+  ])(
     'reveals the $source label on hover and keyboard focus',
     async ({ source, label }) => {
       const user = userEvent.setup()
@@ -210,5 +233,35 @@ describe('log cost display', () => {
     expect(
       screen.getByRole('img', { name: 'Includes tool-call surcharge' })
     ).toHaveAttribute('data-tool-surcharge-indicator', 'true')
+  })
+
+  test('adds the gift credit share of the charge next to the amount', async () => {
+    const user = userEvent.setup()
+    renderCost({
+      quota: 5000,
+      other: { billing_source: 'wallet' },
+      showBillingSource: true,
+      giftQuota: 2500,
+    })
+
+    expect(screen.getByText('$0.01')).toBeVisible()
+    const giftChip = screen.getByText('Gift credit $0.005')
+    expect(giftChip).toBeVisible()
+    expect(screen.queryByText('Paid with gift credit')).not.toBeInTheDocument()
+
+    await user.hover(giftChip)
+    expect(await screen.findByText('Paid with gift credit')).toBeVisible()
+  })
+
+  test('omits the gift credit chip when nothing was paid with gift credit', () => {
+    renderCost({
+      quota: 5000,
+      other: { billing_source: 'wallet' },
+      showBillingSource: true,
+      giftQuota: 0,
+    })
+
+    expect(screen.getByText('$0.01')).toBeVisible()
+    expect(screen.queryByText(/Gift credit/)).not.toBeInTheDocument()
   })
 })

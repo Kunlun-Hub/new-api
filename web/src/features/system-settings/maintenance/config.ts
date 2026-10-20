@@ -90,6 +90,7 @@ export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
   finance: {
     enabled: true,
     topup: true,
+    redPacket: true,
     invitation: true,
     orders: true,
   },

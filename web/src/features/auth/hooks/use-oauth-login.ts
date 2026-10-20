@@ -28,6 +28,7 @@ import { createServerError } from '@/lib/server-error-message'
 import { createOAuthAuthorization, createOAuthFlow, logout } from '../api'
 import {
   buildGitHubOAuthUrl,
+  buildGoogleOAuthUrl,
   buildDiscordOAuthUrl,
   buildOIDCOAuthUrl,
   buildLinuxDOOAuthUrl,
@@ -35,12 +36,18 @@ import {
 import { rememberOAuthLoginRedirect } from '../lib/oauth-callback-mode'
 import type { SystemStatus, CustomOAuthProviderInfo } from '../types'
 
+type OAuthLoginOptions = {
+  turnstileToken?: string
+  onTurnstileConsumed?: () => void
+}
+
 /**
  * Hook for managing OAuth login
  */
 export function useOAuthLogin(
   status: SystemStatus | null,
-  redirectTo?: string
+  redirectTo?: string,
+  options: OAuthLoginOptions = {}
 ) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
@@ -66,6 +73,18 @@ export function useOAuthLogin(
     clearAuthentication()
   }
 
+  const createLoginFlow = async (provider: string) => {
+    await resetSession()
+    options.onTurnstileConsumed?.()
+    return createOAuthFlow(
+      provider,
+      'login',
+      undefined,
+      undefined,
+      options.turnstileToken
+    )
+  }
+
   const handleGitHubLogin = async () => {
     if (!status?.github_client_id) return
     if (githubButtonDisabled) return
@@ -87,8 +106,7 @@ export function useOAuthLogin(
     }, 20000)
 
     try {
-      await resetSession()
-      const state = await createOAuthFlow('github', 'login')
+      const state = await createLoginFlow('github')
       rememberOAuthLoginRedirect(state, redirectTo)
 
       const url = buildGitHubOAuthUrl(status.github_client_id, state)
@@ -111,8 +129,7 @@ export function useOAuthLogin(
 
     setIsLoading(true)
     try {
-      await resetSession()
-      const state = await createOAuthFlow('discord', 'login')
+      const state = await createLoginFlow('discord')
       rememberOAuthLoginRedirect(state, redirectTo)
 
       const url = buildDiscordOAuthUrl(status.discord_client_id, state)
@@ -126,13 +143,31 @@ export function useOAuthLogin(
     }
   }
 
+  const handleGoogleLogin = async () => {
+    if (!status?.google_client_id) return
+
+    setIsLoading(true)
+    try {
+      const state = await createLoginFlow('google')
+      rememberOAuthLoginRedirect(state, redirectTo)
+
+      const url = buildGoogleOAuthUrl(status.google_client_id, state)
+      window.open(url, '_self')
+    } catch (error) {
+      handleServerError(
+        AuthOperationError.from(error, t('Failed to start Google login'))
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleOIDCLogin = async () => {
     if (!status?.oidc_authorization_endpoint || !status?.oidc_client_id) return
 
     setIsLoading(true)
     try {
-      await resetSession()
-      const state = await createOAuthFlow('oidc', 'login')
+      const state = await createLoginFlow('oidc')
       rememberOAuthLoginRedirect(state, redirectTo)
 
       const url = buildOIDCOAuthUrl(
@@ -155,8 +190,7 @@ export function useOAuthLogin(
 
     setIsLoading(true)
     try {
-      await resetSession()
-      const state = await createOAuthFlow('linuxdo', 'login')
+      const state = await createLoginFlow('linuxdo')
       rememberOAuthLoginRedirect(state, redirectTo)
 
       const url = buildLinuxDOOAuthUrl(status.linuxdo_client_id, state)
@@ -181,7 +215,15 @@ export function useOAuthLogin(
     }
     setIsLoading(true)
     try {
-      const authorization = await createOAuthAuthorization('telegram', 'login')
+      options.onTurnstileConsumed?.()
+      const authorization = await createOAuthAuthorization(
+        'telegram',
+        'login',
+        undefined,
+        undefined,
+        undefined,
+        options.turnstileToken
+      )
       if (!authorization.authorizationUrl) {
         throw new AuthOperationError('Failed to initialize OAuth')
       }
@@ -200,8 +242,7 @@ export function useOAuthLogin(
 
     setIsLoading(true)
     try {
-      await resetSession()
-      const state = await createOAuthFlow(provider.slug, 'login')
+      const state = await createLoginFlow(provider.slug)
       rememberOAuthLoginRedirect(state, redirectTo)
 
       const redirectUri = `${window.location.origin}/oauth/${provider.slug}`
@@ -232,6 +273,7 @@ export function useOAuthLogin(
     githubButtonText,
     githubButtonDisabled,
     handleGitHubLogin,
+    handleGoogleLogin,
     handleDiscordLogin,
     handleOIDCLogin,
     handleLinuxDOLogin,

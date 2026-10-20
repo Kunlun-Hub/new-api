@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,200 +16,85 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
-
-import { JsonCodeEditor } from '@/components/json-code-editor'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Switch } from '@/components/ui/switch'
 
 import {
-  SettingsForm,
-  SettingsSwitchContent,
-  SettingsSwitchItem,
-} from '../components/settings-form-layout'
-import { SettingsPageFormActions } from '../components/settings-page-context'
-import { SettingsSection } from '../components/settings-section'
-import { useUpdateOption } from '../hooks/use-update-option'
-import { formatJsonForEditor, normalizeJsonString } from './utils'
-
-const PRICE_NOTICE_TYPES = ['price_up', 'price_cut', 'update'] as const
-
-const priceNoticeSchema = z.object({
-  enabled: z.boolean(),
-  json: z.string().superRefine((value, ctx) => {
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(normalizeJsonString(value, '[]'))
-    } catch {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Invalid JSON data',
-      })
-      return
-    }
-    if (!Array.isArray(parsed)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Invalid JSON data',
-      })
-      return
-    }
-    parsed.forEach((item, index) => {
-      if (typeof item !== 'object' || item === null) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Item ${index + 1} must be an object`,
-        })
-        return
-      }
-      const record = item as Record<string, unknown>
-      if (typeof record.content !== 'string' || record.content === '') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Item ${index + 1} is missing content`,
-        })
-      }
-      if (typeof record.publishDate !== 'string' || record.publishDate === '') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Item ${index + 1} is missing publishDate`,
-        })
-      }
-      if (
-        record.type !== undefined &&
-        !PRICE_NOTICE_TYPES.includes(
-          record.type as (typeof PRICE_NOTICE_TYPES)[number]
-        )
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Item ${index + 1} has an invalid type`,
-        })
-      }
-    })
-  }),
-})
-
-type PriceNoticeFormValues = z.infer<typeof priceNoticeSchema>
+  NoticeEditorSection,
+  type NoticeEditorTypeOption,
+} from './notice-editor-section'
 
 type PriceNoticeSectionProps = {
   enabled: boolean
   data: string
 }
 
-const PLACEHOLDER = `[
+const PRICE_NOTICE_TYPE_OPTIONS: NoticeEditorTypeOption[] = [
   {
-    "content": "Model group ratio price cut\\n\\ncodex 0.35x -> 0.3x",
-    "publishDate": "2026-01-01T00:00:00+08:00",
-    "type": "price_cut"
-  }
-]`
+    value: 'price_cut',
+    labelKey: 'Price Cut',
+    color: 'bg-green-500',
+    badgeVariant: 'success',
+  },
+  {
+    value: 'price_up',
+    labelKey: 'Price Up',
+    color: 'bg-red-500',
+    badgeVariant: 'danger',
+  },
+  {
+    value: 'update',
+    labelKey: 'Price Update',
+    color: 'bg-blue-500',
+    badgeVariant: 'info',
+  },
+]
 
 export function PriceNoticeSection({ enabled, data }: PriceNoticeSectionProps) {
   const { t } = useTranslation()
-  const updateOption = useUpdateOption()
-
-  const form = useForm<PriceNoticeFormValues>({
-    mode: 'onChange',
-    resolver: zodResolver(priceNoticeSchema),
-    defaultValues: {
-      enabled,
-      json: formatJsonForEditor(data, '[]'),
-    },
-  })
-
-  useEffect(() => {
-    form.reset({ enabled, json: formatJsonForEditor(data, '[]') })
-  }, [enabled, data, form])
-
-  const onSubmit = async (values: PriceNoticeFormValues) => {
-    const updates: Array<{ key: string; value: string | boolean }> = []
-
-    if (values.enabled !== enabled) {
-      updates.push({
-        key: 'console_setting.price_notice_enabled',
-        value: values.enabled,
-      })
-    }
-
-    const normalized = normalizeJsonString(values.json, '[]')
-    if (normalized !== normalizeJsonString(data, '[]')) {
-      updates.push({ key: 'console_setting.price_notice', value: normalized })
-    }
-
-    for (const update of updates) {
-      await updateOption.mutateAsync(update)
-    }
-  }
 
   return (
-    <SettingsSection title={t('Price Updates')}>
-      <Form {...form}>
-        <SettingsForm onSubmit={form.handleSubmit(onSubmit)}>
-          <SettingsPageFormActions
-            onSave={form.handleSubmit(onSubmit)}
-            isSaving={updateOption.isPending}
-          />
-          <FormField
-            control={form.control}
-            name='enabled'
-            render={({ field }) => (
-              <SettingsSwitchItem>
-                <SettingsSwitchContent>
-                  <FormLabel>{t('Module availability')}</FormLabel>
-                  <FormDescription>
-                    {t('Show price updates on the dashboard')}
-                  </FormDescription>
-                </SettingsSwitchContent>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </SettingsSwitchItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='json'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Price notice data')}</FormLabel>
-                <FormControl>
-                  <JsonCodeEditor
-                    value={field.value}
-                    onChange={field.onChange}
-                    name={field.name}
-                    onBlur={field.onBlur}
-                    textareaRef={field.ref}
-                    placeholder={PLACEHOLDER}
-                    heightClassName='h-72 min-h-72 max-h-72'
-                    aria-invalid={Boolean(form.formState.errors.json)}
-                  />
-                </FormControl>
-                <FormDescription>
-                  {t(
-                    'Each entry needs content, a publish date and a type of price_up, price_cut or update.'
-                  )}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </SettingsForm>
-      </Form>
-    </SettingsSection>
+    <NoticeEditorSection
+      title={t('Price Updates')}
+      enabled={enabled}
+      data={data}
+      enabledKey='console_setting.price_notice_enabled'
+      dataKey='console_setting.price_notice'
+      defaultType='update'
+      typeOptions={PRICE_NOTICE_TYPE_OPTIONS}
+      labels={{
+        add: t('Add Price Update'),
+        edit: t('Edit Price Update'),
+        empty: t(
+          'No price updates yet. Click "Add Price Update" to create one.'
+        ),
+        added: t('Price update added. Click "Save Settings" to apply.'),
+        updated: t('Price update changed. Click "Save Settings" to apply.'),
+        deleted: t('Price update deleted. Click "Save Settings" to apply.'),
+        batchDeleted: (count) =>
+          t(
+            '{{count}} price updates deleted. Click "Save Settings" to apply.',
+            {
+              count,
+            }
+          ),
+        deleteSingleDescription: t(
+          'This price update will be removed from the list.'
+        ),
+        deleteBatchDescription: (count) =>
+          t('{{count}} price updates will be removed from the list.', {
+            count,
+          }),
+        saved: t('Price updates saved successfully'),
+        saveFailed: t('Failed to save price updates'),
+        dialogDescription: t(
+          'Create or edit price updates shown on the dashboard'
+        ),
+        contentPlaceholder: t('Enter price update content (supports Markdown)'),
+        publishDateDescription: t(
+          'Date and time when this price update should be displayed'
+        ),
+        typePlaceholder: t('Select price update type'),
+      }}
+    />
   )
 }

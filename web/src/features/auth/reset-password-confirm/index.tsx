@@ -26,8 +26,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { resetPassword } from '@/features/auth/api'
+import { TurnstileGate } from '@/features/auth/components/turnstile-gate'
+import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { useCountdown } from '@/hooks/use-countdown'
-import { api } from '@/lib/api'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { handleServerError } from '@/lib/handle-server-error'
 import { AuthOperationError } from '@/lib/secure-verification'
@@ -52,6 +54,15 @@ export function ResetPasswordConfirm({
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const {
+    isTurnstileEnabled,
+    turnstileSiteKey,
+    turnstileToken,
+    turnstileWidgetKey,
+    turnstileReady,
+    setTurnstileToken,
+    resetTurnstile,
+  } = useTurnstile()
+  const {
     secondsLeft,
     isActive,
     start: startCountdown,
@@ -64,16 +75,27 @@ export function ResetPasswordConfirm({
       toast.error(t('Invalid reset link, please request a new password reset'))
       return
     }
+    if (!turnstileReady) {
+      toast.info(t('Please complete the security check to continue.'))
+      return
+    }
+
+    const submittedTurnstileToken = turnstileToken
+    if (isTurnstileEnabled) {
+      resetTurnstile()
+    }
 
     startCountdown()
     setLoading(true)
     try {
-      const res = await api.post('/api/user/reset', { email, token }, {
-        skipBusinessError: true,
-      } as Record<string, unknown>)
+      const res = await resetPassword(email, token, submittedTurnstileToken)
 
-      if (res?.data?.success) {
-        const password = res.data.data
+      if (res?.success) {
+        const password = res.data
+        if (!password) {
+          handleServerError(createServerError(res, t('Request failed')))
+          return
+        }
         setNewPassword(password)
         const copySuccess = await copyToClipboard(password)
         if (copySuccess) {
@@ -86,7 +108,7 @@ export function ResetPasswordConfirm({
           toast.success(t('Password reset: {{password}}', { password }))
         }
       } else {
-        handleServerError(createServerError(res.data, t('Request failed')))
+        handleServerError(createServerError(res, t('Request failed')))
       }
     } catch (error) {
       handleServerError(AuthOperationError.from(error))
@@ -173,6 +195,17 @@ export function ResetPasswordConfirm({
             </div>
           )}
 
+          {!newPassword && isTurnstileEnabled && (
+            <TurnstileGate
+              siteKey={turnstileSiteKey}
+              action='password_reset'
+              widgetKey={turnstileWidgetKey}
+              ready={turnstileReady}
+              onVerify={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+            />
+          )}
+
           <Button
             className='w-full'
             onClick={
@@ -181,7 +214,9 @@ export function ResetPasswordConfirm({
                 : handleSubmit
             }
             disabled={
-              newPassword ? false : loading || isActive || !isValidResetLink
+              newPassword
+                ? false
+                : loading || isActive || !isValidResetLink || !turnstileReady
             }
           >
             {newPassword && t('auth.resetPasswordConfirm.backToLogin')}

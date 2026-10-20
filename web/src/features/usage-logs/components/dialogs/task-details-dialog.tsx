@@ -26,6 +26,7 @@ import { Dialog } from '@/components/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { formatLogQuota, formatTimestampToDate } from '@/lib/format'
+import { translateServerText } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
 import { getTaskArtifacts } from '../../api'
@@ -233,6 +234,17 @@ export function TaskDetailsDialog(props: TaskDetailsDialogProps) {
             value={formatLogQuota(log.quota)}
             mono
           />
+          {log.gift_quota && log.gift_quota > 0 ? (
+            <DetailRow
+              label={t('Gift credit')}
+              value={
+                <span className='text-emerald-600 dark:text-emerald-400'>
+                  {formatLogQuota(log.gift_quota)}
+                </span>
+              }
+              mono
+            />
+          ) : null}
           {properties?.origin_model_name ? (
             <DetailRow
               label={t('Original Model')}
@@ -280,6 +292,12 @@ export function TaskDetailsDialog(props: TaskDetailsDialogProps) {
                 />
               ) : null}
             </>
+          ) : null}
+          {props.log.fail_reason ? (
+            <DetailRow
+              label={t('Fail Reason')}
+              value={translateServerText(t, props.log.fail_reason)}
+            />
           ) : null}
         </DetailSection>
       ) : null}

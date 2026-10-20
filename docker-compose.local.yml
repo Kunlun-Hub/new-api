@@ -32,6 +32,8 @@ services:
       SQL_MAX_LIFETIME: "60"
       RELAY_IDLE_CONN_TIMEOUT: "90"
       STREAMING_TIMEOUT: "300"
+      GITHUB_OAUTH_PROXY: ${GITHUB_OAUTH_PROXY:-}
+      GOOGLE_OAUTH_PROXY: ${GOOGLE_OAUTH_PROXY:-${GITHUB_OAUTH_PROXY:-}}
       # The public site (ai.4w.ink) is served through Cloudflare, so every
       # visitor arrives from a Cloudflare edge IP. Trust only Cloudflare's
       # published ranges and read the real client IP from X-Forwarded-For;

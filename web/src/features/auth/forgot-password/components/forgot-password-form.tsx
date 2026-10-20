@@ -25,7 +25,6 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 
-import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -37,6 +36,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { sendPasswordResetEmail } from '@/features/auth/api'
+import { TurnstileGate } from '@/features/auth/components/turnstile-gate'
 import {
   forgotPasswordFormSchema,
   PASSWORD_RESET_COUNTDOWN,
@@ -59,7 +59,10 @@ export function ForgotPasswordForm({
     isTurnstileEnabled,
     turnstileSiteKey,
     turnstileToken,
+    turnstileWidgetKey,
+    turnstileReady,
     setTurnstileToken,
+    resetTurnstile,
     validateTurnstile,
   } = useTurnstile()
   const {
@@ -72,14 +75,21 @@ export function ForgotPasswordForm({
     resolver: zodResolver(forgotPasswordFormSchema),
     defaultValues: { email: '' },
   })
-  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
 
   async function onSubmit(data: z.infer<typeof forgotPasswordFormSchema>) {
     if (!validateTurnstile()) return
 
+    const submittedTurnstileToken = turnstileToken
+    if (isTurnstileEnabled) {
+      resetTurnstile()
+    }
+
     setIsLoading(true)
     try {
-      const res = await sendPasswordResetEmail(data.email, turnstileToken)
+      const res = await sendPasswordResetEmail(
+        data.email,
+        submittedTurnstileToken
+      )
       if (res?.success) {
         form.reset()
         startCountdown()
@@ -143,6 +153,17 @@ export function ForgotPasswordForm({
             )}
           />
 
+          {isTurnstileEnabled && (
+            <TurnstileGate
+              siteKey={turnstileSiteKey}
+              action='password_reset'
+              widgetKey={turnstileWidgetKey}
+              ready={turnstileReady}
+              onVerify={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+            />
+          )}
+
           <Button
             type='submit'
             className='bg-foreground text-background hover:bg-foreground/90 w-full rounded-full'
@@ -153,13 +174,6 @@ export function ForgotPasswordForm({
               : t('Send reset email')}
             {isLoading ? <Loader2 className='animate-spin' /> : null}
           </Button>
-
-          {isTurnstileEnabled && (
-            <Turnstile
-              siteKey={turnstileSiteKey}
-              onVerify={setTurnstileToken}
-            />
-          )}
         </div>
 
         <div className='mt-4 flex items-center justify-between text-sm'>

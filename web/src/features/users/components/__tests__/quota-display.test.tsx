@@ -45,7 +45,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import zh from '@/i18n/locales/zh.json'
 import { api } from '@/lib/api'
-import { formatTimestampToDate } from '@/lib/format'
+import { formatTimestamp, formatTimestampToDate } from '@/lib/format'
 import { useAuthStore } from '@/stores/auth-store'
 import {
   DEFAULT_CURRENCY_CONFIG,
@@ -65,7 +65,12 @@ await i18n.init({
   initAsync: false,
 })
 
-function QuotaTable(props: { remaining: number; used: number }) {
+function QuotaTable(props: {
+  remaining: number
+  used: number
+  giftQuota?: number
+  giftExpiresAt?: number
+}) {
   const columns = useUsersColumns().filter((column) =>
     ['quota', 'used_quota'].includes(
       column.id ?? ('accessorKey' in column ? String(column.accessorKey) : '')
@@ -82,6 +87,8 @@ function QuotaTable(props: { remaining: number; used: number }) {
         status: 1,
         quota: props.remaining,
         used_quota: props.used,
+        gift_quota: props.giftQuota ?? 0,
+        gift_quota_expired_at: props.giftExpiresAt ?? 0,
         request_count: 0,
         group: 'default',
       } as User,
@@ -158,13 +165,15 @@ it('shows balance above secondary usage text and opens quota details on click', 
   )
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
   expect(screen.queryByText('0.006')).not.toBeInTheDocument()
+  expect(within(cells[0]).getByText('No gift credit')).toBeInTheDocument()
   const trigger = screen.getByRole('button', {
-    name: 'Available Balance 0.0038; Used amount 0.0022',
+    name: 'Available Balance 0.0038; Used amount 0.0022; No gift credit',
   })
   await userEvent.click(trigger)
   const detail = await screen.findByRole('dialog', { name: 'Quota ($)' })
   expect(within(detail).getByText('Available Balance')).toBeInTheDocument()
   expect(within(detail).getByText('Total Used')).toBeInTheDocument()
+  expect(within(detail).getByText('Gift Credit Balance')).toBeInTheDocument()
   expect(within(detail).getByText('0.0038')).toBeInTheDocument()
   expect(within(detail).getByText('0.0022')).toBeInTheDocument()
   expect(within(detail).queryByRole('progressbar')).not.toBeInTheDocument()
@@ -173,6 +182,41 @@ it('shows balance above secondary usage text and opens quota details on click', 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   )
   expect(trigger).toHaveFocus()
+})
+
+it('shows gift credit in the balance cell even when the wallet balance is zero', async () => {
+  render(
+    <I18nextProvider i18n={i18n}>
+      <QuotaTable
+        remaining={0}
+        used={0}
+        giftQuota={250000}
+        giftExpiresAt={1794386117}
+      />
+    </I18nextProvider>
+  )
+  const cell = screen.getAllByRole('cell')[0]
+  expect(within(cell).getByText('No Quota')).toBeInTheDocument()
+  expect(within(cell).getByText('Gift Credit Balance')).toBeInTheDocument()
+  expect(within(cell).getByText('0.5')).toBeInTheDocument()
+  expect(
+    within(cell).getByText(
+      `Gift credit expires at ${formatTimestamp(1794386117)}`
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByRole('columnheader', { name: /Gift Credit Balance/ })
+  ).not.toBeInTheDocument()
+
+  await userEvent.click(
+    screen.getByRole('button', {
+      name: /Gift Credit Balance 0\.5; Gift credit expires at/,
+    })
+  )
+  const detail = await screen.findByRole('dialog', { name: 'Quota ($)' })
+  expect(within(detail).getByText('Gift Credit Balance')).toBeInTheDocument()
+  expect(within(detail).getByText('Gift credit expires')).toBeInTheDocument()
+  expect(within(detail).getByText('0.5')).toBeInTheDocument()
 })
 
 it.each([0, 500000])(
@@ -188,7 +232,7 @@ it.each([0, 500000])(
       expect(screen.queryByText('Used amount')).not.toBeInTheDocument()
       await userEvent.click(screen.getByRole('button', { name: 'No Quota' }))
       const detail = await screen.findByRole('dialog', { name: 'Quota ($)' })
-      expect(within(detail).getAllByText('0')).toHaveLength(2)
+      expect(within(detail).getAllByText('0')).toHaveLength(3)
       return
     }
     expect(screen.queryByText('No Quota')).not.toBeInTheDocument()
@@ -254,9 +298,9 @@ function UsersPage() {
   )
 }
 
-async function renderUsersList(emptyInvitation = false) {
+async function renderUsersList(emptyInvitation = false, giftQuota = 250000) {
   useAuthStore.getState().auth.setUser({ id: 1, username: 'admin', role: 100 })
-  const get = vi.spyOn(api, 'get').mockResolvedValue({
+  const usersResponse = {
     data: {
       success: true,
       data: {
@@ -268,6 +312,8 @@ async function renderUsersList(emptyInvitation = false) {
             role: 1,
             status: 1,
             quota: 1900,
+            gift_quota: giftQuota,
+            gift_quota_expired_at: giftQuota > 0 ? 1794386117 : 0,
             used_quota: 1100,
             request_count: 0,
             created_at: Math.floor(Date.now() / 1000) - 86400,
@@ -281,7 +327,14 @@ async function renderUsersList(emptyInvitation = false) {
         total: 1,
       },
     },
-  })
+  }
+  const get = vi
+    .spyOn(api, 'get')
+    .mockImplementation(async (url) =>
+      url === '/api/group/'
+        ? { data: { success: true, data: ['default'] } }
+        : usersResponse
+    )
   const root = createRootRoute()
   const auth = createRoute({ getParentRoute: () => root, id: '_authenticated' })
   const users = createRoute({
@@ -328,6 +381,31 @@ it('sends balance sorting to the server and keeps invitation details on two line
   ).not.toBeInTheDocument()
   expect(screen.getByText('Inviter ID: 42')).toBeInTheDocument()
   expect(screen.getByText(/Invited 2 users · Earnings:/)).toBeInTheDocument()
+})
+
+it('shows the gift credit balance and its expiry in the balance cell', async () => {
+  await renderUsersList()
+
+  expect(
+    screen.queryByRole('columnheader', { name: 'Gift Credit Balance ($)' })
+  ).not.toBeInTheDocument()
+  const row = screen.getByRole('row', {
+    name: /long-user-name-for-table-layout/,
+  })
+  expect(within(row).getByText('Gift Credit Balance')).toBeInTheDocument()
+  expect(within(row).getByText('0.5')).toBeInTheDocument()
+  expect(
+    within(row).getByText(
+      `Gift credit expires at ${formatTimestamp(1794386117)}`
+    )
+  ).toBeInTheDocument()
+})
+
+it('labels users without gift credit as having none', async () => {
+  await renderUsersList(false, 0)
+
+  expect(screen.getByText('No gift credit')).toBeInTheDocument()
+  expect(screen.queryByText(/Gift credit expires at/)).not.toBeInTheDocument()
 })
 
 it('shows balance above usage on mobile cards in Chinese', async () => {

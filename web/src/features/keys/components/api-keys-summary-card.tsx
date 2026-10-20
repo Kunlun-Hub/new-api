@@ -84,6 +84,7 @@ export function ApiKeysSummaryCard() {
   // The reference always renders the OpenAI-compatible `/v1` suffix next to
   // the host; keep it when the configured address has no path of its own.
   const primaryPath = primary.path || '/v1'
+  const primaryApiUrl = primary.origin ? `${primary.origin}${primaryPath}` : ''
 
   const stats: SummaryStat[] = [
     {
@@ -184,9 +185,9 @@ export function ApiKeysSummaryCard() {
                 </ItemGroup>
               </HoverCardContent>
             </HoverCard>
-            {primaryAddress?.url && (
+            {primaryApiUrl && (
               <CopyButton
-                value={primaryAddress.url}
+                value={primaryApiUrl}
                 variant='outline'
                 size='default'
                 className='border-border/60 size-9 shrink-0 px-2.5'

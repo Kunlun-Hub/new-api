@@ -25,7 +25,7 @@ import { CopyButton } from '@/components/copy-button'
 import { StatusBadge } from '@/components/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { formatQuota, formatTimestampToDate } from '@/lib/format'
+import { formatTimestampToDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 import {
@@ -36,6 +36,7 @@ import {
 import { countMjArtifacts, isMjTaskFailure } from '../../lib/mj-artifacts'
 import type { MidjourneyLog } from '../../types'
 import { ImageDialog } from '../dialogs/image-dialog'
+import { LogCostDisplay } from '../log-cost-display'
 import { createChannelColumn, createFailReasonColumn } from './column-helpers'
 
 export function useDrawingLogsColumns(
@@ -247,9 +248,11 @@ export function useDrawingLogsColumns(
           }
 
           return (
-            <span className='cursor-help font-medium whitespace-nowrap'>
-              {formatQuota(log.quota ?? 0)}
-            </span>
+            <LogCostDisplay
+              quota={log.quota ?? 0}
+              other={null}
+              giftQuota={log.gift_quota}
+            />
           )
         },
       },

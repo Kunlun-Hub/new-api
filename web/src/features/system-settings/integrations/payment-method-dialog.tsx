@@ -68,6 +68,8 @@ type PaymentMethodDialogProps = {
 
 const PAYMENT_TYPE_ICON_NAMES: Record<string, string> = {
   alipay: 'SiAlipay',
+  alipay_official: 'SiAlipay',
+  wechat_official: 'SiWechat',
   stripe: 'SiStripe',
   waffo_pancake: 'LuCreditCard',
   wxpay: 'SiWechat',
@@ -92,10 +94,22 @@ export function PaymentMethodDialog({
       value: 'alipay',
     },
     {
+      iconName: 'SiAlipay',
+      label: `${t('Alipay (Official)')} (alipay_official)`,
+      name: t('Alipay (Official)'),
+      value: 'alipay_official',
+    },
+    {
       iconName: 'SiWechat',
       label: `${t('WeChat Pay')} (Epay: wxpay)`,
       name: t('WeChat Pay'),
       value: 'wxpay',
+    },
+    {
+      iconName: 'SiWechat',
+      label: `${t('WeChat Pay (Official)')} (wechat_official)`,
+      name: t('WeChat Pay (Official)'),
+      value: 'wechat_official',
     },
     {
       iconName: 'SiStripe',
@@ -249,7 +263,7 @@ export function PaymentMethodDialog({
                 </FormControl>
                 <FormDescription className='leading-relaxed'>
                   {t(
-                    'Used to decide the payment flow. Built-in keys include stripe for Stripe and waffo_pancake for Waffo Pancake; other values are sent to Epay as the type parameter.'
+                    'Used to decide the payment flow. Built-in keys include stripe for Stripe, waffo_pancake for Waffo Pancake, and alipay_official / wechat_official for the native gateways; other values are sent to Epay as the type parameter.'
                   )}
                 </FormDescription>
                 <FormMessage />

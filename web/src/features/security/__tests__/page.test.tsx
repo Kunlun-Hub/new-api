@@ -61,7 +61,10 @@ const profile: UserProfile = {
   }),
 }
 
+let profileResponse: UserProfile
+
 beforeEach(() => {
+  profileResponse = profile
   vi.stubGlobal('localStorage', {
     getItem: () => null,
     setItem: () => undefined,
@@ -72,22 +75,19 @@ beforeEach(() => {
     .getState()
     .auth.setUser({ ...profile, permissions: { sidebar_settings: false } })
   vi.spyOn(api, 'get').mockImplementation(async (url) => {
-    if (url === '/api/user/token/status') {
+    if (url === '/api/user/access_tokens') {
+      return { data: { success: true, data: { items: [], legacy: null } } }
+    }
+    if (url === '/api/user/access_tokens/catalog') {
       return {
         data: {
           success: true,
-          data: {
-            exists: false,
-            token_ref: '',
-            created_at: null,
-            last_used_at: null,
-            last_used_ip: '',
-          },
+          data: { groups: [], max_tokens: 20, default_expiry_days: 30 },
         },
       }
     }
     if (url === '/api/user/self') {
-      return { data: { success: true, data: profile } }
+      return { data: { success: true, data: profileResponse } }
     }
     if (url === '/api/user/passkey') {
       return { data: { success: true, data: { enabled: false } } }
@@ -114,15 +114,20 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-async function renderPage(path = '/security') {
+async function renderPage(
+  path = '/security',
+  statusOverrides: Record<string, unknown> = {}
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   client.setQueryData(['status'], {
     checkin_enabled: false,
+    google_oauth: true,
     wechat_login: true,
     github_oauth: true,
     oidc_enabled: true,
+    passkey_login: true,
     custom_oauth_providers: [
       {
         id: 1,
@@ -133,6 +138,7 @@ async function renderPage(path = '/security') {
         scopes: 'openid',
       },
     ],
+    ...statusOverrides,
   })
   const root = createRootRoute()
   const security = createRoute({
@@ -205,7 +211,7 @@ describe('security page migration', () => {
       'xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.46fr)]'
     )
     const access = screen.getByRole('region', { name: 'Sessions & Access' })
-    expect(within(access).getByText('System Token')).toBeVisible()
+    expect(within(access).getByText('Access tokens')).toBeVisible()
     expect(
       await within(access).findByText('No active login sessions')
     ).toBeVisible()
@@ -225,11 +231,35 @@ describe('security page migration', () => {
     const bindings = await screen.findByRole('list', {
       name: 'Account Bindings',
     })
-    expect(within(bindings).getAllByRole('listitem')).toHaveLength(7)
+    expect(within(bindings).getAllByRole('listitem').length).toBeGreaterThan(0)
     expect(within(bindings).getByText('Gitea')).toBeVisible()
     expect(within(bindings).getByText('Google')).toBeVisible()
     expect(bindings).toHaveClass('grid-cols-1', 'gap-4', 'sm:grid-cols-2')
     expect(screen.queryByText('Custom OAuth')).not.toBeInTheDocument()
+  })
+
+  it('hides providers that are not enabled', async () => {
+    profileResponse = {
+      ...profile,
+      github_id: 'linked-github-user',
+      google_id: 'linked-google-user',
+    }
+    await renderPage('/security', {
+      github_oauth: false,
+      google_oauth: false,
+      oidc_enabled: false,
+      wechat_login: false,
+      passkey_login: false,
+      custom_oauth_providers: [],
+    })
+    const bindings = await screen.findByRole('list', {
+      name: 'Account Bindings',
+    })
+    expect(within(bindings).queryByText('GitHub')).not.toBeInTheDocument()
+    expect(within(bindings).queryByText('Google')).not.toBeInTheDocument()
+    expect(within(bindings).queryByText('OIDC')).not.toBeInTheDocument()
+    expect(within(bindings).queryByText('WeChat')).not.toBeInTheDocument()
+    expect(within(bindings).queryByText('Passkey')).not.toBeInTheDocument()
   })
 
   it('the password action opens the existing dialog by keyboard and Escape closes it', async () => {

@@ -21,7 +21,11 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { resolveSidebarView } from '@/components/layout/lib/sidebar-view-registry'
-import type { NavGroup, ResolvedSidebarView } from '@/components/layout/types'
+import type {
+  NavGroup,
+  NavItem,
+  ResolvedSidebarView,
+} from '@/components/layout/types'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -54,13 +58,22 @@ export function useSidebarView(): ResolvedSidebarView {
   const rootNavGroups = useMemo<NavGroup[]>(() => {
     const role = userRole ?? ROLE.GUEST
     const isAdmin = role >= ROLE.ADMIN
+    const canSee = (item: NavItem) =>
+      item.requiredRole === undefined || role >= item.requiredRole
     return configFilteredRoot
       .filter((group) => (group.id === 'admin' ? isAdmin : true))
       .map((group) => {
-        const items = group.items.filter(
-          (item) => item.requiredRole === undefined || role >= item.requiredRole
-        )
-        return items.length === group.items.length ? group : { ...group, items }
+        let narrowed = false
+        const items = group.items.filter(canSee).map((item) => {
+          if (!item.items) return item
+          const subItems = item.items.filter(canSee)
+          if (subItems.length === item.items.length) return item
+          narrowed = true
+          return { ...item, items: subItems }
+        })
+        return !narrowed && items.length === group.items.length
+          ? group
+          : { ...group, items }
       })
   }, [configFilteredRoot, userRole])
 

@@ -99,7 +99,8 @@ export function getRollingDateRange(
 
 /**
  * Compute time range as Unix timestamps (seconds)
- * @param days Default number of days if no dates provided
+ * @param days Number of days covered by the default range; with `useStartOfDay`
+ * the count includes the end day, so `1` means the end day only
  * @param startDate Optional start date
  * @param endDate Optional end date
  * @param useStartOfDay Whether to normalize to start/end of day
@@ -120,7 +121,7 @@ export function computeTimeRange(
       : defaultEnd
     const start = startDate
       ? toStartOfDay(dateToUnixTimestamp(startDate))
-      : end - days * 24 * 3600
+      : end - Math.max(days - 1, 0) * 24 * 3600
 
     return {
       start_timestamp: start,

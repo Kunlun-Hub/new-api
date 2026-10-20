@@ -43,6 +43,9 @@ export const userSchema = z.object({
   telegram_id: z.string().optional(),
   email: z.string().optional(),
   quota: z.number(),
+  gift_quota: z.number().optional(),
+  gift_quota_expired_at: z.number().optional(),
+  gift_used_quota: z.number().optional(),
   used_quota: z.number(),
   request_count: z.number(),
   group: z.string(),
@@ -135,14 +138,17 @@ export type ManageUserAction =
   | 'disable'
   | 'delete'
   | 'add_quota'
+  | 'add_gift_quota'
 
 export type QuotaAdjustMode = 'add' | 'subtract' | 'override'
 
 export interface ManageUserQuotaPayload {
   id: number
-  action: 'add_quota'
+  action: 'add_quota' | 'add_gift_quota'
   mode: QuotaAdjustMode
   value: number
+  /** Gift credit expire time (unix seconds). 0 or omitted means never expires. */
+  expired_at?: number
 }
 
 // ============================================================================

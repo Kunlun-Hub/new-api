@@ -188,10 +188,17 @@ export function useUsersColumns(): ColumnDef<User>[] {
         header: `${t('Available Balance')} (${quotaUnit})`,
         cell: ({ row }) => {
           const user = row.original
-          return <UserQuotaCell remaining={user.quota} used={user.used_quota} />
+          return (
+            <UserQuotaCell
+              remaining={user.quota}
+              used={user.used_quota}
+              giftQuota={user.gift_quota ?? 0}
+              giftExpiresAt={user.gift_quota_expired_at ?? 0}
+            />
+          )
         },
-        size: 180,
-        minSize: 160,
+        size: 240,
+        minSize: 220,
         meta: { mobileOrder: 40 },
       },
       {
@@ -264,7 +271,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
               )}
               {inviterId > 0 && (
                 <LongText className='text-muted-foreground'>
-                  {t('Inviter')} ID: {inviterId}
+                  {t('Inviter ID: {{id}}', { id: inviterId })}
                 </LongText>
               )}
             </div>

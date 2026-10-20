@@ -104,7 +104,7 @@ function UsageLogsContent() {
           )}
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
-          <div className='flex flex-col gap-4'>
+          <div className='flex flex-col gap-5'>
             {activeCategory === 'common' && (
               <div className='shrink-0'>
                 <CommonLogsSummaryCards />

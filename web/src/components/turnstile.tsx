@@ -21,13 +21,18 @@ import { useEffect, useRef } from 'react'
 declare global {
   interface Window {
     turnstile?: {
-      render: (element: HTMLElement, options: Record<string, unknown>) => void
+      render: (
+        element: HTMLElement,
+        options: Record<string, unknown>
+      ) => string
+      remove: (widgetId: string) => void
     }
   }
 }
 
 interface TurnstileProps {
   siteKey: string
+  action: string
   onVerify: (token: string) => void
   onExpire?: () => void
   className?: string
@@ -35,42 +40,90 @@ interface TurnstileProps {
 
 export function Turnstile({
   siteKey,
+  action,
   onVerify,
   onExpire,
   className,
 }: TurnstileProps) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const widgetIdRef = useRef<string | null>(null)
+  const callbacksRef = useRef({ onVerify, onExpire })
 
   useEffect(() => {
+    callbacksRef.current = { onVerify, onExpire }
+  }, [onVerify, onExpire])
+
+  useEffect(() => {
+    let cancelled = false
+
     const render = () => {
-      if (!ref.current || !window.turnstile) return
+      const container = ref.current
+      const turnstile = window.turnstile
+      if (cancelled || !container || !turnstile || widgetIdRef.current) return
+
       try {
-        window.turnstile.render(ref.current, {
+        const widgetId = turnstile.render(container, {
           sitekey: siteKey,
-          callback: (token: string) => onVerify(token),
-          'error-callback': () => onExpire?.(),
-          'expired-callback': () => onExpire?.(),
+          action,
+          callback: (token: string) => {
+            if (!cancelled) callbacksRef.current.onVerify(token)
+          },
+          'error-callback': () => {
+            if (!cancelled) callbacksRef.current.onExpire?.()
+          },
+          'expired-callback': () => {
+            if (!cancelled) callbacksRef.current.onExpire?.()
+          },
         })
+        if (cancelled) {
+          turnstile.remove(widgetId)
+          return
+        }
+        widgetIdRef.current = widgetId
       } catch {
-        /* empty */
+        if (!cancelled) callbacksRef.current.onExpire?.()
       }
     }
 
+    const handleError = () => {
+      if (!cancelled) callbacksRef.current.onExpire?.()
+    }
+
+    let script: HTMLScriptElement | null = null
     if (window.turnstile) {
       render()
-      return
+    } else {
+      const scriptId = 'cf-turnstile'
+      script = document.querySelector<HTMLScriptElement>(`#${scriptId}`)
+      if (!script) {
+        script = document.createElement('script')
+        script.id = scriptId
+        script.src =
+          'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+        script.async = true
+        script.defer = true
+        document.head.appendChild(script)
+      }
+      script.addEventListener('load', render, { once: true })
+      script.addEventListener('error', handleError, { once: true })
     }
-    const scriptId = 'cf-turnstile'
-    if (document.getElementById(scriptId)) return
-    const s = document.createElement('script')
-    s.id = scriptId
-    s.src =
-      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
-    s.async = true
-    s.defer = true
-    s.onload = () => render()
-    document.head.appendChild(s)
-  }, [siteKey, onVerify, onExpire])
+
+    return () => {
+      cancelled = true
+      script?.removeEventListener('load', render)
+      script?.removeEventListener('error', handleError)
+
+      const widgetId = widgetIdRef.current
+      widgetIdRef.current = null
+      if (widgetId && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetId)
+        } catch {
+          /* The widget may already have been removed by the browser. */
+        }
+      }
+    }
+  }, [siteKey, action])
 
   return <div ref={ref} className={className} />
 }

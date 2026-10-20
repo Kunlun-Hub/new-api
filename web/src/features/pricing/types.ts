@@ -66,6 +66,8 @@ export type PricingModel = {
   vendor_icon?: string
   vendor_description?: string
   quota_type: number
+  /** Whether gift credit can be spent on this model (model metadata flag). */
+  gift_quota_enabled?: boolean
   model_ratio: number
   completion_ratio: number
   model_price?: number

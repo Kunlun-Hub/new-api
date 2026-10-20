@@ -142,6 +142,9 @@ export function CheckinCalendarCard({
 
   const doCheckin = useCallback(
     async (token?: string) => {
+      if (token) {
+        setTurnstileWidgetKey((value) => value + 1)
+      }
       setCheckinLoading(true)
       try {
         const res = await performCheckin(token)
@@ -159,9 +162,6 @@ export function CheckinCalendarCard({
             }
             setTurnstileModalVisible(true)
             return
-          }
-          if (token && shouldTriggerTurnstile(res.message)) {
-            setTurnstileWidgetKey((v) => v + 1)
           }
           handleServerError(res, t('Check-in failed'))
         }
@@ -273,6 +273,7 @@ export function CheckinCalendarCard({
           <Turnstile
             key={turnstileWidgetKey}
             siteKey={turnstileSiteKey}
+            action='checkin'
             onVerify={(token) => {
               doCheckin(token)
             }}

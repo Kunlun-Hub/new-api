@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef } from '@tanstack/react-table'
-import { GitBranch, Sparkles, KeyRound } from 'lucide-react'
+import { GitBranch, KeyRound, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -63,6 +63,7 @@ import {
   parseLogOther,
   isViolationFeeLog,
   renderAuditContent,
+  renderLogContent,
 } from '../../lib/format'
 import {
   isDisplayableLogType,
@@ -137,7 +138,7 @@ function buildTypeDetailSegments(
 ): DetailSegment[] {
   // Top-up, audit, and login logs can carry a localized operation descriptor.
   if (log.type === 1 || log.type === 3 || log.type === 7) {
-    const text = renderAuditContent(other, t)
+    const text = renderAuditContent(other, t) ?? renderLogContent(other, t)
     return text ? [{ text }] : []
   }
 
@@ -207,8 +208,9 @@ function buildTypeDetailSegments(
         text: `${tier.label || t('Default')} · ${prices.join(' · ')}`,
       })
     } else {
+      const fallbackTier = other.matched_tier?.trim()
       segments.push({
-        text: `${t('Dynamic Pricing')} · ${t('No matching results')}`,
+        text: `${t('Dynamic Pricing')} · ${fallbackTier || t('Special billing expression')}`,
         muted: true,
       })
     }
@@ -263,8 +265,9 @@ function buildTypeDetailSegments(
         })
       }
     } else {
+      const fallbackTier = other.matched_tier?.trim()
       segments.push({
-        text: `${t('Dynamic Pricing')} · ${t('No matching results')}`,
+        text: `${t('Dynamic Pricing')} · ${fallbackTier || t('Special billing expression')}`,
         muted: true,
       })
     }
@@ -879,7 +882,7 @@ export function useCommonLogsColumns(
     columns.push({
       accessorKey: 'quota',
       header: t('Cost'),
-      size: 85,
+      size: 200,
       meta: { pinned: 'right' as const },
       cell: ({ row }) => {
         const log = row.original
@@ -892,6 +895,7 @@ export function useCommonLogsColumns(
             quota={quota}
             other={other}
             showBillingSource={showBillingSource}
+            giftQuota={log.gift_quota}
           />
         )
       },

@@ -29,5 +29,6 @@ export const TASK_MOBILE_SUMMARY_FIELDS: readonly TaskMobileSummaryField[] = [
   { id: 'channel_id', label: 'Channel', primaryOnly: true },
   { id: 'duration', label: 'Duration', primaryOnly: true },
   { id: 'progress', label: 'Progress' },
+  { id: 'quota', label: 'Cost' },
   { id: 'artifacts', label: 'Artifacts' },
 ]

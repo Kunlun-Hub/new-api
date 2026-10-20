@@ -150,6 +150,12 @@ export function SidebarModulesSection({
         title: t('Recharge'),
         description: t('Top up balance and view billing history.'),
       },
+      redPacket: {
+        title: t('Red Packets'),
+        description: t(
+          'Issue red packets and review the red packets you have claimed.'
+        ),
+      },
       invitation: {
         title: t('Invitation Plan'),
         description: t('Referral rewards and invitation management.'),

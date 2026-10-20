@@ -32,6 +32,8 @@ const STATUS_RELATED_KEYS = new Set([
   'SidebarModulesAdmin',
   'Notice',
   'LogConsumeEnabled',
+  'log_setting.user_export_enabled',
+  'log_setting.max_range_days',
   'QuotaPerUnit',
   'USDExchangeRate',
   'DisplayInCurrencyEnabled',
@@ -48,6 +50,8 @@ const STATUS_RELATED_KEYS = new Set([
   'console_setting.orders_enabled',
   'console_setting.invoices_enabled',
   'console_setting.tickets_enabled',
+  'QuotaRemindEnabled',
+  'QuotaRemindThreshold',
 ])
 
 export function useUpdateOption() {

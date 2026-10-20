@@ -21,6 +21,8 @@ import { render, screen, within } from '@testing-library/react'
 import i18next from 'i18next'
 import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 
+import { formatLogQuota } from '@/lib/format'
+
 import type { UsageLog } from '../../data/schema'
 import type { LogOtherData } from '../../types'
 import { DetailsDialog } from '../dialogs/details-dialog'
@@ -35,10 +37,11 @@ const i18nKeys = {
   'Matched Tier': 'Matched Tier',
   'Group Ratio': 'Group Ratio',
   'Total Cost': 'Total Cost',
+  'Gift credit': 'Gift credit',
   'Usage parameters': 'Usage parameters',
 }
 
-function makeLog(other: LogOtherData): UsageLog {
+function makeLog(other: LogOtherData, giftQuota = 0): UsageLog {
   return {
     id: 1,
     user_id: 1,
@@ -49,6 +52,7 @@ function makeLog(other: LogOtherData): UsageLog {
     token_name: 'token',
     model_name: 'wan2.5-i2v-preview',
     quota: 5000,
+    gift_quota: giftQuota,
     prompt_tokens: 0,
     completion_tokens: 0,
     use_time: 0,
@@ -64,7 +68,11 @@ function makeLog(other: LogOtherData): UsageLog {
   }
 }
 
-function renderDetails(other: LogOtherData, promptTokens = 0): QueryClient {
+function renderDetails(
+  other: LogOtherData,
+  promptTokens = 0,
+  giftQuota = 0
+): QueryClient {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -79,7 +87,7 @@ function renderDetails(other: LogOtherData, promptTokens = 0): QueryClient {
   render(
     <QueryClientProvider client={queryClient}>
       <DetailsDialog
-        log={{ ...makeLog(other), prompt_tokens: promptTokens }}
+        log={{ ...makeLog(other, giftQuota), prompt_tokens: promptTokens }}
         isAdmin={false}
         isRoot={false}
         open
@@ -106,6 +114,20 @@ test('shows the recorded request and response models in log details', () => {
   expect(rowValue('Request Model')).toBe('requested-model')
   expect(rowValue('Upstream Model')).toBe('mapped-model')
   expect(screen.getByText('unexpected-model')).toBeVisible()
+  queryClient.clear()
+})
+
+test('shows the gift credit share of the charge in billing details', () => {
+  const queryClient = renderDetails({ model_price: 0.25 }, 0, 2500)
+  expect(rowValue('Total Cost')).toBe(formatLogQuota(5000))
+  expect(rowValue('Gift credit')).toBe(formatLogQuota(2500))
+  queryClient.clear()
+})
+
+test('omits the gift credit row when no gift credit was used', () => {
+  const queryClient = renderDetails({ model_price: 0.25 })
+  expect(rowValue('Total Cost')).toBe(formatLogQuota(5000))
+  expect(screen.queryByText('Gift credit')).toBeNull()
   queryClient.clear()
 })
 

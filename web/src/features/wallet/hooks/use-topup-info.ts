@@ -24,6 +24,7 @@ import { getTopupInfo } from '../api'
 import {
   generatePresetAmounts,
   mergePresetAmounts,
+  getDefaultPaymentType,
   getMinTopupAmount,
 } from '../lib'
 import type {
@@ -229,7 +230,10 @@ export function useTopupInfo() {
         )
         setPresetAmounts(customPresets)
       } else {
-        const minTopup = getMinTopupAmount(processedData)
+        const minTopup = getMinTopupAmount(
+          processedData,
+          getDefaultPaymentType(processedData)
+        )
         const defaultPresets = generatePresetAmounts(minTopup)
         setPresetAmounts(defaultPresets)
       }

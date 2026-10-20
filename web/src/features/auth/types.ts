@@ -96,6 +96,8 @@ export interface SystemStatus {
     logo?: string
     github_oauth?: boolean
     github_client_id?: string
+    google_oauth?: boolean
+    google_client_id?: string
     discord_oauth?: boolean
     discord_client_id?: string
     oidc_enabled?: boolean
@@ -143,6 +145,8 @@ export interface SystemStatus {
   logo?: string
   github_oauth?: boolean
   github_client_id?: string
+  google_oauth?: boolean
+  google_client_id?: string
   discord_oauth?: boolean
   discord_client_id?: string
   oidc_enabled?: boolean
@@ -182,6 +186,11 @@ export interface SystemStatus {
   password_login_encryption_enabled?: boolean
   password_register_enabled?: boolean
   custom_oauth_providers?: CustomOAuthProviderInfo[]
+  log_export_enabled?: boolean
+  log_max_range_days?: number
+  quota_remind_enabled?: boolean
+  /** Site default low balance reminder threshold, in quota units */
+  quota_remind_threshold?: number
   [key: string]: unknown
 }
 
@@ -191,7 +200,14 @@ export interface SystemStatus {
 
 export interface OAuthProvider {
   name: string
-  type: 'github' | 'discord' | 'oidc' | 'linuxdo' | 'telegram' | 'wechat'
+  type:
+    | 'github'
+    | 'google'
+    | 'discord'
+    | 'oidc'
+    | 'linuxdo'
+    | 'telegram'
+    | 'wechat'
   enabled: boolean
   clientId?: string
   authEndpoint?: string

@@ -20,6 +20,7 @@ import {
   Activity,
   Box,
   ClipboardList,
+  Coins,
   CreditCard,
   FileText,
   FlaskConical,
@@ -125,6 +126,22 @@ export function useSidebarData(): SidebarData {
             icon: Wallet,
           },
           {
+            title: t('Red Packets'),
+            icon: Coins,
+            defaultOpen: true,
+            items: [
+              {
+                title: t('Send Red Packets'),
+                url: '/red-packets',
+                requiredRole: ROLE.ADMIN,
+              },
+              {
+                title: t('Red Packet Records'),
+                url: '/red-packet-records',
+              },
+            ],
+          },
+          {
             title: t('Invite Plan'),
             url: '/invitation',
             icon: Gift,
@@ -203,6 +220,7 @@ export function useSidebarData(): SidebarData {
             url: '/system-settings/site',
             activeUrls: ['/system-settings'],
             icon: Settings,
+            requiredRole: ROLE.SUPER_ADMIN,
           },
         ],
       },

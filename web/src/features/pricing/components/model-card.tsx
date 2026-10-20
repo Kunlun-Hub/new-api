@@ -48,6 +48,7 @@ import { taskPriceLabel, taskUsageUnitLabel } from '../lib/task-price-display'
 import type { PricingModel, PriceType, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelCapabilityBadges } from './model-capability-badges'
+import { ModelPaymentBadges } from './model-payment-badges'
 import type { ModelPerfBadgeData } from './model-perf-badge'
 
 export interface ModelCardProps {
@@ -112,6 +113,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   )
   let priceSummary: ReactNode
   if (dynamicSummary) {
+    const cacheReadEntries = dynamicSummary.secondaryEntries.filter(
+      (entry) => entry.field === 'cacheReadPrice' && entry.unit === 'token'
+    )
     const simpleTokenEntries =
       dynamicSummary.isTaskUsage ||
       dynamicSummary.isMixedBilling ||
@@ -164,11 +168,20 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           )}
         </>
       )
-    } else if (dynamicSummary.primaryEntries.length > 0) {
+    } else if (
+      dynamicSummary.primaryEntries.length > 0 ||
+      cacheReadEntries.length > 0
+    ) {
       priceSummary = (
         <>
-          {dynamicSummary.primaryEntries
-            .slice(0, dynamicSummary.providerCount ? 2 : undefined)
+          {[
+            dynamicSummary.primaryEntries.slice(
+              0,
+              dynamicSummary.providerCount ? 2 : undefined
+            ),
+            cacheReadEntries,
+          ]
+            .flat()
             .map((entry) => {
               const unitLabelKey = getDynamicPriceUnitLabelKey(entry)
               const unitLabel = taskUsageUnitLabel(
@@ -225,6 +238,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </span>
           )}
           {dynamicSummary.isTaskUsage &&
+            dynamicSummary.tierCount > 1 &&
             dynamicSummary.tier?.label &&
             !dynamicSummary.primaryEntries.some(
               (entry) => entry.formattedRange
@@ -339,9 +353,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           >
             {priceSummary}
           </div>
-          <div
-            className='pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100'
-          >
+          <div className='pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100'>
             <Button
               variant='outline'
               size='sm'
@@ -394,6 +406,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </Badge>
           )}
           <ModelBillingModeBadge model={props.model} appearance='chip' />
+          <ModelPaymentBadges model={props.model} />
           {hasWebSearch && (
             <Badge
               variant='outline'

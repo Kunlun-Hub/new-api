@@ -27,7 +27,6 @@ import type { z } from 'zod'
 
 import { Dialog } from '@/components/dialog'
 import { PasswordInput } from '@/components/password-input'
-import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -42,6 +41,7 @@ import { Label } from '@/components/ui/label'
 import { register, wechatLoginByCode } from '@/features/auth/api'
 import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
+import { TurnstileGate } from '@/features/auth/components/turnstile-gate'
 import { registerFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useEmailVerification } from '@/features/auth/hooks/use-email-verification'
@@ -67,7 +67,6 @@ export function SignUpForm({
   const [wechatCode, setWeChatCode] = useState('')
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
-  const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
@@ -75,7 +74,10 @@ export function SignUpForm({
     isTurnstileEnabled,
     turnstileSiteKey,
     turnstileToken,
+    turnstileWidgetKey,
+    turnstileReady,
     setTurnstileToken,
+    resetTurnstile,
     validateTurnstile,
   } = useTurnstile()
   const { redirectToLogin, handleLoginResult } = useAuthRedirect()
@@ -110,6 +112,7 @@ export function SignUpForm({
   const hasOAuthLogin = Boolean(
     hasWeChatLogin ||
     status?.github_oauth ||
+    status?.google_oauth ||
     status?.discord_oauth ||
     status?.oidc_enabled ||
     status?.linuxdo_oauth ||
@@ -117,7 +120,6 @@ export function SignUpForm({
     (status?.custom_oauth_providers?.length ?? 0) > 0
   )
   const showTopDivider = oauthRegisterEnabled && hasOAuthLogin
-  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
 
   const wechatQrCodeUrl = useMemo(() => {
     return (
@@ -164,6 +166,11 @@ export function SignUpForm({
 
     if (!validateTurnstile()) return
 
+    const submittedTurnstileToken = turnstileToken
+    if (isTurnstileEnabled) {
+      resetTurnstile()
+    }
+
     setIsLoading(true)
     try {
       const res = await register({
@@ -172,7 +179,7 @@ export function SignUpForm({
         email: data.email,
         verification_code: verificationCode || undefined,
         aff_code: getAffiliateCode(),
-        turnstile: turnstileToken,
+        turnstile: submittedTurnstileToken,
       })
 
       if (res?.success) {
@@ -191,9 +198,10 @@ export function SignUpForm({
   }
 
   async function handleSendVerificationCode() {
-    if (await sendCode(emailValue || '')) {
-      setTurnstileToken('')
-      setTurnstileWidgetKey((current) => current + 1)
+    const submittedTurnstileToken = turnstileToken
+    await sendCode(emailValue || '')
+    if (isTurnstileEnabled && submittedTurnstileToken) {
+      resetTurnstile()
     }
   }
 
@@ -271,11 +279,29 @@ export function SignUpForm({
           </p>
         </div>
 
+        {isTurnstileEnabled && (
+          <TurnstileGate
+            className='mb-8'
+            siteKey={turnstileSiteKey}
+            action='register'
+            widgetKey={turnstileWidgetKey}
+            ready={turnstileReady}
+            onVerify={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+          />
+        )}
+
         {showTopDivider && (
           <div className='mb-8'>
             <OAuthProviders
               status={status}
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+              disabled={
+                isLoading ||
+                !turnstileReady ||
+                (requiresLegalConsent && !agreedToLegal)
+              }
+              turnstileToken={turnstileToken}
+              onTurnstileConsumed={resetTurnstile}
               onWeChatLogin={
                 hasWeChatLogin ? handleOpenWeChatDialog : undefined
               }
@@ -369,15 +395,6 @@ export function SignUpForm({
             </div>
           )}
 
-          {/* Turnstile */}
-          {isTurnstileEnabled && (
-            <Turnstile
-              key={turnstileWidgetKey}
-              siteKey={turnstileSiteKey}
-              onVerify={setTurnstileToken}
-            />
-          )}
-
           <LegalConsent
             status={status}
             checked={agreedToLegal}
@@ -436,6 +453,7 @@ export function SignUpForm({
                 disabled={
                   isWeChatSubmitting ||
                   !wechatCode.trim() ||
+                  !turnstileReady ||
                   (requiresLegalConsent && !agreedToLegal)
                 }
                 className='gap-2'

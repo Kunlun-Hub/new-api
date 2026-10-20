@@ -29,6 +29,10 @@ import type {
   AmountResponse,
   PaymentResponse,
   StripePaymentResponse,
+  AlipayPaymentResponse,
+  AlipaySyncResponse,
+  WechatPaymentResponse,
+  WechatSyncResponse,
   AffiliateCodeResponse,
   AffiliateTransferResponse,
   BillingHistoryResponse,
@@ -128,6 +132,57 @@ export async function requestStripePayment(
   request: PaymentRequest
 ): Promise<StripePaymentResponse> {
   const res = await api.post('/api/user/stripe/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+/**
+ * Request native Alipay (official precreate) payment
+ */
+export async function requestAlipayPayment(
+  request: PaymentRequest
+): Promise<AlipayPaymentResponse> {
+  const res = await api.post('/api/user/alipay/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+/**
+ * Reconcile a native Alipay order by querying Alipay directly.
+ * Used after the PC website payment cashier redirects back and as a
+ * fallback when the async notify is delayed or lost.
+ */
+export async function syncAlipayOrder(
+  tradeNo: string
+): Promise<AlipaySyncResponse> {
+  const res = await api.post('/api/user/alipay/query', { trade_no: tradeNo }, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+/**
+ * Request native WeChat Pay (official API v3 Native) payment
+ */
+export async function requestWechatPayment(
+  request: PaymentRequest
+): Promise<WechatPaymentResponse> {
+  const res = await api.post('/api/user/wechat/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+/**
+ * Reconcile a native WeChat Pay order by querying the gateway directly.
+ * Used as a fallback when the async notify is delayed or lost.
+ */
+export async function syncWechatOrder(
+  tradeNo: string
+): Promise<WechatSyncResponse> {
+  const res = await api.post('/api/user/wechat/query', { trade_no: tradeNo }, {
     skipBusinessError: true,
   } as Record<string, unknown>)
   return res.data

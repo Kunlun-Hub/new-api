@@ -64,10 +64,55 @@ interface TimingMetricsCellProps {
    */
   indicator?: 'bar' | 'dot'
   compact?: boolean
+  /** Single-line presentation used by the reference usage-log table. */
+  variant?: 'metrics' | 'inline'
 }
 
 export function TimingMetricsCell(props: TimingMetricsCellProps) {
   const { t } = useTranslation()
+  if (props.variant === 'inline') {
+    const secondsPerToken =
+      props.completionTokens > 0
+        ? props.useTimeSec / props.completionTokens
+        : null
+    let rateColor = ''
+    if (secondsPerToken != null) {
+      if (secondsPerToken < 0.08) {
+        rateColor = 'text-foreground'
+      } else if (secondsPerToken < 0.14) {
+        rateColor = 'text-amber-500 font-medium'
+      } else {
+        rateColor = 'text-red-500 font-medium'
+      }
+    }
+    const firstToken =
+      props.frtMs != null && props.frtMs > 0
+        ? formatUseTime(props.frtMs / 1000)
+        : null
+
+    return (
+      <div
+        className={cn(
+          'flex items-center gap-1.5 whitespace-nowrap text-[13px]',
+          props.className
+        )}
+        title={firstToken ? `${t('First token')}: ${firstToken}` : undefined}
+      >
+        <span className='font-medium'>{formatUseTime(props.useTimeSec)}</span>
+        {secondsPerToken != null && (
+          <>
+            <span className='text-muted-foreground/60'>/</span>
+            <span className={rateColor}>{secondsPerToken.toFixed(3)}s</span>
+          </>
+        )}
+        {props.isStream && props.completionTokens > 0 && (
+          <span className='border-border rounded-full border px-1 py-0 text-[10px]'>
+            {t('Stream')}
+          </span>
+        )}
+      </div>
+    )
+  }
   const indicator = props.indicator ?? 'bar'
   const showFirstToken = props.isStream
   const firstTokenSeconds =

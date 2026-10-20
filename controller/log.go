@@ -1,32 +1,62 @@
 package controller
 
 import (
-	"encoding/csv"
-	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllLogs(c *gin.Context) {
-	pageInfo := common.GetPageQuery(c)
+// logFilterFromQuery reads the log search shared by the log list and the log
+// export. Username and channel are read only for administrators.
+func logFilterFromQuery(c *gin.Context, admin bool) model.LogFilter {
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	username := c.Query("username")
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	group := c.Query("group")
-	requestId := c.Query("request_id")
-	upstreamRequestId := c.Query("upstream_request_id")
-	logs, total, err := model.GetAllLogs(logType, startTimestamp, endTimestamp, modelName, username, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), channel, group, requestId, upstreamRequestId)
+	filter := model.LogFilter{
+		Type:              logType,
+		StartTimestamp:    startTimestamp,
+		EndTimestamp:      endTimestamp,
+		ModelName:         c.Query("model_name"),
+		TokenName:         c.Query("token_name"),
+		Group:             c.Query("group"),
+		RequestId:         c.Query("request_id"),
+		UpstreamRequestId: c.Query("upstream_request_id"),
+	}
+	if admin {
+		filter.Username = c.Query("username")
+		filter.Channel, _ = strconv.Atoi(c.Query("channel"))
+	}
+	return filter
+}
+
+// limitLogTimeRange returns the start of a log or dashboard search kept within
+// the longest log time range. A missing start reaches back the whole range, and
+// time after now does not count toward it.
+func limitLogTimeRange(startTimestamp int64, endTimestamp int64) (int64, error) {
+	maxRange := operation_setting.GetLogSetting().MaxRangeSeconds()
+	end := common.GetTimestamp()
+	if endTimestamp != 0 {
+		end = min(end, endTimestamp)
+	}
+	if startTimestamp == 0 {
+		return end - maxRange, nil
+	}
+	if end-startTimestamp > maxRange {
+		return 0, common.NewMessage("The time range cannot exceed {{days}} days", map[string]any{"days": maxRange / (24 * 60 * 60)})
+	}
+	return startTimestamp, nil
+}
+
+func GetAllLogs(c *gin.Context) {
+	pageInfo := common.GetPageQuery(c)
+	logs, total, err := model.GetAllLogs(logFilterFromQuery(c, true), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -44,16 +74,16 @@ func GetAllLogs(c *gin.Context) {
 
 func GetUserLogs(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
-	userId := c.GetInt("id")
-	logType, _ := strconv.Atoi(c.Query("type"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	group := c.Query("group")
-	requestId := c.Query("request_id")
-	upstreamRequestId := c.Query("upstream_request_id")
-	logs, total, err := model.GetUserLogs(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId, upstreamRequestId)
+	filter := logFilterFromQuery(c, false)
+	if c.GetInt("role") < common.RoleAdminUser {
+		startTimestamp, err := limitLogTimeRange(filter.StartTimestamp, filter.EndTimestamp)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		filter.StartTimestamp = startTimestamp
+	}
+	logs, total, err := model.GetUserLogs(c.GetInt("id"), filter, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -64,29 +94,95 @@ func GetUserLogs(c *gin.Context) {
 	return
 }
 
+// ExportAllLogs streams every user's logs matching the search.
+func ExportAllLogs(c *gin.Context) {
+	exportLogs(c, true)
+}
+
+// ExportUserLogs streams the caller's own logs matching the search.
+func ExportUserLogs(c *gin.Context) {
+	if c.GetInt("role") < common.RoleAdminUser && !operation_setting.GetLogSetting().UserExportEnabled {
+		common.ApiErrorT(c, "Log export is disabled")
+		return
+	}
+	exportLogs(c, false)
+}
+
+// exportLogs writes one JSON log per line, newest first, and ends with an API
+// response object: success with the log count, or the failure. Each user runs
+// one export at a time, and every export stays within the longest log time
+// range.
+func exportLogs(c *gin.Context, all bool) {
+	filter := logFilterFromQuery(c, all)
+	startTimestamp, err := limitLogTimeRange(filter.StartTimestamp, filter.EndTimestamp)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	filter.StartTimestamp = startTimestamp
+
+	userId := c.GetInt("id")
+	release, ok, err := service.AcquireLogExportLock(userId)
+	if err != nil {
+		common.SysError(common.LogText("failed to lock log export: %s", err.Error()))
+		common.ApiErrorT(c, "Failed to export logs")
+		return
+	}
+	if !ok {
+		common.ApiErrorT(c, "Another log export is running. Try again after it finishes.")
+		return
+	}
+	defer release()
+
+	c.Header("Content-Type", "application/x-ndjson; charset=utf-8")
+	c.Header("Cache-Control", "no-store")
+	c.Header("X-Accel-Buffering", "no")
+	c.Status(http.StatusOK)
+
+	count := 0
+	writeLog := func(log *model.Log) error {
+		line, err := common.Marshal(log)
+		if err != nil {
+			return err
+		}
+		if _, err := c.Writer.Write(append(line, '\n')); err != nil {
+			return err
+		}
+		count++
+		return nil
+	}
+	ctx := c.Request.Context()
+	if all {
+		err = model.StreamAllLogs(ctx, filter, c.GetInt("role"), writeLog)
+	} else {
+		err = model.StreamUserLogs(ctx, userId, filter, writeLog)
+	}
+	if ctx.Err() != nil {
+		return
+	}
+	// The status is already sent, so the result object becomes the last line.
+	if err != nil {
+		common.SysError(common.LogText("failed to export logs: %s", err.Error()))
+		common.ApiErrorT(c, "Failed to export logs")
+		return
+	}
+	common.ApiSuccess(c, gin.H{"count": count})
+}
+
 // Deprecated: SearchAllLogs 已废弃，前端未使用该接口。
 func SearchAllLogs(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": false,
-		"message": "该接口已废弃",
-	})
+	common.ApiErrorT(c, "This API is deprecated")
 }
 
 // Deprecated: SearchUserLogs 已废弃，前端未使用该接口。
 func SearchUserLogs(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": false,
-		"message": "该接口已废弃",
-	})
+	common.ApiErrorT(c, "This API is deprecated")
 }
 
 func GetLogByKey(c *gin.Context) {
 	tokenId := c.GetInt("token_id")
 	if tokenId == 0 {
-		c.JSON(200, gin.H{
-			"success": false,
-			"message": "无效的令牌",
-		})
+		common.ApiErrorI18n(c, i18n.MsgTokenInvalid)
 		return
 	}
 	logs, err := model.GetLogByTokenId(tokenId)
@@ -136,6 +232,13 @@ func GetLogsSelfStat(c *gin.Context) {
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	if c.GetInt("role") < common.RoleAdminUser {
+		var err error
+		if startTimestamp, err = limitLogTimeRange(startTimestamp, endTimestamp); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
 	channel, _ := strconv.Atoi(c.Query("channel"))
@@ -157,85 +260,4 @@ func GetLogsSelfStat(c *gin.Context) {
 		},
 	})
 	return
-}
-
-const logExportMaxRows = 50000
-
-// ExportAllLogs streams the filtered logs of every user as a CSV attachment.
-func ExportAllLogs(c *gin.Context) {
-	exportLogs(c, true)
-}
-
-// ExportUserLogs streams the current user's filtered logs as a CSV attachment.
-func ExportUserLogs(c *gin.Context) {
-	exportLogs(c, false)
-}
-
-func exportLogs(c *gin.Context, allUsers bool) {
-	logType, _ := strconv.Atoi(c.Query("type"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	username := c.Query("username")
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	group := c.Query("group")
-	requestId := c.Query("request_id")
-	upstreamRequestId := c.Query("upstream_request_id")
-
-	var (
-		logs []*model.Log
-		err  error
-	)
-	if allUsers {
-		logs, _, err = model.GetAllLogs(logType, startTimestamp, endTimestamp, modelName, username, tokenName, 0, logExportMaxRows, channel, group, requestId, upstreamRequestId)
-	} else {
-		logs, _, err = model.GetUserLogs(c.GetInt("id"), logType, startTimestamp, endTimestamp, modelName, tokenName, 0, logExportMaxRows, group, requestId, upstreamRequestId)
-	}
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	if len(logs) == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"code":    "no_records",
-			"message": common.TranslateMessage(c, i18n.MsgNoLogsToExport),
-		})
-		return
-	}
-
-	filename := fmt.Sprintf("logs-%s.csv", time.Now().Format("20060102-150405"))
-	c.Header("Content-Type", "text/csv; charset=utf-8")
-	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
-	c.Header("Cache-Control", "no-store")
-
-	writer := csv.NewWriter(c.Writer)
-	header := []string{"created_at", "type", "username", "token_name", "model_name", "group", "channel", "use_time", "is_stream", "prompt_tokens", "completion_tokens", "quota", "request_id", "upstream_request_id", "content"}
-	if err = writer.Write(header); err != nil {
-		return
-	}
-	for _, log := range logs {
-		record := []string{
-			time.Unix(log.CreatedAt, 0).Format("2006-01-02 15:04:05"),
-			strconv.Itoa(log.Type),
-			log.Username,
-			log.TokenName,
-			log.ModelName,
-			log.Group,
-			log.ChannelName,
-			strconv.Itoa(log.UseTime),
-			strconv.FormatBool(log.IsStream),
-			strconv.Itoa(log.PromptTokens),
-			strconv.Itoa(log.CompletionTokens),
-			strconv.Itoa(log.Quota),
-			log.RequestId,
-			log.UpstreamRequestId,
-			log.Content,
-		}
-		if err = writer.Write(record); err != nil {
-			return
-		}
-	}
-	writer.Flush()
 }

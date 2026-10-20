@@ -36,6 +36,8 @@ interface TodayStat {
   label: string
   value: number
   display: string
+  /** Secondary amount line, e.g. the gift credit share of today's spending. */
+  subLabel?: string
   icon: ComponentType<{ className?: string }>
   color: string
 }
@@ -70,12 +72,14 @@ function sumQuotaData(items: QuotaDataItem[]) {
   let count = 0
   let tokens = 0
   let quota = 0
+  let giftQuota = 0
   for (const item of items) {
     count += Number(item.count) || 0
     tokens += Number(item.token_used) || 0
     quota += Number(item.quota) || 0
+    giftQuota += Number(item.gift_quota) || 0
   }
-  return { count, tokens, quota }
+  return { count, tokens, quota, giftQuota }
 }
 
 export function TodayStatCards() {
@@ -92,6 +96,7 @@ export function TodayStatCards() {
       label: t('Today Usage'),
       value: totals.quota,
       display: formatQuota(totals.quota),
+      subLabel: `${t('Gift credit')}: ${formatQuota(totals.giftQuota)}`,
       icon: DatabaseZap,
       color: 'rgb(236, 72, 153)',
     },
@@ -125,7 +130,7 @@ export function TodayStatCards() {
               <stat.icon className='h-5 w-5 text-white' />
             </div>
             <div className='min-w-0 flex-1'>
-              <div className='text-muted-foreground text-xs 2xl:text-sm'>
+              <div className='text-muted-foreground truncate text-xs 2xl:text-sm'>
                 {stat.label}
               </div>
               {query.isLoading ? (
@@ -135,9 +140,13 @@ export function TodayStatCards() {
                   {stat.display}
                 </div>
               )}
+              {stat.subLabel && !query.isLoading && (
+                <div className='truncate text-xs font-medium text-emerald-600 dark:text-emerald-400'>
+                  {stat.subLabel}
+                </div>
+              )}
             </div>
           </div>
-          <div className='h-26 w-2/3 md:max-xl:hidden' />
         </div>
       ))}
     </div>

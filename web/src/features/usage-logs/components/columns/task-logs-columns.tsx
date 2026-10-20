@@ -26,17 +26,21 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
-import { formatQuota, formatTimestampToDate } from '@/lib/format'
+import { formatTimestampToDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 import { taskStatusMapper } from '../../lib/mappers'
 import type { TaskLog } from '../../types'
+import { LogCostDisplay } from '../log-cost-display'
 import { PluginAuthorLink } from '../plugin-author-link'
 import { TaskArtifactsCell } from '../task-artifacts'
 import { useUsageLogsContext } from '../usage-logs-provider'
 import { createChannelColumn } from './column-helpers'
 
-export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
+export function useTaskLogsColumns(
+  isAdmin: boolean,
+  _isRoot: boolean
+): ColumnDef<TaskLog>[] {
   const { t } = useTranslation()
   return useMemo(() => {
     const columns: ColumnDef<TaskLog>[] = [
@@ -285,9 +289,11 @@ export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
           }
 
           return (
-            <span className='cursor-help font-medium whitespace-nowrap'>
-              {formatQuota(log.quota ?? 0)}
-            </span>
+            <LogCostDisplay
+              quota={log.quota ?? 0}
+              other={null}
+              giftQuota={log.gift_quota}
+            />
           )
         },
       },

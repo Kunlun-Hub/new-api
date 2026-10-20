@@ -27,7 +27,6 @@ import type { z } from 'zod'
 
 import { Dialog } from '@/components/dialog'
 import { PasswordInput } from '@/components/password-input'
-import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -41,6 +40,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { login, wechatLoginByCode } from '@/features/auth/api'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
+import { TurnstileGate } from '@/features/auth/components/turnstile-gate'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
@@ -77,7 +77,6 @@ export function UserAuthForm({
   useEffect(() => () => passkeyOperation.current?.abort(), [])
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
-  const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const loginFailedMessage = t('Login failed')
 
   const { status } = useStatus()
@@ -96,15 +95,20 @@ export function UserAuthForm({
     isTurnstileEnabled,
     turnstileSiteKey,
     turnstileToken,
+    turnstileWidgetKey,
+    turnstileReady,
     setTurnstileToken,
+    resetTurnstile,
     validateTurnstile,
   } = useTurnstile()
   const { handleLoginResult } = useAuthRedirect()
 
-  const passkeyButtonDisabled = isPasskeyLoading || !passkeySupported
+  const passkeyButtonDisabled =
+    isPasskeyLoading || !passkeySupported || !turnstileReady
   const hasWeChatLogin = Boolean(status?.wechat_login)
   const hasOAuthLogin = Boolean(
     status?.github_oauth ||
+    status?.google_oauth ||
     status?.discord_oauth ||
     status?.oidc_enabled ||
     status?.linuxdo_oauth ||
@@ -145,8 +149,7 @@ export function UserAuthForm({
 
     const submittedTurnstileToken = turnstileToken
     if (isTurnstileEnabled) {
-      setTurnstileToken('')
-      setTurnstileWidgetKey((current) => current + 1)
+      resetTurnstile()
     }
 
     setIsLoading(true)
@@ -290,12 +293,26 @@ export function UserAuthForm({
           </p>
         </div>
 
+        {isTurnstileEnabled && (
+          <TurnstileGate
+            className='mb-6'
+            siteKey={turnstileSiteKey}
+            action='login'
+            widgetKey={turnstileWidgetKey}
+            ready={turnstileReady}
+            onVerify={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+          />
+        )}
+
         {hasOAuthLogin && (
           <div className='mb-8'>
             <OAuthProviders
               status={status}
               redirectTo={redirectTo}
-              disabled={isLoading}
+              disabled={isLoading || !turnstileReady}
+              turnstileToken={turnstileToken}
+              onTurnstileConsumed={resetTurnstile}
               onWeChatLogin={
                 hasWeChatLogin ? handleOpenWeChatDialog : undefined
               }
@@ -358,23 +375,12 @@ export function UserAuthForm({
 
             <Button
               type='submit'
-              className='bg-foreground text-background hover:bg-foreground/90 w-full rounded-full'
-              disabled={isLoading}
+              className='bg-foreground text-background hover:bg-foreground/90 mt-2 w-full justify-center gap-2 rounded-full'
+              disabled={isLoading || !turnstileReady}
             >
               {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
               {t('Continue with email')}
             </Button>
-
-            {isTurnstileEnabled && (
-              <div className='flex justify-center'>
-                <Turnstile
-                  key={turnstileWidgetKey}
-                  siteKey={turnstileSiteKey}
-                  onVerify={setTurnstileToken}
-                  onExpire={() => setTurnstileToken('')}
-                />
-              </div>
-            )}
           </div>
         )}
 
@@ -460,7 +466,9 @@ export function UserAuthForm({
               <Button
                 type='button'
                 onClick={handleWeChatLogin}
-                disabled={isWeChatSubmitting || !wechatCode.trim()}
+                disabled={
+                  isWeChatSubmitting || !wechatCode.trim() || !turnstileReady
+                }
                 className='gap-2'
               >
                 {isWeChatSubmitting ? (

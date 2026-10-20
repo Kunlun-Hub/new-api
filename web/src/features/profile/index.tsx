@@ -26,7 +26,7 @@ import {
   CardStaggerItem,
 } from '@/components/page-transition'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AccessTokenCard } from '@/features/security/components/access-token-card'
+import { AccessTokensCard } from '@/features/security/components/access-tokens-card'
 import { AccountActionCard } from '@/features/security/components/account-action-card'
 import { AccountBindings } from '@/features/security/components/account-bindings'
 import { TwoFACard } from '@/features/security/components/two-fa-card'
@@ -155,7 +155,7 @@ export function Profile() {
                   </p>
                   <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                     <TwoFACard loading={loading} />
-                    <AccessTokenCard />
+                    <AccessTokensCard />
                     {profile && (
                       <AccountActionCard
                         action='delete'

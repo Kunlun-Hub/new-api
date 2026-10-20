@@ -21,7 +21,9 @@ import { describe, expect, test } from 'vitest'
 import { PAYMENT_TYPES } from '../constants'
 import {
   dispatchSelectedPayment,
+  isAlipayOfficialPayment,
   isStripePayment,
+  isWechatOfficialPayment,
   isWaffoPayment,
   isWaffoPancakePayment,
 } from './payment'
@@ -33,6 +35,10 @@ describe('payment type classification', () => {
     expect(isWaffoPancakePayment(PAYMENT_TYPES.WAFFO_PANCAKE)).toBe(true)
     expect(isWaffoPancakePayment(PAYMENT_TYPES.WAFFO)).toBe(false)
     expect(isStripePayment(PAYMENT_TYPES.STRIPE)).toBe(true)
+    expect(isAlipayOfficialPayment(PAYMENT_TYPES.ALIPAY_OFFICIAL)).toBe(true)
+    expect(isAlipayOfficialPayment(PAYMENT_TYPES.ALIPAY)).toBe(false)
+    expect(isWechatOfficialPayment(PAYMENT_TYPES.WECHAT_OFFICIAL)).toBe(true)
+    expect(isWechatOfficialPayment(PAYMENT_TYPES.WECHAT)).toBe(false)
   })
 })
 
@@ -44,10 +50,15 @@ describe('payment dispatch', () => {
       120,
       3,
       {
+        alipay: async () => {
+          calls.push('alipay')
+          return false
+        },
         regular: async () => {
           calls.push('regular')
           return false
         },
+        wechat: async () => false,
         waffo: async (amount, index) => {
           calls.push(`waffo:${amount}:${index}`)
           return true
@@ -70,7 +81,9 @@ describe('payment dispatch', () => {
       120,
       null,
       {
+        alipay: async () => false,
         regular: async () => false,
+        wechat: async () => false,
         waffo: async () => {
           called = true
           return true
@@ -81,5 +94,55 @@ describe('payment dispatch', () => {
 
     expect(success).toBe(false)
     expect(called).toBe(false)
+  })
+
+  test('routes the official Alipay method to its own processor', async () => {
+    const calls: string[] = []
+    const success = await dispatchSelectedPayment(
+      { name: 'Alipay (Official)', type: PAYMENT_TYPES.ALIPAY_OFFICIAL },
+      120,
+      null,
+      {
+        alipay: async (amount) => {
+          calls.push(`alipay:${amount}`)
+          return true
+        },
+        regular: async () => {
+          calls.push('regular')
+          return false
+        },
+        wechat: async () => false,
+        waffo: async () => false,
+        waffoPancake: async () => false,
+      }
+    )
+
+    expect(success).toBe(true)
+    expect(calls).toEqual(['alipay:120'])
+  })
+
+  test('routes the official WeChat pay method to its own processor', async () => {
+    const calls: string[] = []
+    const success = await dispatchSelectedPayment(
+      { name: 'WeChat Pay (Official)', type: PAYMENT_TYPES.WECHAT_OFFICIAL },
+      120,
+      null,
+      {
+        alipay: async () => false,
+        regular: async () => {
+          calls.push('regular')
+          return false
+        },
+        wechat: async (amount) => {
+          calls.push(`wechat:${amount}`)
+          return true
+        },
+        waffo: async () => false,
+        waffoPancake: async () => false,
+      }
+    )
+
+    expect(success).toBe(true)
+    expect(calls).toEqual(['wechat:120'])
   })
 })

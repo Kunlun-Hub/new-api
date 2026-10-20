@@ -22,7 +22,6 @@ import type { Table } from '@tanstack/react-table'
 import { Eye, EyeOff } from 'lucide-react'
 import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -46,15 +45,15 @@ import { getUserGroups } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
-import { exportLogs } from '../api'
 import { LOG_TYPE_ALL_VALUE, LOG_TYPE_FILTERS } from '../constants'
 import { buildSearchParams } from '../lib/filter'
-import { buildApiParams, getDefaultTimeRange } from '../lib/utils'
+import { getDefaultTimeRange } from '../lib/utils'
 import type { CommonLogFilters } from '../types'
 import {
   CompactDateTimeField,
   CompactDateTimeRangePicker,
 } from './compact-date-time-range-picker'
+import { ExportLogsDialog } from './dialogs/export-logs-dialog'
 import {
   LogsFilterField,
   LogsFilterInput,
@@ -259,45 +258,6 @@ export function CommonLogsFilterBar<TData>(
     queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
   }, [navigate, queryClient])
 
-  const [exporting, setExporting] = useState(false)
-
-  const handleExport = useCallback(async () => {
-    setExporting(true)
-    try {
-      const result = await exportLogs(
-        buildApiParams({
-          page: 1,
-          pageSize: 1,
-          searchParams,
-          columnFilters: [],
-          isAdmin,
-        }),
-        isAdmin
-      )
-      if (!result.ok) {
-        toast.error(
-          result.code === 'no_records'
-            ? t('No consumption records in the selected time range')
-            : (result.message ?? t('Export failed'))
-        )
-        return
-      }
-      const blob = new Blob([`\uFEFF${result.csv}`], {
-        type: 'text/csv;charset=utf-8',
-      })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = result.filename
-      document.body.append(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
-    } finally {
-      setExporting(false)
-    }
-  }, [isAdmin, searchParams, t])
-
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') handleApply()
@@ -306,23 +266,21 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const hasExpandedFilters =
-    !!filters.username ||
-    !!filters.channel ||
-    !!filters.requestId ||
-    !!filters.upstreamRequestId
+    !!filters.group || !!filters.requestId || !!filters.upstreamRequestId
 
   const hasTypeFilter = logType !== LOG_TYPE_ALL_VALUE
   const hasAdditionalFilters =
     !!filters.token ||
     !!filters.model ||
     !!filters.group ||
+    !!filters.username ||
+    !!filters.channel ||
+    !!filters.requestId ||
     hasTypeFilter ||
     hasExpandedFilters
 
   const expandedFilterCount = [
     filters.group,
-    isAdmin ? filters.username : undefined,
-    isAdmin ? filters.channel : undefined,
     filters.requestId,
     filters.upstreamRequestId,
   ].filter(Boolean).length
@@ -433,6 +391,47 @@ export function CommonLogsFilterBar<TData>(
       />
     </LogsFilterField>
   )
+  const usernameFilter = (
+    <LogsFilterField className='w-full lg:w-28'>
+      <LogsFilterInput
+        placeholder={t('Username')}
+        className={sensitiveInputClass}
+        value={filters.username || ''}
+        onChange={(e) => handleChange('username', e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+    </LogsFilterField>
+  )
+  const channelFilter = (
+    <LogsFilterField className='w-full lg:w-26'>
+      <LogsFilterInput
+        placeholder={t('Channel ID')}
+        value={filters.channel || ''}
+        onChange={(e) => handleChange('channel', e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+    </LogsFilterField>
+  )
+  const requestIdFilter = (
+    <LogsFilterField className='w-full lg:w-26'>
+      <LogsFilterInput
+        placeholder={t('Request ID')}
+        value={filters.requestId || ''}
+        onChange={(e) => handleChange('requestId', e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+    </LogsFilterField>
+  )
+  const upstreamRequestIdFilter = (
+    <LogsFilterField>
+      <LogsFilterInput
+        placeholder={t('Upstream Request ID')}
+        value={filters.upstreamRequestId || ''}
+        onChange={(e) => handleChange('upstreamRequestId', e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+    </LogsFilterField>
+  )
   const typeFilter = (
     <LogsFilterField>
       <Select
@@ -509,43 +508,16 @@ export function CommonLogsFilterBar<TData>(
   const advancedFilters = (
     <>
       {groupFilter}
-      {isAdmin && (
-        <LogsFilterField>
-          <LogsFilterInput
-            placeholder={t('Username')}
-            className={sensitiveInputClass}
-            value={filters.username || ''}
-            onChange={(e) => handleChange('username', e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-        </LogsFilterField>
+      {requestIdFilter}
+      {upstreamRequestIdFilter}
+      {!isMobile && (
+        <div className='flex items-center gap-2'>
+          {sensitiveToggle}
+          <span className='text-muted-foreground text-xs'>
+            {sensitiveVisible ? t('Hide') : t('Show')}
+          </span>
+        </div>
       )}
-      {isAdmin && (
-        <LogsFilterField>
-          <LogsFilterInput
-            placeholder={t('Channel ID')}
-            value={filters.channel || ''}
-            onChange={(e) => handleChange('channel', e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-        </LogsFilterField>
-      )}
-      <LogsFilterField>
-        <LogsFilterInput
-          placeholder={t('Request ID')}
-          value={filters.requestId || ''}
-          onChange={(e) => handleChange('requestId', e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-      </LogsFilterField>
-      <LogsFilterField>
-        <LogsFilterInput
-          placeholder={t('Upstream Request ID')}
-          value={filters.upstreamRequestId || ''}
-          onChange={(e) => handleChange('upstreamRequestId', e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-      </LogsFilterField>
     </>
   )
 
@@ -553,12 +525,15 @@ export function CommonLogsFilterBar<TData>(
     <LogsFilterToolbar
       table={props.table}
       compactMobile
-      actionStart={sensitiveToggle}
+      actionStart={isMobile ? sensitiveToggle : undefined}
+      actionEnd={<ExportLogsDialog />}
       primaryFilters={
         <>
           {dateRangeFilter}
           {tokenFilter}
           {modelFilter}
+          {isAdmin && usernameFilter}
+          {isAdmin && channelFilter}
         </>
       }
       secondaryFilters={
@@ -572,13 +547,23 @@ export function CommonLogsFilterBar<TData>(
         <>
           {tokenFilter}
           {modelFilter}
+          {isAdmin && usernameFilter}
+          {isAdmin && channelFilter}
           {typeFilter}
           {advancedFilters}
         </>
       }
       mobileFilterCount={
-        [filters.model, filters.group, hasTypeFilter].filter(Boolean).length +
-        expandedFilterCount
+        [
+          filters.token,
+          filters.model,
+          filters.group,
+          filters.username,
+          filters.channel,
+          filters.requestId,
+          filters.upstreamRequestId,
+          hasTypeFilter,
+        ].filter(Boolean).length
       }
       hasAdvancedActiveFilters={hasExpandedFilters}
       advancedFilterCount={expandedFilterCount}
@@ -586,8 +571,6 @@ export function CommonLogsFilterBar<TData>(
       onSearch={() => handleApply()}
       searchLoading={fetchingLogs > 0}
       onReset={handleReset}
-      onExport={handleExport}
-      exporting={exporting}
     />
   )
 }
